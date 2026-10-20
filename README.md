@@ -127,7 +127,23 @@ The weights for the unsupervised LSTM Autoencoder are excluded from version cont
 ```bash
 # Create models directory if it doesn't exist
 mkdir -p models
+```
 
+**Option A — this repository ([release v0.1.0](https://github.com/TranDuon/anomaly-behavior-detector-system/releases/tag/v0.1.0))**
+
+Trained with `python main.py train --synthetic --epochs 30` on CPU. SHA-256: `edaf8a6bd74f767f9867269c6f5a097723aea33495182e4fda130da480ad46a8`. Suggested `ANOMALY_THRESHOLD=0.00035`.
+
+```bash
+# Download via curl
+curl -L -o models/lstm_autoencoder.pt https://github.com/TranDuon/anomaly-behavior-detector-system/releases/download/v0.1.0/lstm_autoencoder.pt
+
+# Or via wget
+wget -O models/lstm_autoencoder.pt https://github.com/TranDuon/anomaly-behavior-detector-system/releases/download/v0.1.0/lstm_autoencoder.pt
+```
+
+**Option B — original author's release** (link currently returns 404)
+
+```bash
 # Download via curl
 curl -L -o models/lstm_autoencoder.pt https://github.com/anshulec23-cloud/digital-surveillance-system/releases/download/v1.0.0/lstm_autoencoder.pt
 
