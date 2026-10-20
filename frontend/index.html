@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SENTINEL — Anomaly Detection System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow:wght@300;400;600;700&family=Barlow+Condensed:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  /* ── DESIGN TOKENS ──────────────────────────────────────────────────────── */
+  :root {
+    --bg-void:     #080b0f;
+    --bg-panel:    #0d1117;
+    --bg-surface:  #141b24;
+    --bg-elevated: #1a2332;
+    --border:      #1e2d3d;
+    --border-hot:  #2a3f55;
+
+    --green:       #00ff88;
+    --green-dim:   #00994d;
+    --green-glow:  rgba(0,255,136,0.12);
+    --red:         #ff2244;
+    --red-dim:     #991122;
+    --red-glow:    rgba(255,34,68,0.15);
+    --amber:       #ffaa00;
+    --amber-glow:  rgba(255,170,0,0.12);
+    --cyan:        #00d4ff;
+    --cyan-dim:    #007a99;
+    --white:       #e8f4f8;
+    --muted:       #4a6278;
+    --muted-light: #6a8299;
+
+    --font-mono:   'Share Tech Mono', monospace;
+    --font-ui:     'Barlow', sans-serif;
+    --font-display:'Barlow Condensed', sans-serif;
+
+    --radius-sm: 3px;
+    --radius-md: 6px;
+
+    --transition: 140ms ease;
+  }
+
+  /* ── RESET ──────────────────────────────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; }
+
+  body {
+    background: var(--bg-void);
+    color: var(--white);
+    font-family: var(--font-ui);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  /* ── SCANLINE OVERLAY ────────────────────────────────────────────────────── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.03) 2px,
+      rgba(0,0,0,0.03) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* ── LAYOUT ──────────────────────────────────────────────────────────────── */
+  #app {
+    display: grid;
+    grid-template-rows: 56px 1fr;
+    grid-template-columns: 1fr 380px;
+    height: 100vh;
+    gap: 0;
+  }
+
+  /* ── TOPBAR ──────────────────────────────────────────────────────────────── */
+  #topbar {
+    grid-column: 1 / -1;
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    gap: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  #topbar::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--green-dim), transparent);
+    animation: scan-line 4s linear infinite;
+  }
+
+  @keyframes scan-line {
+    0%   { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+
+  .wordmark {
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: 22px;
+    letter-spacing: 6px;
+    color: var(--green);
+    text-shadow: 0 0 20px var(--green);
+    text-transform: uppercase;
+    flex-shrink: 0;
+  }
+
+  .wordmark span {
+    color: var(--muted);
+    font-weight: 400;
+  }
+
+  .top-divider {
+    width: 1px;
+    height: 24px;
+    background: var(--border-hot);
+    flex-shrink: 0;
+  }
+
+  .top-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    flex-shrink: 0;
+  }
+
+  .top-stat-label {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+  }
+
+  .top-stat-value {
+    font-family: var(--font-mono);
+    font-size: 16px;
+    color: var(--cyan);
+    line-height: 1;
+  }
+
+  .top-stat-value.alert { color: var(--red); animation: pulse-val 1s ease infinite; }
+  .top-stat-value.ok    { color: var(--green); }
+
+  @keyframes pulse-val {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.5; }
+  }
+
+  #system-status {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  .status-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--muted);
+    transition: var(--transition);
+  }
+
+  .status-dot.running {
+    background: var(--green);
+    box-shadow: 0 0 8px var(--green);
+    animation: blink-dot 2s ease infinite;
+  }
+
+  .status-dot.stopped { background: var(--red-dim); }
+
+  @keyframes blink-dot {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.4; }
+  }
+
+  /* ── MAIN VIDEO PANEL ───────────────────────────────────────────────────── */
+  #main-panel {
+    background: var(--bg-void);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-right: 1px solid var(--border);
+  }
+
+  /* ── VIDEO VIEWPORT ──────────────────────────────────────────────────────── */
+  #video-wrap {
+    flex: 1;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #050708;
+    overflow: hidden;
+  }
+
+  #video-feed {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    display: block;
+  }
+
+  #video-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .placeholder-icon {
+    width: 64px; height: 64px;
+    border: 2px solid var(--border-hot);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .placeholder-icon svg { color: var(--muted); }
+
+  /* Alert flash overlay */
+  #alert-flash {
+    position: absolute;
+    inset: 0;
+    border: 3px solid var(--red);
+    box-shadow: inset 0 0 40px rgba(255,34,68,0.2);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 200ms ease;
+  }
+
+  #alert-flash.active { opacity: 1; }
+
+  /* Corner decorations */
+  .corner {
+    position: absolute;
+    width: 20px; height: 20px;
+    border-color: var(--green-dim);
+    border-style: solid;
+    opacity: 0.5;
+  }
+  .corner.tl { top:8px; left:8px; border-width:2px 0 0 2px; }
+  .corner.tr { top:8px; right:8px; border-width:2px 2px 0 0; }
+  .corner.bl { bottom:8px; left:8px; border-width:0 0 2px 2px; }
+  .corner.br { bottom:8px; right:8px; border-width:0 2px 2px 0; }
+
+  /* ── CONTROLS BAR ───────────────────────────────────────────────────────── */
+  #controls {
+    padding: 10px 16px;
+    background: var(--bg-panel);
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 7px 16px;
+    border: 1px solid;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: var(--transition);
+    background: transparent;
+    white-space: nowrap;
+  }
+
+  .btn-primary {
+    border-color: var(--green-dim);
+    color: var(--green);
+  }
+  .btn-primary:hover {
+    background: var(--green-glow);
+    border-color: var(--green);
+    box-shadow: 0 0 12px var(--green-glow);
+  }
+
+  .btn-danger {
+    border-color: var(--red-dim);
+    color: var(--red);
+  }
+  .btn-danger:hover {
+    background: var(--red-glow);
+    border-color: var(--red);
+  }
+
+  .btn-secondary {
+    border-color: var(--border-hot);
+    color: var(--muted-light);
+  }
+  .btn-secondary:hover {
+    border-color: var(--cyan-dim);
+    color: var(--cyan);
+  }
+
+  .btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  .file-input-wrap { position: relative; }
+  .file-input-wrap input[type="file"] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer;
+  }
+
+  #cam-index {
+    width: 44px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-hot);
+    color: var(--white);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    text-align: center;
+    border-radius: var(--radius-sm);
+    padding: 6px 4px;
+  }
+
+  #cam-index:focus { outline: none; border-color: var(--green-dim); }
+
+  .ctrl-sep {
+    width: 1px; height: 24px;
+    background: var(--border);
+    margin: 0 4px;
+    flex-shrink: 0;
+  }
+
+  /* ── SIDEBAR ──────────────────────────────────────────────────────────────── */
+  #sidebar {
+    background: var(--bg-panel);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ── SECTION HEADER ──────────────────────────────────────────────────────── */
+  .section-header {
+    padding: 10px 16px 8px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  .section-title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: var(--muted-light);
+  }
+
+  .badge {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 2px;
+    background: var(--bg-surface);
+    color: var(--cyan);
+    border: 1px solid var(--border-hot);
+  }
+
+  /* ── STATS GRID ──────────────────────────────────────────────────────────── */
+  #stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .stat-cell {
+    background: var(--bg-surface);
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .stat-cell-label {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .stat-cell-value {
+    font-family: var(--font-mono);
+    font-size: 24px;
+    font-weight: bold;
+    line-height: 1;
+    color: var(--white);
+  }
+
+  .stat-cell-value.highlight { color: var(--green); }
+  .stat-cell-value.warning   { color: var(--amber); }
+  .stat-cell-value.danger    { color: var(--red); text-shadow: 0 0 8px var(--red); }
+
+  /* ── ANOMALY TYPE BREAKDOWN ──────────────────────────────────────────────── */
+  #type-breakdown {
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .type-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .type-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--muted-light);
+    width: 70px;
+    flex-shrink: 0;
+  }
+
+  .type-bar-wrap {
+    flex: 1;
+    height: 6px;
+    background: var(--bg-surface);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .type-bar {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 400ms ease;
+    min-width: 2px;
+  }
+
+  .type-bar.running  { background: var(--amber); }
+  .type-bar.fighting { background: var(--red); box-shadow: 0 0 6px var(--red); }
+  .type-bar.loitering { background: var(--cyan); }
+  .type-bar.unknown  { background: var(--muted); }
+
+  .type-count {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted-light);
+    width: 24px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  /* ── EVENT LOG ───────────────────────────────────────────────────────────── */
+  #event-log-wrap {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  #event-log-wrap::-webkit-scrollbar { width: 4px; }
+  #event-log-wrap::-webkit-scrollbar-track { background: transparent; }
+  #event-log-wrap::-webkit-scrollbar-thumb { background: var(--border-hot); border-radius: 2px; }
+
+  .event-empty {
+    padding: 32px 16px;
+    text-align: center;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .event-item {
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--border);
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 8px;
+    align-items: start;
+    animation: slide-in 200ms ease;
+    transition: background var(--transition);
+    cursor: default;
+  }
+
+  .event-item:hover { background: var(--bg-surface); }
+
+  @keyframes slide-in {
+    from { opacity: 0; transform: translateX(12px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+
+  .event-type-badge {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 2px 6px;
+    border-radius: 2px;
+    flex-shrink: 0;
+    margin-top: 1px;
+    border: 1px solid;
+  }
+
+  .event-type-badge.running  { color: var(--amber);  border-color: var(--amber);  background: rgba(255,170,0,0.08); }
+  .event-type-badge.fighting { color: var(--red);    border-color: var(--red);    background: rgba(255,34,68,0.08); }
+  .event-type-badge.loitering{ color: var(--cyan);   border-color: var(--cyan);   background: rgba(0,212,255,0.08); }
+  .event-type-badge.unknown  { color: var(--muted-light); border-color: var(--border-hot); background: transparent; }
+
+  .event-body { min-width: 0; }
+
+  .event-meta {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .event-detail {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--muted-light);
+    margin-top: 1px;
+  }
+
+  .event-conf {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted-light);
+    flex-shrink: 0;
+    text-align: right;
+  }
+
+  /* ── LOG FOOTER ──────────────────────────────────────────────────────────── */
+  #log-footer {
+    padding: 8px 16px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    background: var(--bg-void);
+  }
+
+  #log-footer .hint {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 1px;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .btn-xs {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border: 1px solid var(--border-hot);
+    color: var(--muted-light);
+    background: transparent;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: var(--transition);
+  }
+
+  .btn-xs:hover { border-color: var(--red-dim); color: var(--red); }
+
+  /* ── TOAST ALERTS ────────────────────────────────────────────────────────── */
+  #toast-container {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    z-index: 1000;
+    pointer-events: none;
+  }
+
+  .toast {
+    background: var(--bg-elevated);
+    border: 1px solid var(--red-dim);
+    border-left: 3px solid var(--red);
+    color: var(--white);
+    padding: 10px 18px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    border-radius: var(--radius-md);
+    box-shadow: 0 4px 24px rgba(255,34,68,0.25);
+    animation: toast-in 250ms ease, toast-out 400ms ease 2600ms forwards;
+    white-space: nowrap;
+  }
+
+  .toast.info {
+    border-color: var(--border-hot);
+    border-left-color: var(--cyan);
+    box-shadow: 0 4px 24px rgba(0,212,255,0.1);
+  }
+
+  @keyframes toast-in {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes toast-out {
+    to { opacity: 0; transform: translateY(-8px); }
+  }
+
+  /* ── WS INDICATOR ────────────────────────────────────────────────────────── */
+  #ws-dot {
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--muted);
+    margin-right: 4px;
+    vertical-align: middle;
+  }
+
+  #ws-dot.connected { background: var(--green); box-shadow: 0 0 5px var(--green); }
+  #ws-dot.error     { background: var(--red); }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ── TOPBAR ─────────────────────────────────────────────────────────── -->
+  <header id="topbar">
+    <div class="wordmark">SENTINEL <span>// ADS</span></div>
+    <div class="top-divider"></div>
+    <div class="top-stat">
+      <span class="top-stat-label">Frames</span>
+      <span class="top-stat-value" id="stat-frames">0</span>
+    </div>
+    <div class="top-stat">
+      <span class="top-stat-label">Tracks</span>
+      <span class="top-stat-value" id="stat-tracks">0</span>
+    </div>
+    <div class="top-stat">
+      <span class="top-stat-label">Total Alerts</span>
+      <span class="top-stat-value" id="stat-alerts">0</span>
+    </div>
+    <div id="system-status">
+      <span id="ws-dot"></span>
+      <span id="status-label">OFFLINE</span>
+      <div class="top-divider"></div>
+      <span id="conn-status">WS: disconnected</span>
+      <div class="top-divider"></div>
+      <div class="status-dot" id="proc-dot"></div>
+      <span id="proc-label">IDLE</span>
+    </div>
+  </header>
+
+  <!-- ── MAIN PANEL ─────────────────────────────────────────────────────── -->
+  <main id="main-panel">
+    <div id="video-wrap">
+      <div class="corner tl"></div>
+      <div class="corner tr"></div>
+      <div class="corner bl"></div>
+      <div class="corner br"></div>
+      <div id="alert-flash"></div>
+
+      <img id="video-feed" src="" alt="" style="display:none">
+
+      <div id="video-placeholder">
+        <div class="placeholder-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M15 10l4.553-2.069A1 1 0 0121 8.87v6.26a1 1 0 01-1.447.9L15 14M3 8a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"/>
+          </svg>
+        </div>
+        <span>NO FEED — UPLOAD VIDEO OR START CAMERA</span>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div id="controls">
+      <div class="file-input-wrap">
+        <button class="btn btn-primary">▲ UPLOAD VIDEO</button>
+        <input type="file" id="file-input" accept="video/*">
+      </div>
+
+      <div class="ctrl-sep"></div>
+
+      <input type="number" id="cam-index" value="0" min="0" max="9" title="Camera index">
+      <button class="btn btn-primary" id="btn-camera">◉ CAMERA</button>
+
+      <div class="ctrl-sep"></div>
+
+      <button class="btn btn-danger" id="btn-stop" disabled>■ STOP</button>
+
+      <div class="ctrl-sep" style="margin-left:auto"></div>
+      <button class="btn btn-secondary" id="btn-train" title="Train LSTM on synthetic data (server-side)">⚙ TRAIN MODEL</button>
+    </div>
+  </main>
+
+  <!-- ── SIDEBAR ────────────────────────────────────────────────────────── -->
+  <aside id="sidebar">
+    <!-- Stats -->
+    <div class="section-header">
+      <span class="section-title">Telemetry</span>
+      <span class="badge" id="model-badge">RULES ONLY</span>
+    </div>
+
+    <div id="stats-grid">
+      <div class="stat-cell">
+        <span class="stat-cell-label">Session Alerts</span>
+        <span class="stat-cell-value danger" id="s-alerts">0</span>
+      </div>
+      <div class="stat-cell">
+        <span class="stat-cell-label">Active Tracks</span>
+        <span class="stat-cell-value highlight" id="s-tracks">0</span>
+      </div>
+      <div class="stat-cell">
+        <span class="stat-cell-label">Running</span>
+        <span class="stat-cell-value warning" id="s-running">0</span>
+      </div>
+      <div class="stat-cell">
+        <span class="stat-cell-label">Loitering</span>
+        <span class="stat-cell-value" style="color:var(--cyan)" id="s-loiter">0</span>
+      </div>
+    </div>
+
+    <!-- Type breakdown -->
+    <div id="type-breakdown">
+      <div class="type-row" id="bar-running">
+        <span class="type-label">Running</span>
+        <div class="type-bar-wrap"><div class="type-bar running" style="width:0%"></div></div>
+        <span class="type-count">0</span>
+      </div>
+      <div class="type-row" id="bar-fighting">
+        <span class="type-label">Fighting</span>
+        <div class="type-bar-wrap"><div class="type-bar fighting" style="width:0%"></div></div>
+        <span class="type-count">0</span>
+      </div>
+      <div class="type-row" id="bar-loitering">
+        <span class="type-label">Loitering</span>
+        <div class="type-bar-wrap"><div class="type-bar loitering" style="width:0%"></div></div>
+        <span class="type-count">0</span>
+      </div>
+      <div class="type-row" id="bar-unknown">
+        <span class="type-label">Unknown</span>
+        <div class="type-bar-wrap"><div class="type-bar unknown" style="width:0%"></div></div>
+        <span class="type-count">0</span>
+      </div>
+    </div>
+
+    <!-- Event Log -->
+    <div class="section-header">
+      <span class="section-title">Event Log</span>
+      <span class="badge" id="log-count">0 events</span>
+    </div>
+
+    <div id="event-log-wrap">
+      <div class="event-empty" id="log-empty">AWAITING EVENTS…</div>
+    </div>
+
+    <div id="log-footer">
+      <span class="hint"><span id="ws-dot-footer"></span> LIVE STREAM</span>
+      <button class="btn-xs" id="btn-clear-log">CLEAR LOG</button>
+    </div>
+  </aside>
+</div>
+
+<div id="toast-container"></div>
+
+<script>
+// ── CONFIG ─────────────────────────────────────────────────────────────────
+const API  = window.location.origin;
+const WS   = API.replace(/^http/, 'ws') + '/ws/alerts';
+
+// ── STATE ──────────────────────────────────────────────────────────────────
+let ws = null;
+let statusInterval = null;
+let eventCounts = { running: 0, fighting: 0, loitering: 0, unknown: 0 };
+let totalAlerts = 0;
+let eventItems = [];
+
+// ── DOM ────────────────────────────────────────────────────────────────────
+const $  = id => document.getElementById(id);
+const videoFeed   = $('video-feed');
+const placeholder = $('video-placeholder');
+const alertFlash  = $('alert-flash');
+const btnStop     = $('btn-stop');
+const fileInput   = $('file-input');
+const logWrap     = $('event-log-wrap');
+const logEmpty    = $('log-empty');
+
+// ── WEBSOCKET ──────────────────────────────────────────────────────────────
+function connectWS() {
+  ws = new WebSocket(WS);
+
+  ws.onopen = () => {
+    setWsDot(true);
+    $('conn-status').textContent = 'WS: live';
+    showToast('WebSocket connected', 'info');
+  };
+
+  ws.onmessage = e => {
+    const ev = JSON.parse(e.data);
+    if (ev.type === 'ping') return;
+    ingestEvent(ev);
+    triggerFlash();
+  };
+
+  ws.onerror = () => setWsDot(false, true);
+
+  ws.onclose = () => {
+    setWsDot(false);
+    $('conn-status').textContent = 'WS: reconnecting…';
+    setTimeout(connectWS, 3000);
+  };
+}
+
+function setWsDot(ok, error = false) {
+  const d1 = $('ws-dot');
+  d1.className = ok ? 'connected' : (error ? 'error' : '');
+  $('conn-status').textContent = ok ? 'WS: live' : 'WS: disconnected';
+}
+
+// ── STATUS POLL ────────────────────────────────────────────────────────────
+async function pollStatus() {
+  try {
+    const res  = await fetch(`${API}/api/status`);
+    const data = await res.json();
+
+    $('stat-frames').textContent = data.frame_count ?? 0;
+    $('stat-tracks').textContent = data.track_count ?? 0;
+    $('stat-alerts').textContent = data.alert_count ?? 0;
+    $('s-tracks').textContent    = data.track_count ?? 0;
+
+    const running = data.running;
+    const dot     = $('proc-dot');
+    dot.className = 'status-dot ' + (running ? 'running' : 'stopped');
+    $('proc-label').textContent = running ? 'ACTIVE' : 'IDLE';
+    $('status-label').textContent = running ? 'PROCESSING' : 'OFFLINE';
+
+    if (data.model_loaded) {
+      $('model-badge').textContent = 'LSTM+RULES';
+      $('model-badge').style.color = 'var(--green)';
+    }
+
+    btnStop.disabled = !running;
+  } catch { /* server not ready */ }
+}
+
+// ── EVENT INGESTION ────────────────────────────────────────────────────────
+function ingestEvent(ev) {
+  const type = ev.anomaly_type || 'unknown';
+  eventCounts[type] = (eventCounts[type] || 0) + 1;
+  totalAlerts++;
+  eventItems.unshift(ev);
+  if (eventItems.length > 200) eventItems.pop();
+
+  updateCounts();
+  updateBars();
+  renderTopEvent(ev);
+  showToast(`ALERT: ${type.toUpperCase()} — Track #${ev.track_id} (conf ${ev.confidence})`, 'danger');
+}
+
+function updateCounts() {
+  $('s-alerts').textContent  = totalAlerts;
+  $('s-running').textContent = eventCounts.running || 0;
+  $('s-loiter').textContent  = eventCounts.loitering || 0;
+  $('log-count').textContent = `${eventItems.length} events`;
+}
+
+function updateBars() {
+  const max = Math.max(1, ...Object.values(eventCounts));
+  ['running','fighting','loitering','unknown'].forEach(t => {
+    const row = $('bar-' + t);
+    if (!row) return;
+    const cnt = eventCounts[t] || 0;
+    row.querySelector('.type-bar').style.width = `${(cnt / max) * 100}%`;
+    row.querySelector('.type-count').textContent = cnt;
+  });
+}
+
+function renderTopEvent(ev) {
+  logEmpty.style.display = 'none';
+  const type = ev.anomaly_type || 'unknown';
+  const time = ev.timestamp_iso || new Date().toISOString().slice(11,19);
+
+  const item = document.createElement('div');
+  item.className = 'event-item';
+  item.innerHTML = `
+    <div class="event-type-badge ${type}">${type.slice(0,7).toUpperCase()}</div>
+    <div class="event-body">
+      <div class="event-meta">Track #${ev.track_id} · Frame ${ev.frame_number}</div>
+      <div class="event-detail">err=${ev.reconstruction_error ?? '—'} · rule=${ev.rule_triggered ?? '—'}</div>
+    </div>
+    <div class="event-conf">${(ev.confidence * 100).toFixed(0)}%<br><span style="font-size:9px;color:var(--muted)">${time}</span></div>
+  `;
+
+  logWrap.insertBefore(item, logWrap.firstChild);
+
+  // Keep DOM lean
+  const kids = logWrap.querySelectorAll('.event-item');
+  if (kids.length > 80) kids[kids.length - 1].remove();
+}
+
+// ── FLASH ──────────────────────────────────────────────────────────────────
+function triggerFlash() {
+  alertFlash.classList.add('active');
+  setTimeout(() => alertFlash.classList.remove('active'), 500);
+}
+
+// ── VIDEO STREAM ───────────────────────────────────────────────────────────
+function startVideoFeed() {
+  const ts = Date.now();
+  videoFeed.src = `${API}/api/stream?t=${ts}`;
+  videoFeed.style.display = 'block';
+  placeholder.style.display = 'none';
+}
+
+function stopVideoFeed() {
+  videoFeed.src = '';
+  videoFeed.style.display = 'none';
+  placeholder.style.display = 'flex';
+}
+
+// ── CONTROLS ───────────────────────────────────────────────────────────────
+fileInput.addEventListener('change', async () => {
+  const file = fileInput.files[0];
+  if (!file) return;
+  const fd = new FormData();
+  fd.append('file', file);
+  showToast(`Uploading ${file.name}…`, 'info');
+  try {
+    const res = await fetch(`${API}/api/upload`, { method: 'POST', body: fd });
+    if (res.ok) {
+      startVideoFeed();
+      btnStop.disabled = false;
+      showToast('Processing started', 'info');
+    } else {
+      showToast('Upload failed', 'danger');
+    }
+  } catch { showToast('Server unreachable', 'danger'); }
+});
+
+$('btn-camera').addEventListener('click', async () => {
+  const idx = parseInt($('cam-index').value, 10) || 0;
+  try {
+    const res = await fetch(`${API}/api/stream/camera?index=${idx}`, { method: 'POST' });
+    if (res.ok) {
+      startVideoFeed();
+      btnStop.disabled = false;
+      showToast(`Camera ${idx} started`, 'info');
+    } else {
+      showToast('Camera start failed', 'danger');
+    }
+  } catch { showToast('Server unreachable', 'danger'); }
+});
+
+btnStop.addEventListener('click', async () => {
+  try {
+    await fetch(`${API}/api/stop`, { method: 'POST' });
+    stopVideoFeed();
+    btnStop.disabled = true;
+    showToast('Processing stopped', 'info');
+  } catch { showToast('Server unreachable', 'danger'); }
+});
+
+$('btn-clear-log').addEventListener('click', async () => {
+  await fetch(`${API}/api/events`, { method: 'DELETE' });
+  eventCounts = { running: 0, fighting: 0, loitering: 0, unknown: 0 };
+  totalAlerts = 0;
+  eventItems  = [];
+  logWrap.querySelectorAll('.event-item').forEach(e => e.remove());
+  logEmpty.style.display = '';
+  updateCounts();
+  updateBars();
+});
+
+$('btn-train').addEventListener('click', () => {
+  showToast('Run: python -m anomaly.train --synthetic --epochs 30', 'info');
+});
+
+// ── TOAST ──────────────────────────────────────────────────────────────────
+function showToast(msg, type = 'danger') {
+  const container = $('toast-container');
+  const t = document.createElement('div');
+  t.className = `toast ${type === 'info' ? 'info' : ''}`;
+  t.textContent = msg;
+  container.appendChild(t);
+  setTimeout(() => t.remove(), 3200);
+}
+
+// ── INIT ───────────────────────────────────────────────────────────────────
+connectWS();
+pollStatus();
+statusInterval = setInterval(pollStatus, 1500);
+
+// Load existing events on page load
+(async () => {
+  try {
+    const res  = await fetch(`${API}/api/events?limit=50`);
+    const data = await res.json();
+    const evs  = (data.events || []).reverse();
+    evs.forEach(ev => {
+      const type = ev.anomaly_type || 'unknown';
+      eventCounts[type] = (eventCounts[type] || 0) + 1;
+      totalAlerts++;
+      eventItems.unshift(ev);
+      renderTopEvent(ev);
+    });
+    updateCounts();
+    updateBars();
+  } catch { /* server might not be up yet */ }
+})();
+</script>
+</body>
+</html>

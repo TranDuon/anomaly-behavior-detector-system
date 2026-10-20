@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+logs/
+.env
+.DS_Store
+
+# Runtime artefacts (training / inference / Colab)
+models/*.pt
+yolov8*.pt
+uploads/
+*.mp4
+server.log
+sentinel_results.zip
+.venv/
+samples/
