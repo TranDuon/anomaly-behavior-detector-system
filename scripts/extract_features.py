@@ -1,4 +1,4 @@
-"""Extract per-track feature sequences from a directory of normal clips."""
+"""Extract per-track feature sequences and frame metadata from video clips."""
 
 from __future__ import annotations
 
@@ -106,12 +106,14 @@ def extract_clip(
     detector: PersonDetector,
     stride: int,
     max_frames: int | None = None,
-) -> tuple[np.ndarray, dict]:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, dict]:
     """Extract full-length rolling sequences from one independent clip."""
     tracker = PersonTracker()
     feature_buffer = TrackFeatureBuffer()
     track_steps: dict[int, int] = {}
     sequences: list[np.ndarray] = []
+    frame_numbers: list[int] = []
+    track_ids: list[int] = []
     frame_count = 0
     detection_count = 0
     track_observations = 0
@@ -140,6 +142,8 @@ def extract_clip(
                 sequence = feature_buffer.get_sequence(track.track_id)
                 if sequence is not None:
                     sequences.append(sequence.copy())
+                    frame_numbers.append(frame_count)
+                    track_ids.append(track.track_id)
 
         active_ids = {track.track_id for track in tracks}
         feature_buffer.prune(active_ids)
@@ -165,7 +169,12 @@ def extract_clip(
         "track_observations": track_observations,
         "sequences": int(len(sequence_array)),
     }
-    return sequence_array, stats
+    return (
+        sequence_array,
+        np.asarray(frame_numbers, dtype=np.int32),
+        np.asarray(track_ids, dtype=np.int32),
+        stats,
+    )
 
 
 def clip_key(clip_path: Path, input_path: Path) -> str:
@@ -260,13 +269,18 @@ def main() -> None:
             continue
 
         print(f"[{index}/{len(clips)}] Extracting {clip_path}")
-        sequences, stats = extract_clip(
+        sequences, frame_numbers, track_ids, stats = extract_clip(
             clip_path,
             detector,
             stride=args.stride,
             max_frames=args.max_frames,
         )
-        np.savez_compressed(output_path, sequences=sequences)
+        np.savez_compressed(
+            output_path,
+            sequences=sequences,
+            frame_numbers=frame_numbers,
+            track_ids=track_ids,
+        )
         manifest["clips"][key] = {
             "source": str(clip_path),
             "cache": str(output_path),

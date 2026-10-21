@@ -227,6 +227,8 @@ For a resumable Google Colab workflow that keeps the repository, feature cache,
 and model artifacts on Google Drive, see
 [`docs/COLAB_DATASET_TRAINING.md`](docs/COLAB_DATASET_TRAINING.md) and
 [`colab/train_ucsd_ped2_drive.ipynb`](colab/train_ucsd_ped2_drive.ipynb).
+The notebook also evaluates the checkpoint against UCSD Ped2 `Test/Test_gt` and
+exports frame-level metrics, curves, a confusion matrix, and per-frame scores.
 
 | Dataset | Description | Link |
 |---------|-------------|------|
