@@ -107,7 +107,8 @@ def main() -> None:
 
     print(
         f"[train-features] Clips: {len(train_files)} train, "
-        f"{len(val_files)} validation"
+        f"{len(val_files)} validation",
+        flush=True,
     )
     mean, std = compute_scaler(train_files)
     np.savez(output_dir / "feature_scaler.npz", mean=mean, std=std)
@@ -116,7 +117,8 @@ def main() -> None:
     val_sequences = load_sequences(val_files, mean, std)
     print(
         f"[train-features] Sequences: {len(train_sequences)} train, "
-        f"{len(val_sequences)} validation"
+        f"{len(val_sequences)} validation",
+        flush=True,
     )
 
     model, metadata = train_with_validation(
@@ -160,11 +162,16 @@ def main() -> None:
             "patience": args.patience,
             "seed": args.seed,
             "device": metadata["device"],
+            "parameter_count": metadata["parameter_count"],
+            "train_sequence_count": metadata["train_sequence_count"],
+            "validation_sequence_count": metadata["validation_sequence_count"],
+            "epochs_completed": metadata["epochs_completed"],
+            "training_seconds": metadata["training_seconds"],
             "best_epoch": metadata["best_epoch"],
             "best_val_loss": metadata["best_val_loss"],
         },
     )
-    print(f"[train-features] Artifacts saved to {output_dir}")
+    print(f"[train-features] Artifacts saved to {output_dir}", flush=True)
 
 
 if __name__ == "__main__":

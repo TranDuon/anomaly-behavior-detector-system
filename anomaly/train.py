@@ -14,6 +14,7 @@ Usage:
 
 import argparse
 import random
+import time
 from pathlib import Path
 from typing import List
 
@@ -170,6 +171,12 @@ def train_with_validation(
         hidden_size=settings.lstm_hidden,
         num_layers=settings.lstm_layers,
     ).to(device)
+    parameter_count = sum(parameter.numel() for parameter in model.parameters())
+    print(
+        f"[train] Model parameters: {parameter_count:,}; "
+        f"batch size: {batch_size}; requested epochs: {epochs}",
+        flush=True,
+    )
     optimiser = torch.optim.Adam(model.parameters(), lr=1e-3)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
         optimiser, patience=3, factor=0.5
@@ -181,8 +188,10 @@ def train_with_validation(
     best_state = None
     epochs_without_improvement = 0
     history = []
+    training_started_at = time.perf_counter()
 
     for epoch in range(1, epochs + 1):
+        epoch_started_at = time.perf_counter()
         model.train()
         train_loss = 0.0
         for (batch,) in train_loader:
@@ -213,6 +222,7 @@ def train_with_validation(
                 "train_loss": float(train_loss),
                 "val_loss": float(val_loss),
                 "learning_rate": learning_rate,
+                "seconds": float(time.perf_counter() - epoch_started_at),
             }
         )
 
@@ -227,11 +237,12 @@ def train_with_validation(
         else:
             epochs_without_improvement += 1
 
-        if epoch == 1 or epoch % 5 == 0:
-            print(
-                f"  Epoch {epoch:3d}/{epochs}  train={train_loss:.6f}  "
-                f"val={val_loss:.6f}  lr={learning_rate:.2e}"
-            )
+        print(
+            f"  Epoch {epoch:3d}/{epochs}  train={train_loss:.6f}  "
+            f"val={val_loss:.6f}  lr={learning_rate:.2e}  "
+            f"time={history[-1]['seconds']:.2f}s",
+            flush=True,
+        )
 
         if patience > 0 and epochs_without_improvement >= patience:
             print(f"[train] Early stopping at epoch {epoch}.")
@@ -256,6 +267,11 @@ def train_with_validation(
     metadata = {
         "seed": seed,
         "device": str(device),
+        "parameter_count": parameter_count,
+        "train_sequence_count": len(train_sequences),
+        "validation_sequence_count": len(val_sequences),
+        "epochs_completed": len(history),
+        "training_seconds": float(time.perf_counter() - training_started_at),
         "best_epoch": best_epoch,
         "best_val_loss": float(best_val_loss),
         "threshold": threshold,
@@ -266,8 +282,17 @@ def train_with_validation(
         "history": history,
     }
 
-    print(f"\n[train] Suggested anomaly_threshold = {threshold:.6f}")
-    print(f"        validation mean={error_mean:.6f}, std={error_std:.6f}")
+    print(f"\n[train] Suggested anomaly_threshold = {threshold:.6f}", flush=True)
+    print(
+        f"        validation mean={error_mean:.6f}, std={error_std:.6f}",
+        flush=True,
+    )
+    print(
+        f"[train] Finished {len(history)} epochs in "
+        f"{metadata['training_seconds']:.2f}s; best epoch={best_epoch}; "
+        f"best val={best_val_loss:.6f}",
+        flush=True,
+    )
     return model, metadata
 
 
