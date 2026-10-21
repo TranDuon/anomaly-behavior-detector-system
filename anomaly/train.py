@@ -20,7 +20,7 @@ from typing import List
 import numpy as np
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader, TensorDataset, random_split
+from torch.utils.data import DataLoader, TensorDataset
 
 from core.config import settings
 from anomaly.model import LSTMAutoencoder
@@ -121,35 +121,66 @@ def collect_sequences_from_video(video_path: str) -> np.ndarray:
 
 # ── Training loop ─────────────────────────────────────────────────────────────
 
-def train(sequences: np.ndarray, epochs: int = 30) -> LSTMAutoencoder:
-    """Train the LSTM Autoencoder on the provided normal sequences."""
-    print(f"[train] Dataset: {sequences.shape[0]} sequences "
-          f"× {sequences.shape[1]} frames × {sequences.shape[2]} features")
+def train_with_validation(
+    train_sequences: np.ndarray,
+    val_sequences: np.ndarray,
+    epochs: int = 30,
+    batch_size: int = 64,
+    seed: int = 42,
+    device_name: str | None = None,
+    patience: int = 8,
+) -> tuple[LSTMAutoencoder, dict]:
+    """Train with an explicit clip-level validation split."""
+    if len(train_sequences) == 0 or len(val_sequences) == 0:
+        raise ValueError("Training and validation sequences must both be non-empty.")
 
-    X = torch.tensor(sequences, dtype=torch.float32)
-    dataset = TensorDataset(X)
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
 
-    val_size   = max(1, int(len(dataset) * 0.1))
-    train_size = len(dataset) - val_size
-    train_ds, val_ds = random_split(dataset, [train_size, val_size])
+    requested_device = device_name or settings.yolo_device
+    if requested_device.startswith("cuda") and not torch.cuda.is_available():
+        print("[train] CUDA requested but unavailable; falling back to CPU.")
+        requested_device = "cpu"
+    device = torch.device(requested_device)
 
-    train_loader = DataLoader(train_ds, batch_size=64, shuffle=True, drop_last=False)
-    val_loader   = DataLoader(val_ds,   batch_size=64, shuffle=False)
+    train_tensor = torch.tensor(train_sequences, dtype=torch.float32)
+    val_tensor = torch.tensor(val_sequences, dtype=torch.float32)
+    train_loader = DataLoader(
+        TensorDataset(train_tensor),
+        batch_size=batch_size,
+        shuffle=True,
+        drop_last=False,
+    )
+    val_loader = DataLoader(
+        TensorDataset(val_tensor),
+        batch_size=batch_size,
+        shuffle=False,
+    )
+
+    print(
+        f"[train] Train: {len(train_sequences)} sequences; "
+        f"validation: {len(val_sequences)}; device: {device}"
+    )
 
     model = LSTMAutoencoder(
         input_size=settings.feature_dim,
         hidden_size=settings.lstm_hidden,
         num_layers=settings.lstm_layers,
-    )
-
-    device    = torch.device(settings.yolo_device if torch.cuda.is_available() else "cpu")
-    model     = model.to(device)
+    ).to(device)
     optimiser = torch.optim.Adam(model.parameters(), lr=1e-3)
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimiser, patience=3, factor=0.5)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+        optimiser, patience=3, factor=0.5
+    )
     criterion = nn.MSELoss()
 
     best_val_loss = float("inf")
-    best_state    = None
+    best_epoch = 0
+    best_state = None
+    epochs_without_improvement = 0
+    history = []
 
     for epoch in range(1, epochs + 1):
         model.train()
@@ -157,53 +188,104 @@ def train(sequences: np.ndarray, epochs: int = 30) -> LSTMAutoencoder:
         for (batch,) in train_loader:
             batch = batch.to(device)
             optimiser.zero_grad()
-            recon = model(batch)
-            loss  = criterion(recon, batch)
+            reconstruction = model(batch)
+            loss = criterion(reconstruction, batch)
             loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             optimiser.step()
             train_loss += loss.item() * len(batch)
-
-        train_loss /= train_size
+        train_loss /= len(train_sequences)
 
         model.eval()
         val_loss = 0.0
         with torch.no_grad():
             for (batch,) in val_loader:
                 batch = batch.to(device)
-                recon = model(batch)
-                val_loss += criterion(recon, batch).item() * len(batch)
-        val_loss /= val_size
-
+                reconstruction = model(batch)
+                val_loss += criterion(reconstruction, batch).item() * len(batch)
+        val_loss /= len(val_sequences)
         scheduler.step(val_loss)
+
+        learning_rate = float(optimiser.param_groups[0]["lr"])
+        history.append(
+            {
+                "epoch": epoch,
+                "train_loss": float(train_loss),
+                "val_loss": float(val_loss),
+                "learning_rate": learning_rate,
+            }
+        )
 
         if val_loss < best_val_loss:
             best_val_loss = val_loss
-            best_state    = {k: v.clone() for k, v in model.state_dict().items()}
+            best_epoch = epoch
+            best_state = {
+                key: value.detach().cpu().clone()
+                for key, value in model.state_dict().items()
+            }
+            epochs_without_improvement = 0
+        else:
+            epochs_without_improvement += 1
 
-        if epoch % 5 == 0 or epoch == 1:
-            print(f"  Epoch {epoch:3d}/{epochs}  train={train_loss:.5f}  val={val_loss:.5f}")
+        if epoch == 1 or epoch % 5 == 0:
+            print(
+                f"  Epoch {epoch:3d}/{epochs}  train={train_loss:.6f}  "
+                f"val={val_loss:.6f}  lr={learning_rate:.2e}"
+            )
 
-    if best_state:
+        if patience > 0 and epochs_without_improvement >= patience:
+            print(f"[train] Early stopping at epoch {epoch}.")
+            break
+
+    if best_state is not None:
         model.load_state_dict(best_state)
 
-    # Calibrate threshold on validation set
     model.eval()
     errors = []
     with torch.no_grad():
         for (batch,) in val_loader:
             batch = batch.to(device)
-            recon = model(batch)
-            err   = LSTMAutoencoder.reconstruction_error(batch, recon)
-            errors.extend(err.cpu().tolist())
+            reconstruction = model(batch)
+            error = LSTMAutoencoder.reconstruction_error(batch, reconstruction)
+            errors.extend(error.cpu().tolist())
 
-    # Threshold = mean + 3 × std of reconstruction errors on normal data
-    err_arr   = np.array(errors)
-    threshold = float(err_arr.mean() + 3 * err_arr.std())
-    print(f"\n[train] Suggested anomaly_threshold = {threshold:.5f}")
-    print(f"        (mean={err_arr.mean():.5f}, std={err_arr.std():.5f})")
-    print(f"        Update settings.anomaly_threshold in core/config.py")
+    error_array = np.asarray(errors, dtype=np.float64)
+    error_mean = float(error_array.mean())
+    error_std = float(error_array.std())
+    threshold = float(error_mean + 3 * error_std)
+    metadata = {
+        "seed": seed,
+        "device": str(device),
+        "best_epoch": best_epoch,
+        "best_val_loss": float(best_val_loss),
+        "threshold": threshold,
+        "threshold_method": "validation_mean_plus_3_std",
+        "validation_error_mean": error_mean,
+        "validation_error_std": error_std,
+        "validation_error_p99": float(np.percentile(error_array, 99)),
+        "history": history,
+    }
 
+    print(f"\n[train] Suggested anomaly_threshold = {threshold:.6f}")
+    print(f"        validation mean={error_mean:.6f}, std={error_std:.6f}")
+    return model, metadata
+
+
+def train(sequences: np.ndarray, epochs: int = 30) -> LSTMAutoencoder:
+    """Backward-compatible training helper for a single sequence array."""
+    if len(sequences) < 2:
+        raise ValueError("At least two sequences are required for training.")
+
+    rng = np.random.default_rng(42)
+    indices = rng.permutation(len(sequences))
+    val_size = max(1, int(len(sequences) * 0.1))
+    val_indices = indices[:val_size]
+    train_indices = indices[val_size:]
+    model, _ = train_with_validation(
+        sequences[train_indices],
+        sequences[val_indices],
+        epochs=epochs,
+    )
     return model
 
 

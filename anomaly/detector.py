@@ -12,6 +12,7 @@ Rule logic:
 """
 
 from __future__ import annotations
+import json
 from typing import List, Optional, Dict, Tuple
 
 import numpy as np
@@ -36,6 +37,9 @@ class AnomalyDetector:
         self._model_loaded: bool = False
         self._features = TrackFeatureBuffer()
         self._device = settings.yolo_device
+        self._feature_mean: Optional[np.ndarray] = None
+        self._feature_std: Optional[np.ndarray] = None
+        self._threshold = settings.anomaly_threshold
 
         # Per-track loiter counter: {track_id: (frames_in_zone, anchor_pos)}
         self._loiter: Dict[int, dict] = {}
@@ -111,6 +115,8 @@ class AnomalyDetector:
         seq = self._features.get_sequence(track_id)
         if seq is None:
             return 0.0, 0.0, False
+        if self._feature_mean is not None and self._feature_std is not None:
+            seq = (seq - self._feature_mean) / self._feature_std
 
         x = torch.tensor(seq, dtype=torch.float32).unsqueeze(0).to(self._device)
         with torch.no_grad():
@@ -118,8 +124,8 @@ class AnomalyDetector:
             err = float(LSTMAutoencoder.reconstruction_error(x, x_hat).item())
 
         # Normalise score: sigmoid-like mapping around threshold
-        score = float(1 / (1 + np.exp(-10 * (err - settings.anomaly_threshold))))
-        is_anomaly = err > settings.anomaly_threshold
+        score = float(1 / (1 + np.exp(-10 * (err - self._threshold))))
+        is_anomaly = err > self._threshold
         return err, score, is_anomaly
 
     # ── Rule-based heuristics ────────────────────────────────────────────────
@@ -215,10 +221,40 @@ class AnomalyDetector:
                 self._model = LSTMAutoencoder.load(path, device=self._device)
                 self._model_loaded = True
                 print(f"[AnomalyDetector] Loaded model from {path}")
+                self._load_preprocessing()
             except Exception as e:
+                self._model = None
+                self._model_loaded = False
                 print(f"[AnomalyDetector] Model load failed: {e} — using rules only")
         else:
             print("[AnomalyDetector] No trained model found — using rule-based detection only.")
+
+    def _load_preprocessing(self) -> None:
+        scaler_path = settings.feature_scaler_path
+        if scaler_path.exists():
+            with np.load(scaler_path) as scaler:
+                feature_mean = np.asarray(scaler["mean"], dtype=np.float32)
+                feature_std = np.asarray(scaler["std"], dtype=np.float32)
+            expected_shape = (settings.feature_dim,)
+            if (
+                feature_mean.shape != expected_shape
+                or feature_std.shape != expected_shape
+            ):
+                raise ValueError(
+                    f"Invalid scaler shape: {feature_mean.shape}, {feature_std.shape}"
+                )
+            self._feature_mean = feature_mean
+            self._feature_std = np.maximum(feature_std, 1e-6)
+            print(f"[AnomalyDetector] Loaded feature scaler from {scaler_path}")
+
+        threshold_path = settings.anomaly_threshold_path
+        if threshold_path.exists():
+            threshold_data = json.loads(threshold_path.read_text(encoding="utf-8"))
+            self._threshold = float(threshold_data["threshold"])
+            print(
+                f"[AnomalyDetector] Loaded anomaly threshold "
+                f"{self._threshold:.6f} from {threshold_path}"
+            )
 
     @staticmethod
     def _norm_bbox(bbox_xyxy, frame_w, frame_h) -> List[float]:

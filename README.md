@@ -223,6 +223,11 @@ Update `ANOMALY_THRESHOLD` in `.env`.
 
 ### Option 3 — Public datasets
 
+For a resumable Google Colab workflow that keeps the repository, feature cache,
+and model artifacts on Google Drive, see
+[`docs/COLAB_DATASET_TRAINING.md`](docs/COLAB_DATASET_TRAINING.md) and
+[`colab/train_ucsd_ped2_drive.ipynb`](colab/train_ucsd_ped2_drive.ipynb).
+
 | Dataset | Description | Link |
 |---------|-------------|------|
 | UCSD Ped1/Ped2 | Pedestrian anomaly | http://www.svcl.ucsd.edu/projects/anomaly/ |

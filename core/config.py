@@ -16,6 +16,8 @@ class Settings(BaseSettings):
     models_dir: Path = BASE_DIR / "models"
     logs_dir: Path = BASE_DIR / "logs"
     anomaly_model_path: Path = BASE_DIR / "models" / "lstm_autoencoder.pt"
+    feature_scaler_path: Path = BASE_DIR / "models" / "feature_scaler.npz"
+    anomaly_threshold_path: Path = BASE_DIR / "models" / "threshold.json"
     event_log_path: Path = BASE_DIR / "logs" / "events.jsonl"
 
     # ── Detection (YOLOv8) ─────────────────────────────────────────────────

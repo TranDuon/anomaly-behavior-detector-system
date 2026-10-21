@@ -6,6 +6,8 @@ logs/
 
 # Runtime artefacts (training / inference / Colab)
 models/*.pt
+models/*.npz
+models/*.json
 yolov8*.pt
 uploads/
 *.mp4

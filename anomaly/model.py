@@ -130,9 +130,9 @@ class LSTMAutoencoder(nn.Module):
 
     @classmethod
     def load(cls, path: Path, device: str = "cpu") -> "LSTMAutoencoder":
-        ckpt = torch.load(path, map_location=device)
+        ckpt = torch.load(path, map_location=device, weights_only=True)
         cfg  = ckpt["config"]
-        model = cls(**cfg)
+        model = cls(**cfg).to(device)
         model.load_state_dict(ckpt["state_dict"])
         model.eval()
         return model
