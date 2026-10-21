@@ -145,6 +145,41 @@ models/threshold.json
 Thiếu scaler sẽ làm input inference khác phân phối input lúc train. Thiếu threshold
 sẽ khiến hệ thống quay lại giá trị `ANOMALY_THRESHOLD` trong `.env`.
 
+## Đóng gói và chạy local Windows bằng CPU
+
+Sau khi train/evaluate xong, chạy cell **`15. Tải runtime bundle về máy local`**.
+Notebook tạo và tải file:
+
+```text
+sentinel_ucsd_ped2_runtime.zip
+└── models/
+    ├── lstm_autoencoder.pt
+    ├── feature_scaler.npz
+    ├── threshold.json
+    ├── metadata/
+    ├── CHECKSUMS.json
+    └── README_RUNTIME.txt
+```
+
+Giữ ZIP trong thư mục `Downloads` của Windows, cập nhật repository local rồi nhấp
+đúp `run_local.cmd`. Launcher sẽ tự động:
+
+1. Tạo `.venv` bằng Python 3.11/3.12/3.13 có sẵn.
+2. Cài bản PyTorch CPU và `requirements.txt` ở lần chạy đầu.
+3. Tìm runtime ZIP mới nhất trong `Downloads` và giải nén vào repository.
+4. Tạo/cập nhật `.env` với `YOLO_DEVICE=cpu`.
+5. Xác minh checkpoint, scaler và threshold có thể load trên CPU.
+6. Mở dashboard tại `http://localhost:8000`.
+
+Các lần chạy sau tự bỏ qua bước cài dependency. Có thể dùng thêm:
+
+```powershell
+run_local.cmd -Mode webcam
+run_local.cmd -Mode video -Source "D:\video\test.mp4"
+run_local.cmd -BundlePath "D:\models\sentinel_ucsd_ped2_runtime.zip"
+run_local.cmd -Reinstall
+```
+
 ## Khi smoke test không có sequence
 
 Kiểm tra theo thứ tự:

@@ -103,6 +103,27 @@ video_anomaly_detection/
 
 ## Setup
 
+### Windows CPU — one-click (recommended)
+
+1. In the Colab notebook, run **`15. Tải runtime bundle về máy local`**.
+2. Keep `sentinel_ucsd_ped2_runtime.zip` in the Windows `Downloads` folder.
+3. Double-click `run_local.cmd` in the repository root.
+
+The launcher creates `.venv`, installs CPU-only PyTorch and all dependencies,
+extracts the latest runtime bundle, forces `YOLO_DEVICE=cpu`, validates the model,
+scaler and threshold, then starts the dashboard at `http://localhost:8000`.
+Installation is skipped automatically on later runs.
+
+Optional PowerShell/Command Prompt modes:
+
+```powershell
+run_local.cmd
+run_local.cmd -Mode webcam
+run_local.cmd -Mode video -Source "D:\video\test.mp4"
+run_local.cmd -BundlePath "D:\models\sentinel_ucsd_ped2_runtime.zip"
+run_local.cmd -Reinstall
+```
+
 ### 1. Prerequisites
 - Python 3.10+
 - Git
@@ -158,12 +179,9 @@ cp .env.example .env
 # Edit .env to tune thresholds, switch to GPU, etc.
 ```
 
-For GPU inference:
-```bash
-# Install CUDA-enabled torch first, then:
-# Set YOLO_DEVICE=cuda in .env
-pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
-```
+The one-click Windows launcher intentionally uses CPU inference. GPU is optional;
+if needed later, install a compatible CUDA build using the official PyTorch selector
+and change `YOLO_DEVICE=cuda` in `.env`.
 
 ---
 

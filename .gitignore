@@ -8,10 +8,13 @@ logs/
 models/*.pt
 models/*.npz
 models/*.json
+models/metadata/
+models/README_RUNTIME.txt
 yolov8*.pt
 uploads/
 *.mp4
 server.log
 sentinel_results.zip
+sentinel_ucsd_ped2_runtime*.zip
 .venv/
 samples/
