@@ -56,27 +56,53 @@ function Test-RuntimeArtifacts {
     return $true
 }
 
+function Test-PythonCommand {
+    param(
+        [string]$Executable,
+        [string[]]$Arguments
+    )
+
+    $PreviousErrorActionPreference = $ErrorActionPreference
+    try {
+        $ErrorActionPreference = "SilentlyContinue"
+        & $Executable @Arguments 2>$null
+        return $LASTEXITCODE -eq 0
+    } catch {
+        return $false
+    } finally {
+        $ErrorActionPreference = $PreviousErrorActionPreference
+    }
+}
+
 function New-VirtualEnvironment {
     Write-Step "Creating Python virtual environment"
     $Created = $false
-    $PyLauncher = Get-Command "py.exe" -ErrorAction SilentlyContinue
-    if ($null -ne $PyLauncher) {
-        foreach ($Version in @("3.11", "3.12", "3.13")) {
-            & $PyLauncher.Source "-$Version" -c "import sys" 2>$null
-            if ($LASTEXITCODE -eq 0) {
-                Invoke-Checked $PyLauncher.Source @("-$Version", "-m", "venv", $VenvDir)
-                $Created = $true
-                break
+
+    $SystemPython = Get-Command "python.exe" -ErrorAction SilentlyContinue
+    if ($null -ne $SystemPython -and (Test-PythonCommand $SystemPython.Source @(
+        "-c", "import sys; assert (3, 11) <= sys.version_info[:2] <= (3, 13)"
+    ))) {
+        Write-Host "Using $($SystemPython.Source)"
+        Invoke-Checked $SystemPython.Source @("-m", "venv", $VenvDir)
+        $Created = $true
+    }
+
+    if (-not $Created) {
+        $PyLauncher = Get-Command "py.exe" -ErrorAction SilentlyContinue
+        if ($null -ne $PyLauncher) {
+            foreach ($Version in @("3.11", "3.12", "3.13")) {
+                if (Test-PythonCommand $PyLauncher.Source @("-$Version", "-c", "import sys")) {
+                    Write-Host "Using py -$Version"
+                    Invoke-Checked $PyLauncher.Source @("-$Version", "-m", "venv", $VenvDir)
+                    $Created = $true
+                    break
+                }
             }
         }
     }
 
     if (-not $Created) {
-        $SystemPython = Get-Command "python.exe" -ErrorAction SilentlyContinue
-        if ($null -eq $SystemPython) {
-            throw "Python was not found. Install Python 3.11 or 3.12, then run again."
-        }
-        Invoke-Checked $SystemPython.Source @("-m", "venv", $VenvDir)
+        throw "Python 3.11, 3.12, or 3.13 was not found. Install Python from python.org, enable Add Python to PATH, then run again."
     }
 
     if (-not (Test-Path -LiteralPath $PythonExe -PathType Leaf)) {
@@ -171,24 +197,7 @@ function Set-CpuEnvironment {
 
 function Test-RuntimeModel {
     Write-Step "Verifying checkpoint, scaler, and threshold on CPU"
-    $ValidationCode = @"
-import json
-import numpy as np
-from core.config import settings
-from anomaly.model import LSTMAutoencoder
-
-model = LSTMAutoencoder.load(settings.anomaly_model_path, device="cpu")
-with np.load(settings.feature_scaler_path) as scaler:
-    mean = np.asarray(scaler["mean"])
-    std = np.asarray(scaler["std"])
-threshold = json.loads(settings.anomaly_threshold_path.read_text(encoding="utf-8"))["threshold"]
-assert mean.shape == (model.input_size,)
-assert std.shape == (model.input_size,)
-print(f"Model OK: input={model.input_size}, hidden={model.hidden_size}, layers={model.num_layers}")
-print(f"Scaler OK: {mean.shape[0]} features")
-print(f"Threshold OK: {float(threshold):.6f}")
-"@
-    Invoke-Checked $PythonExe @("-c", $ValidationCode)
+    Invoke-Checked $PythonExe @("-m", "scripts.verify_runtime")
 }
 
 Set-Location $ProjectRoot
@@ -220,4 +229,3 @@ switch ($Mode) {
         Invoke-Checked $PythonExe @("main.py", "run", "--source", "0")
     }
 }
-
