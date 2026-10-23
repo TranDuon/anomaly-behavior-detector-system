@@ -241,6 +241,10 @@ Update `ANOMALY_THRESHOLD` in `.env`.
 
 ### Option 3 — Public datasets
 
+Project direction report (Vietnamese): behaviours in scope, the four-stream
+architecture, datasets per behaviour, roadmap, difficulties —
+[`docs/BAO_CAO_HUONG_DI.md`](docs/BAO_CAO_HUONG_DI.md).
+
 For the fight detector (skeleton stream: YOLOv8-pose + BoT-SORT + ST-GCN,
 trained on UBI-Fights), see [`docs/FIGHT_TRAINING.md`](docs/FIGHT_TRAINING.md)
 and [`colab/train_fight_drive.ipynb`](colab/train_fight_drive.ipynb):
