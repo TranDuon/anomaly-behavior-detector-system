@@ -130,10 +130,22 @@ class PairBagClassifier(nn.Module):
         return self.encoder.config
 
     def pair_logits(self, bags: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
-        """bags (B, K, C, T, V), mask (B, K) bool -> pair logits (B, K, num_classes)."""
+        """bags (B, K, C, T, V), mask (B, K) bool -> pair logits (B, K, num_classes).
+
+        Only real pairs go through the encoder. Feeding the all-zero padding
+        slots as well put them into every BatchNorm batch statistic, so the
+        normalisation depended on how many slots each batch happened to pad
+        and differed between training and evaluation.
+        """
         b, k = bags.shape[:2]
-        logits = self.encoder(bags.flatten(0, 1)).view(b, k, -1)
-        return logits.masked_fill(~mask[..., None], float("-inf"))
+        flat_mask = mask.reshape(-1)
+        logits = torch.full(
+            (b * k, self.config["num_classes"]), float("-inf"),
+            dtype=torch.float32, device=bags.device,
+        )
+        if flat_mask.any():
+            logits[flat_mask] = self.encoder(bags.flatten(0, 1)[flat_mask]).float()
+        return logits.view(b, k, -1)
 
     def forward(self, bags: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
         """Window logits (B, num_classes): the highest-scoring pair of each window."""

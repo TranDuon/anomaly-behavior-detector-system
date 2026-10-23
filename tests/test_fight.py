@@ -26,7 +26,7 @@ from anomaly.skeleton import (
 )
 from anomaly.stgcn import PairBagClassifier, collate_bags, predict_windows
 from scripts.dedup_videos import hamming, match_fraction
-from scripts.train_fight import best_f1_threshold, split_videos, window_labels
+from scripts.train_fight import best_threshold, split_videos, window_labels
 
 
 def standing_person(x, y, height=100.0, frames=24):
@@ -323,12 +323,22 @@ def test_split_videos_keeps_fights_in_both_sides():
     assert any(item.has_positive for item in val) and any(item.has_positive for item in train)
 
 
-def test_best_f1_threshold_matches_strict_rule():
+def test_best_threshold_matches_strict_rule():
     labels = np.array([0, 0, 1, 1])
     scores = np.array([0.1, 0.4, 0.6, 0.9])
-    threshold, f1 = best_f1_threshold(labels, scores)
-    assert f1 == pytest.approx(1.0)
+    threshold, balanced = best_threshold(labels, scores)
+    assert balanced == pytest.approx(1.0)
     np.testing.assert_array_equal(scores > threshold, labels.astype(bool))
+
+
+def test_best_threshold_weighs_both_classes():
+    # Mostly positives: max-F1 would flag everything; balanced accuracy keeps
+    # the clearly normal windows below the threshold.
+    labels = np.array([0, 0, 0, 1, 1, 1, 1, 1, 1, 1])
+    scores = np.array([0.1, 0.2, 0.35, 0.3, 0.6, 0.7, 0.8, 0.85, 0.9, 0.95])
+    threshold, balanced = best_threshold(labels, scores)
+    assert 0.35 <= threshold < 0.6
+    assert balanced == pytest.approx((6 / 7 + 1.0) / 2)
 
 
 def test_dedup_hamming_and_match_fraction():

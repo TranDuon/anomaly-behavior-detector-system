@@ -5,9 +5,12 @@ each window's fight probability is assigned to the frame where the window
 ends (what a live system knows at that moment); frames between window ends
 are interpolated, as in scripts/evaluation_metrics.py.
 
-Clip level (every dataset): a video's score is its highest window score, its
-label whether it contains any fight. This is the protocol of clip datasets
-such as Surveillance Camera Fight.
+Clip level (clip datasets only: Surveillance Camera Fight, RLVS): a clip's
+score is its highest window score, its label whether it contains a fight.
+Not computed for UBI-Fights / UCF-Crime: their videos range from seconds to
+many minutes (and normal test videos may be shortened), and the maximum over
+more windows is higher by chance alone, so a video-level AUC there measures
+length as much as fighting.
 
 Crowd subset: videos whose pose cache averages at least --crowd-threshold
 tracked people per sampled frame are also reported on their own
@@ -47,6 +50,7 @@ from scripts.evaluation_metrics import aggregate_frame_scores, binary_metrics
 
 
 FRAME_LEVEL_DATASETS = {"ubi", "ucf"}
+CLIP_LEVEL_DATASETS = {"scf", "rlvs"}
 
 
 def save_curves(output_dir: Path, name: str, labels: np.ndarray, scores: np.ndarray, metrics: dict) -> None:
@@ -141,6 +145,7 @@ def main() -> None:
     clip_data = defaultdict(lambda: {"labels": [], "scores": []})
     timelines = defaultdict(list)
     video_rows = []
+    video_counts: dict[str, int] = defaultdict(int)
     partial: list[str] = []
     missing = 0
 
@@ -166,11 +171,14 @@ def main() -> None:
         groups = [item.dataset]
         if mean_people >= args.crowd_threshold:
             groups.append(f"{item.dataset}_crowd")
+        for group in groups:
+            video_counts[group] += 1
 
         video_score = float(probabilities.max())
-        for group in groups:
-            clip_data[group]["labels"].append(int(labels.any()))
-            clip_data[group]["scores"].append(video_score)
+        if item.dataset in CLIP_LEVEL_DATASETS:
+            for group in groups:
+                clip_data[group]["labels"].append(int(labels.any()))
+                clip_data[group]["scores"].append(video_score)
         row = {
             "dataset": item.dataset,
             "video": item.key,
@@ -203,7 +211,7 @@ def main() -> None:
         "window": window,
         "stride_samples": args.stride,
         "crowd_threshold_people": args.crowd_threshold,
-        "videos_per_group": {group: len(data["labels"]) for group, data in clip_data.items()},
+        "videos_per_group": dict(video_counts),
         "missing_pose_caches": missing,
         # False when test videos were shortened (--max-seconds-test-normal):
         # numbers are then a development estimate, not comparable to papers.

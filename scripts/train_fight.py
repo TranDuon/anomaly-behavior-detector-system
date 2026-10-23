@@ -23,7 +23,7 @@ from pathlib import Path
 import numpy as np
 import torch
 import torch.nn as nn
-from sklearn.metrics import average_precision_score, precision_recall_curve, roc_auc_score
+from sklearn.metrics import average_precision_score, f1_score, roc_auc_score, roc_curve
 from torch.utils.data import DataLoader, Dataset, WeightedRandomSampler
 
 
@@ -153,14 +153,20 @@ def evaluate(model, loader, device, criterion) -> dict:
     }
 
 
-def best_f1_threshold(labels: np.ndarray, scores: np.ndarray) -> tuple[float, float]:
-    """Threshold t maximising F1 of the rule score > t (the rule used at evaluation)."""
-    precision, recall, thresholds = precision_recall_curve(labels, scores)
-    f1 = 2 * precision[:-1] * recall[:-1] / np.maximum(precision[:-1] + recall[:-1], 1e-12)
-    best = int(np.argmax(f1))
-    # precision_recall_curve predicts positive for score >= t; nudge below t
-    # so that score > threshold selects the same windows.
-    return float(np.nextafter(thresholds[best], -np.inf)), float(f1[best])
+def best_threshold(labels: np.ndarray, scores: np.ndarray) -> tuple[float, float]:
+    """Threshold t maximising balanced accuracy (Youden J) of the rule score > t.
+
+    Max-F1 favours recall when positives are frequent and produced a threshold
+    that flagged 75% of normal frames; balanced accuracy weighs both classes.
+    Returns (threshold, balanced accuracy).
+    """
+    false_positive_rate, true_positive_rate, thresholds = roc_curve(labels, scores)
+    youden = true_positive_rate - false_positive_rate
+    best = int(np.argmax(youden[1:])) + 1          # index 0 is the +inf threshold
+    # roc_curve predicts positive for score >= t; nudge below t so that
+    # score > threshold selects the same windows.
+    balanced = (true_positive_rate[best] + 1 - false_positive_rate[best]) / 2
+    return float(np.nextafter(thresholds[best], -np.inf)), float(balanced)
 
 
 def write_json(path: Path, payload: dict) -> None:
@@ -348,12 +354,14 @@ def main() -> None:
 
     best = PairBagClassifier.load(output_dir / "fight_stgcn.pt", device=str(device))
     validation = evaluate(best, val_loader, device, criterion)
-    threshold, val_f1 = best_f1_threshold(validation["labels"], validation["scores"])
+    threshold, val_balanced = best_threshold(validation["labels"], validation["scores"])
+    val_f1 = float(f1_score(validation["labels"], validation["scores"] > threshold, zero_division=0))
     write_json(
         output_dir / "fight_threshold.json",
         {
             "threshold": threshold,
-            "method": "max F1 on validation windows",
+            "method": "max balanced accuracy (Youden J) on validation windows",
+            "val_balanced_accuracy": val_balanced,
             "val_f1": val_f1,
             "val_auc": validation["auc"],
             "val_ap": validation["ap"],
@@ -393,7 +401,7 @@ def main() -> None:
     )
     print(
         f"[train-fight] best epoch {best_epoch}: val AUC={best_auc:.4f}; "
-        f"threshold={threshold:.4f} (val F1={val_f1:.4f}) -> {output_dir}",
+        f"threshold={threshold:.4f} (val balanced accuracy={val_balanced:.4f}, F1={val_f1:.4f}) -> {output_dir}",
         flush=True,
     )
 
