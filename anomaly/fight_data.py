@@ -66,6 +66,34 @@ class VideoItem:
         return labels
 
 
+def training_ranges(item: VideoItem, margin_frames: int) -> Optional[List[Tuple[int, int]]]:
+    """Inclusive frame ranges worth extracting for a training video, or None for all of it.
+
+    Only frame-labelled training videos that contain a fight are cropped:
+    every fight run is kept plus `margin_frames` on each side (the normal
+    moments right before and after, in the same scene, are the hardest
+    negatives). Overlapping ranges are merged.
+    """
+    if item.split != "train" or margin_frames < 0 or not item.has_positive:
+        return None
+    if item.frame_labels is not None:
+        labels = np.asarray(item.frame_labels) > 0
+        edges = np.diff(np.concatenate([[0], labels.astype(np.int8), [0]]))
+        runs = list(zip(np.flatnonzero(edges == 1), np.flatnonzero(edges == -1) - 1))
+    elif item.intervals:
+        runs = sorted(item.intervals)
+    else:
+        return None
+    ranges: List[Tuple[int, int]] = []
+    for start, end in runs:
+        start, end = max(int(start) - margin_frames, 0), int(end) + margin_frames
+        if ranges and start <= ranges[-1][1] + 1:
+            ranges[-1] = (ranges[-1][0], max(ranges[-1][1], end))
+        else:
+            ranges.append((start, end))
+    return ranges
+
+
 def _videos_in(directory: Path) -> list[Path]:
     return sorted(
         path

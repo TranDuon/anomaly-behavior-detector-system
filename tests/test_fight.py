@@ -7,6 +7,7 @@ from anomaly.fight_data import (
     load_items,
     parse_ubi_annotation,
     parse_ucf_annotation,
+    training_ranges,
 )
 from anomaly.skeleton import (
     BODY_TARGETS,
@@ -60,6 +61,63 @@ def test_labels_for_unifies_granularities():
     clip = VideoItem("scf", "c", None, "test", clip_label=1)
     np.testing.assert_array_equal(clip.labels_for(3), [1, 1, 1])
     assert not VideoItem("scf", "d", None, "test", clip_label=0).has_positive
+
+
+def test_training_ranges_keep_fight_runs_with_margin():
+    labels = np.zeros(100, dtype=np.int32)
+    labels[20:30] = 1
+    labels[36:40] = 1
+    labels[80:85] = 1
+    item = VideoItem("ubi", "f", None, "train", frame_labels=labels)
+    # runs 20-29 and 36-39 merge once widened by 5; 80-84 stays separate
+    assert training_ranges(item, 5) == [(15, 44), (75, 89)]
+    assert training_ranges(item, 30) == [(0, 114)]
+    test_item = VideoItem("ubi", "t", None, "test", frame_labels=labels)
+    assert training_ranges(test_item, 5) is None                 # test videos are never cropped
+    normal = VideoItem("ubi", "n", None, "train", frame_labels=np.zeros(10))
+    assert training_ranges(normal, 5) is None
+    assert training_ranges(VideoItem("ucf", "u", None, "train", intervals=[(50, 60)]), 10) == [(40, 70)]
+
+
+def test_extraction_options_follow_split_and_label():
+    from types import SimpleNamespace
+    from scripts.extract_pose import extraction_options
+
+    args = SimpleNamespace(max_seconds_normal=20, max_seconds_test_normal=60, fight_margin_seconds=10)
+    fight_train = VideoItem("ubi", "a", None, "train", frame_labels=np.array([0, 1]))
+    normal_train = VideoItem("ubi", "b", None, "train", frame_labels=np.array([0, 0]))
+    normal_test = VideoItem("ubi", "c", None, "test", frame_labels=np.array([0, 0]))
+    fight_test = VideoItem("ubi", "d", None, "test", frame_labels=np.array([0, 1]))
+    assert extraction_options(fight_train, args) == {"max_seconds": 0.0, "fight_margin_seconds": 10.0}
+    assert extraction_options(normal_train, args) == {"max_seconds": 20.0, "fight_margin_seconds": -1.0}
+    assert extraction_options(normal_test, args) == {"max_seconds": 60.0, "fight_margin_seconds": -1.0}
+    assert extraction_options(fight_test, args) == {"max_seconds": 0.0, "fight_margin_seconds": -1.0}
+    final = SimpleNamespace(max_seconds_normal=20, max_seconds_test_normal=None, fight_margin_seconds=10)
+    assert extraction_options(normal_test, final)["max_seconds"] == 0.0   # final run re-extracts it
+
+
+def test_cache_matches_ignores_caps_that_never_cut_the_video(tmp_path):
+    from scripts.extract_pose import cache_matches
+
+    def cache(name, cap, truncated, frames, margin=-1.0):
+        path = tmp_path / f"{name}.npz"
+        np.savez(path, max_seconds=np.float32(cap), truncated=np.bool_(truncated),
+                 frame_count=np.int32(frames), fps=np.float32(10), fight_margin_seconds=np.float32(margin))
+        return path
+
+    short_clip = cache("short", cap=60, truncated=False, frames=20)        # 2 s clip, cap never applied
+    cut_video = cache("cut", cap=60, truncated=True, frames=600)           # 60 s of a longer video
+    full = {"max_seconds": 0.0, "fight_margin_seconds": -1.0}
+    dev = {"max_seconds": 60.0, "fight_margin_seconds": -1.0}
+    assert cache_matches(short_clip, full) and cache_matches(short_clip, dev)
+    assert cache_matches(cut_video, dev) and not cache_matches(cut_video, full)
+    assert cache_matches(cut_video, {"max_seconds": 20.0, "fight_margin_seconds": -1.0})   # longer cap covers shorter
+    whole = cache("whole", cap=0, truncated=False, frames=6000)
+    assert cache_matches(whole, dev)                                       # back to dev phase: keep it
+    cropped = cache("crop", cap=0, truncated=False, frames=900, margin=10)
+    assert cache_matches(cropped, {"max_seconds": 0.0, "fight_margin_seconds": 5.0})
+    assert not cache_matches(cropped, {"max_seconds": 0.0, "fight_margin_seconds": 15.0})
+    assert not cache_matches(cropped, full)                                # whole video wanted
 
 
 def test_load_items_reads_ubi_layout_and_split(tmp_path):
@@ -224,6 +282,16 @@ def test_window_bag_and_model_forward():
     )
     np.testing.assert_allclose(again, probabilities)
     assert all(pair == (1, 2) for pair in pairs)
+
+
+def test_windows_spanning_two_extracted_ranges_are_not_contiguous():
+    pose = make_pose(frames=40)
+    pose.segment_ids = np.array([0] * 20 + [1] * 20)
+    assert pose.contiguous(0, 20)
+    assert not pose.contiguous(10, 20)
+    assert pose.contiguous(20, 24)                 # runs past the end inside one range
+    pose.segment_ids = None
+    assert pose.contiguous(10, 20)                 # old caches: one continuous range
 
 
 def test_window_pairs_reports_track_ids():

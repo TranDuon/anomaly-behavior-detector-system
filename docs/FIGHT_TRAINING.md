@@ -8,15 +8,23 @@ Sau khi mở: `Runtime > Change runtime type > L4 GPU`, rồi `Runtime > Run all
 
 ## Khối lượng và cách giảm tài nguyên
 
-Tính từ file nhãn của UBI-Fights:
+Chỉ trích khung xương những đoạn cần (video gốc không bị sửa). Tính từ file nhãn của UBI-Fights:
 
-| Tập | Video | Thời lượng | Ghi chú |
-|---|---|---|---|
-| Test (đánh nhau + bình thường) | 67 | 12,9 giờ | Giữ nguyên để so sánh được với bài báo |
-| Train, đánh nhau | 176 | 6,0 giờ | Giữ nguyên |
-| Train, bình thường | 757 | 60,1 giờ → tối đa 12,6 giờ | Cắt 60 giây/video (`MAX_SECONDS_NORMAL`) |
+| Tập | Video | Toàn bộ | Giai đoạn phát triển | Giai đoạn chốt |
+|---|---|---|---|---|
+| Train, đánh nhau | 176 | 6,0 giờ (29% là đánh nhau) | 3,5 giờ: đoạn đánh nhau ±10 s (`FIGHT_MARGIN_SECONDS`) | không đổi |
+| Train, bình thường | 757 | 60,1 giờ | tối đa 4,2 giờ: 20 s/video (`MAX_SECONDS_NORMAL`) | không đổi |
+| Test, đánh nhau | 40 | 1,5 giờ | 1,5 giờ | 1,5 giờ |
+| Test, bình thường | 27 | 11,4 giờ | 0,45 giờ: 60 s/video | 11,4 giờ (trích thêm một lần, không train lại) |
+| **Tổng** | | **79 giờ** | **~9,7 giờ** | thêm ~11 giờ |
 
-Các bước giảm tài nguyên đã áp dụng:
+Khoảng đệm ±10 s quanh đoạn đánh nhau giữ lại khoảnh khắc bình thường ngay trước/sau trong cùng khung cảnh — mẫu âm khó nhất. Tracker khởi động lại ở mỗi đoạn, và cửa sổ train không được vắt qua hai đoạn.
+
+Kết quả giai đoạn phát triển ghi `"official_protocol": false` trong `evaluation.json` vì video test bình thường bị rút ngắn; chỉ số liệu giai đoạn chốt mới so sánh được với bài báo. Cache được dùng lại giữa hai giai đoạn: chuyển sang giai đoạn chốt chỉ trích lại những video đã thực sự bị cắt, và một cache đầy đủ hơn mức yêu cầu luôn được giữ.
+
+Các bước giảm tài nguyên khác:
+
+- **FP16 trên GPU** (`--half auto`) và **bỏ giải mã màu** (`grab()`) cho frame không được lấy mẫu.
 
 - **Trích khung xương song song:** `--shard k/n`, notebook chạy `POSE_SHARDS` tiến trình (theo số CPU, tối đa 6) cùng dùng một GPU, vì tracking phải chạy tuần tự trong từng video nên một tiến trình để GPU rảnh phần lớn thời gian.
 - **Dựng cửa sổ dạng ma trận:** khoảng cách và tầm với của mọi cặp người tính một lần thay vì lặp từng cặp. Trên UBI-Fights thật: cảnh quán bar 19 người/frame 79 → 18 ms/cửa sổ, cảnh ít người 8 → 4,5 ms (CPU máy local).

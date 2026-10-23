@@ -108,7 +108,8 @@ def build_index(
         stride = positive_stride if item.has_positive else normal_stride
         starts = window_starts(pose.num_samples, WINDOW["length"], stride)
         labels = window_labels(sample_labels, starts, WINDOW["length"])
-        keep = labels >= 0
+        contiguous = np.array([pose.contiguous(int(s), WINDOW["length"]) for s in starts], dtype=bool)
+        keep = (labels >= 0) & contiguous
         rows.extend((pose_id, int(s), int(l)) for s, l in zip(starts[keep], labels[keep]))
     return np.asarray(rows, dtype=np.int64).reshape(-1, 3)
 

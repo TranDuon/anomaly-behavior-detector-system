@@ -141,6 +141,7 @@ def main() -> None:
     clip_data = defaultdict(lambda: {"labels": [], "scores": []})
     timelines = defaultdict(list)
     video_rows = []
+    partial: list[str] = []
     missing = 0
 
     print(f"[evaluate-fight] {len(items)} test video(s), threshold={threshold:.4f}", flush=True)
@@ -153,7 +154,10 @@ def main() -> None:
         if pose.num_samples == 0 or pose.frame_count == 0:
             missing += 1
             continue
+        if item.frame_labels is not None and pose.frame_count < len(item.frame_labels) - int(pose.fps):
+            partial.append(item.uid)
         starts = window_starts(pose.num_samples, window["length"], args.stride)
+        starts = starts[[pose.contiguous(int(s), window["length"]) for s in starts]]
         probabilities = predict_windows(model, pose, starts, window, device, args.batch_size)
         end_samples = np.minimum(starts + window["length"] - 1, pose.num_samples - 1)
         end_frames = pose.sample_frames[end_samples] + 1
@@ -201,6 +205,10 @@ def main() -> None:
         "crowd_threshold_people": args.crowd_threshold,
         "videos_per_group": {group: len(data["labels"]) for group, data in clip_data.items()},
         "missing_pose_caches": missing,
+        # False when test videos were shortened (--max-seconds-test-normal):
+        # numbers are then a development estimate, not comparable to papers.
+        "official_protocol": not partial and missing == 0,
+        "shortened_test_videos": partial,
         "frame_level": {},
         "clip_level": {},
     }
@@ -236,6 +244,13 @@ def main() -> None:
                 f"accuracy={metrics['accuracy']:.4f}",
                 flush=True,
             )
+    if not report["official_protocol"]:
+        print(
+            f"[evaluate-fight] WARNING: not the official protocol "
+            f"({len(partial)} shortened test video(s), {missing} missing pose cache(s)); "
+            "rerun pose extraction without --max-seconds-test-normal for final numbers.",
+            flush=True,
+        )
     print(f"[evaluate-fight] Reports saved to {output_dir}", flush=True)
 
 

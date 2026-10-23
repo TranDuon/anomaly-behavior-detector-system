@@ -82,6 +82,7 @@ class PoseTrack:
     keypoints: np.ndarray        # (N, 17, 3) x, y pixels + confidence
     frame_count: int
     fps: float
+    segment_ids: Optional[np.ndarray] = None   # (S,) extracted range of each sample
 
     @classmethod
     def load(cls, path) -> "PoseTrack":
@@ -96,11 +97,22 @@ class PoseTrack:
                 keypoints=np.asarray(data["keypoints"], dtype=np.float32),
                 frame_count=int(data["frame_count"]),
                 fps=float(data["fps"]),
+                segment_ids=(
+                    np.asarray(data["segment_ids"], dtype=np.int64)
+                    if "segment_ids" in data else None
+                ),
             )
 
     @property
     def num_samples(self) -> int:
         return len(self.sample_frames)
+
+    def contiguous(self, start: int, length: int) -> bool:
+        """False when the window spans two extracted ranges (a time jump)."""
+        if self.segment_ids is None or self.num_samples == 0:
+            return True
+        segments = self.segment_ids[start : min(start + length, self.num_samples)]
+        return len(segments) == 0 or segments.min() == segments.max()
 
     def window_tracks(
         self, start: int, length: int, min_presence: int
