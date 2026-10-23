@@ -117,9 +117,9 @@ Code luồng B cho hành vi đánh nhau đã hoàn thành và đưa lên reposit
 Pipeline gồm 4 bước, chạy bằng notebook `colab/train_fight_drive.ipynb`:
 
 1. **Loại video trùng** giữa các dataset bằng hash ảnh. Chỉ cặp khác dataset bị loại khỏi train; cặp trong cùng dataset được giữ để không phá tập chia chuẩn của tác giả.
-2. **Trích khung xương** bằng YOLOv8n-pose + BoT-SORT, lưu từng video lên Drive, chạy tiếp được khi Colab ngắt; nhiều tiến trình chạy song song trên GPU L4, chỉ trích đoạn cần cho train — đoạn đánh nhau ±10 giây (6,0 → 3,5 giờ) và 20 giây mỗi video bình thường (60,1 → tối đa 4,2 giờ); giai đoạn phát triển lấy 60 giây mỗi video test bình thường, giai đoạn chốt trích đủ tập test chuẩn mà không train lại (tổng 79 giờ video → khoảng 9,7 giờ cho giai đoạn phát triển).
+2. **Trích khung xương** bằng YOLOv8n-pose + BoT-SORT, lưu từng video lên Drive, chạy tiếp được khi Colab ngắt; nhiều tiến trình chạy song song trên GPU L4, chỉ trích đoạn cần cho train — đoạn đánh nhau ±10 giây (6,0 → 3,5 giờ) và 20 giây mỗi video bình thường (60,1 → tối đa 4,2 giờ); tập test lấy đủ 40 video đánh nhau và 60 giây đầu mỗi video bình thường (tổng 79 giờ video → khoảng 9,7 giờ).
 3. **Train ST-GCN** trên đồ thị 34 khớp của hai người; mỗi cửa sổ là một túi cặp người, điểm cửa sổ là điểm cặp cao nhất (MIL). Checkpoint lưu mỗi epoch, ngưỡng chọn trên tập validation.
-4. **Đánh giá** trên tập test chuẩn của UBI-Fights (AUC theo frame), test chéo trên Surveillance Camera Fight (theo clip) và riêng nhóm video đông người; chấm một cửa sổ mỗi 0,3 giây, frame ở giữa được nội suy.
+4. **Đánh giá** trên tập test rút gọn của UBI-Fights (40 video đánh nhau đầy đủ + 60 giây mỗi video bình thường; AUC theo frame; đề tài không so sánh với bài báo khác), test chéo trên Surveillance Camera Fight (theo clip) và riêng nhóm video đông người; chấm một cửa sổ mỗi 0,3 giây, frame ở giữa được nội suy.
 
 Các lựa chọn cấu hình đều dựa trên số đo thật (CPU máy local; 4 video UBI-Fights lấy trong đoạn đánh nhau):
 
@@ -129,7 +129,7 @@ Các lựa chọn cấu hình đều dựa trên số đo thật (CPU máy local
 | Lấy mẫu | 10 FPS, cửa sổ 24 mẫu (2,4 giây) | Trích pose có tracking đạt \~7,5 mẫu/giây trên CPU |
 | Tracker | BoT-SORT có ReID | Giữ ID qua che khuất ngắn trong cửa sổ |
 | Chọn cặp | Tối đa 16 cặp trong 1,5 lần chiều cao người, xếp theo mức tương tác | Cảnh đánh nhau có 13–130 cặp ứng viên/cửa sổ; ST-GCN chấm 16 cặp mất \~87 ms, 32 cặp \~230 ms |
-| Dữ liệu | UBI-Fights (train + test chuẩn); Surveillance Camera Fight (test chéo) | RWF-2000 đã bị gỡ; UBI-Fights có nhãn theo frame và 5–19 người/frame trong cảnh đánh nhau |
+| Dữ liệu | UBI-Fights (train + test rút gọn); Surveillance Camera Fight (test chéo) | RWF-2000 đã bị gỡ; UBI-Fights có nhãn theo frame và 5–19 người/frame trong cảnh đánh nhau |
 
 Kiểm chứng hiện có: 22 test tự động; chạy thử toàn bộ pipeline trên dữ liệu giả; 225/229 cửa sổ đánh nhau trong 4 video UBI-Fights có ít nhất một cặp ứng viên. Hạn chế đã biết: trên cảnh quán bar rất đông, cặp được xếp hạng cao nhất không trùng nhóm đang xô xát khi kiểm tra bằng mắt; AUC của nhóm đông người sẽ kiểm chứng model có bù được không.
 
@@ -153,7 +153,7 @@ Khó khăn lớn nhất là dữ liệu: nhiều hành vi không có bộ công 
 | Che khuất và đám đông | Người bị che, tracker đổi ID giữa chừng làm đứt chuỗi chuyển động; khung xương thiếu khớp; ở ảnh vào 640, model pose bỏ sót phần lớn người cao dưới \~100 px (cảnh đông UMN: chỉ 2,6 người/frame) | Đã xử lý: ảnh vào 1280 (UMN: 9,6 người/frame), chọn 16 cặp theo mức tương tác, BoT-SORT có ReID; nội suy keypoint bị thiếu; làm mượt điểm số theo thời gian trên từng track |
 | Hành vi ít chuyển động bị bỏ sót | Móc túi, cạy khóa không tạo tín hiệu rõ ở tầng 1, nên tầng 2 không được kích hoạt | Trong vùng nhạy cảm (cửa ra vào, quầy hàng) chạy tầng 2 liên tục hoặc theo chu kỳ; kích hoạt khi hai người ở rất gần nhau |
 | Phụ thuộc vào từng camera | Ngưỡng tính theo pixel/frame thay đổi khi đổi góc quay, độ phân giải, FPS | Chuẩn hóa theo chiều cao người và theo giây; hiệu chỉnh vùng cấm và ngưỡng riêng cho từng camera khi lắp đặt |
-| Tài nguyên tính toán | Máy chạy local chỉ có CPU; pose và mô hình video chạy chậm (đo được: YOLOv8n-pose ảnh 1280 \~106 ms/frame, ST-GCN 16 cặp \~87 ms/cửa sổ) | Luồng B chỉ chạy trên cặp nghi vấn, luồng A lấy mẫu thưa; dùng bản nano của YOLO; bỏ bớt frame; xuất ONNX / OpenVINO; train trên Google Colab L4; đã áp dụng: dựng cửa sổ dạng ma trận (cảnh đông 79 → 18 ms/cửa sổ), trích khung xương song song, chỉ trích đoạn cần cho train theo hai giai đoạn (79 → \~9,7 giờ video), FP16, đánh giá bước 0,3 giây |
+| Tài nguyên tính toán | Máy chạy local chỉ có CPU; pose và mô hình video chạy chậm (đo được: YOLOv8n-pose ảnh 1280 \~106 ms/frame, ST-GCN 16 cặp \~87 ms/cửa sổ) | Luồng B chỉ chạy trên cặp nghi vấn, luồng A lấy mẫu thưa; dùng bản nano của YOLO; bỏ bớt frame; xuất ONNX / OpenVINO; train trên Google Colab L4; đã áp dụng: dựng cửa sổ dạng ma trận (cảnh đông 79 → 18 ms/cửa sổ), trích khung xương song song, chỉ trích đoạn cần cho train và tập test rút gọn (79 → \~9,7 giờ video), FP16, đánh giá bước 0,3 giây |
 | Truy cập và dung lượng dữ liệu | NTU phải xin phép; RWF-2000 đã gỡ video; UCF-Crime nặng hàng chục GB; nhiều video Kinetics đã bị gỡ khỏi YouTube | Gửi đơn sớm; dùng đặc trưng I3D đã trích sẵn do cộng đồng chia sẻ; dùng mô hình đã pre-train trên Kinetics thay vì tự tải lại |
 | Quyền riêng tư và đạo đức | Dữ liệu chứa hình ảnh người thật; nguy cơ gán nhãn sai người vô tội | Chỉ dùng cho nghiên cứu theo giấy phép dataset; không nhận diện khuôn mặt; làm mờ mặt trong demo; cảnh báo chỉ là gợi ý, người trực quyết định |
 | Không có benchmark chung | Mỗi dataset một metric, không so sánh được toàn hệ thống bằng một con số | Báo cáo theo từng hành vi trên dataset tương ứng; thêm một bộ video kịch bản tự quay để đánh giá toàn hệ thống |
