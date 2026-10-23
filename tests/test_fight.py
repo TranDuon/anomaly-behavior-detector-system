@@ -9,9 +9,13 @@ from anomaly.fight_data import (
     parse_ucf_annotation,
 )
 from anomaly.skeleton import (
+    BODY_TARGETS,
+    LIMB_ENDS,
     NUM_CHANNELS,
     NUM_NODES,
     PoseTrack,
+    _track_stats,
+    proximity_matrix,
     pair_tensor,
     select_pairs,
     two_person_adjacency,
@@ -108,6 +112,44 @@ def test_select_pairs_ranks_interaction_above_mere_closeness():
     ]
     assert select_pairs(tracks, max_pairs=1, radius=2.5) == [(4, 5)]
     assert len(select_pairs(tracks, max_pairs=8, radius=2.5)) == 3
+
+
+def naive_proximity(first, second, stats_first, stats_second):
+    """Pair-by-pair reference for proximity_matrix (the original loop version)."""
+    together = ~np.isnan(stats_first.center[:, 0]) & ~np.isnan(stats_second.center[:, 0])
+    if not together.any():
+        return np.inf
+    scale = (stats_first.height + stats_second.height) / 2
+    centre = np.linalg.norm(stats_first.center[together] - stats_second.center[together], axis=1)
+    closeness = float(np.quantile(centre, 0.2)) / scale
+    reach = np.inf
+    for kp_a, kp_b in ((first[0], second[0]), (second[0], first[0])):
+        limbs = kp_a[together][:, LIMB_ENDS]
+        bodies = kp_b[together][:, BODY_TARGETS]
+        ok = (limbs[:, :, None, 2] >= 0.1) & (bodies[:, None, :, 2] >= 0.1)
+        if ok.any():
+            gaps = np.linalg.norm(limbs[:, :, None, :2] - bodies[:, None, :, :2], axis=-1)
+            reach = min(reach, float(gaps[ok].min()) / scale)
+    return min(closeness, reach)
+
+
+def test_proximity_matrix_matches_pairwise_reference():
+    rng = np.random.default_rng(3)
+    tracks = []
+    for _ in range(7):
+        keypoints, heights = standing_person(*rng.uniform(0, 400, 2), height=rng.uniform(60, 140))
+        keypoints[:, :, :2] += rng.normal(0, 8, (24, 17, 2))
+        keypoints[:, :, 2] = rng.uniform(0, 1, (24, 17))          # some below 0.1
+        absent = rng.random(24) < 0.3
+        keypoints[absent] = 0
+        heights[absent] = 0
+        tracks.append((keypoints, heights))
+    stats = [_track_stats(kp, h) for kp, h in tracks]
+    matrix = proximity_matrix(np.stack([kp for kp, _ in tracks]), stats)
+    for i in range(7):
+        for j in range(7):
+            if i != j:
+                assert matrix[i, j] == pytest.approx(naive_proximity(tracks[i], tracks[j], stats[i], stats[j]), rel=1e-5)
 
 
 def test_select_pairs_training_explores_beyond_top_ranks():

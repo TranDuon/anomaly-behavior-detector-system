@@ -173,29 +173,50 @@ def _track_stats(keypoints: np.ndarray, heights: np.ndarray) -> Optional[_TrackS
     return _TrackStats(center, height, energy)
 
 
-def _pair_proximity(
-    first: Tuple[np.ndarray, np.ndarray],
-    second: Tuple[np.ndarray, np.ndarray],
-    stats_first: _TrackStats,
-    stats_second: _TrackStats,
-) -> Optional[float]:
-    """Closeness in person heights: low quantile of centre distance, or limb reach."""
-    together = ~np.isnan(stats_first.center[:, 0]) & ~np.isnan(stats_second.center[:, 0])
-    if not together.any():
-        return None
-    scale = (stats_first.height + stats_second.height) / 2
-    centre = np.linalg.norm(stats_first.center[together] - stats_second.center[together], axis=1)
-    closeness = float(np.quantile(centre, 0.2)) / scale
+def proximity_matrix(keypoints: np.ndarray, stats: List[_TrackStats]) -> np.ndarray:
+    """(n, n) closeness in person heights for every track pair, inf when never together.
 
-    reach = np.inf
-    for (kp_a, _), (kp_b, _) in ((first, second), (second, first)):
-        limbs = kp_a[together][:, LIMB_ENDS]
-        bodies = kp_b[together][:, BODY_TARGETS]
-        ok = (limbs[:, :, None, 2] >= MIN_KEYPOINT_CONF) & (bodies[:, None, :, 2] >= MIN_KEYPOINT_CONF)
-        if ok.any():
-            gaps = np.linalg.norm(limbs[:, :, None, :2] - bodies[:, None, :, :2], axis=-1)
-            reach = min(reach, float(gaps[ok].min()) / scale)
-    return min(closeness, reach)
+    Closeness is the smaller of the 20th-percentile centre distance and the
+    closest a wrist/ankle of one person gets to the other's head/torso, over
+    the samples where both are present. All pairs are computed at once: a
+    crowd of 19 people is 171 pairs per window.
+    """
+    centers = np.stack([item.center for item in stats])                   # (n, T, 2)
+    heights = np.asarray([item.height for item in stats], dtype=np.float32)
+    present = ~np.isnan(centers[..., 0])
+    together = present[:, None, :] & present[None, :, :]                  # (n, n, T)
+    any_together = together.any(axis=-1)
+    scale = (heights[:, None] + heights[None, :]) / 2
+
+    # 20th percentile over the shared samples, linear interpolation as in
+    # np.quantile; done with one sort because np.nanquantile loops per row.
+    distance = np.linalg.norm(centers[:, None] - centers[None, :], axis=-1)
+    ordered = np.sort(np.where(together, distance, np.inf), axis=-1)
+    count = together.sum(axis=-1)
+    position = 0.2 * np.maximum(count - 1, 0)
+    low = np.floor(position).astype(np.int64)[..., None]
+    high = np.ceil(position).astype(np.int64)[..., None]
+    low_value = np.take_along_axis(ordered, low, axis=-1)[..., 0]
+    high_value = np.take_along_axis(ordered, high, axis=-1)[..., 0]
+    with np.errstate(invalid="ignore"):
+        quantile = low_value + (position - low[..., 0]) * (high_value - low_value)
+    closeness = np.where(any_together, quantile / scale, np.inf)
+
+    limbs = keypoints[:, :, LIMB_ENDS]                                    # (n, T, 4, 3)
+    bodies = keypoints[:, :, BODY_TARGETS]                                # (n, T, 5, 3)
+    gaps = np.linalg.norm(
+        limbs[:, None, :, :, None, :2] - bodies[None, :, :, None, :, :2], axis=-1
+    )                                                                      # (n, n, T, 4, 5)
+    ok = (
+        (limbs[:, None, :, :, None, 2] >= MIN_KEYPOINT_CONF)
+        & (bodies[None, :, :, None, :, 2] >= MIN_KEYPOINT_CONF)
+        & together[:, :, :, None, None]
+    )
+    reach_one_way = np.where(ok, gaps, np.inf).min(axis=(2, 3, 4))      # i's limbs -> j's body
+    reach = np.minimum(reach_one_way, reach_one_way.T) / scale
+    proximity = np.minimum(closeness, reach)
+    proximity[~any_together] = np.inf
+    return proximity
 
 
 def select_pairs(
@@ -214,13 +235,16 @@ def select_pairs(
     stats = [_track_stats(kp, h) for kp, h in tracks]
     valid = [index for index, item in enumerate(stats) if item is not None]
     candidates = []
-    for position, i in enumerate(valid):
-        for j in valid[position + 1 :]:
-            proximity = _pair_proximity(tracks[i], tracks[j], stats[i], stats[j])
-            if proximity is None or proximity > radius:
-                continue
-            interaction = (stats[i].limb_energy + stats[j].limb_energy + 1e-3) / (0.25 + proximity)
-            candidates.append((-interaction, proximity, i, j))
+    if len(valid) >= 2:
+        valid_stats = [stats[index] for index in valid]
+        proximity = proximity_matrix(np.stack([tracks[index][0] for index in valid]), valid_stats)
+        energy = np.asarray([item.limb_energy for item in valid_stats])
+        interaction = (energy[:, None] + energy[None, :] + 1e-3) / (0.25 + proximity)
+        rows, columns = np.nonzero(np.triu(proximity <= radius, k=1))
+        candidates = [
+            (-float(interaction[a, b]), float(proximity[a, b]), valid[a], valid[b])
+            for a, b in zip(rows, columns)
+        ]
     if candidates:
         candidates.sort()
         ranked = [(i, j) for _, _, i, j in candidates]

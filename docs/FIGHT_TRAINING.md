@@ -4,7 +4,24 @@ Notebook chính: `colab/train_fight_drive.ipynb` — mở thẳng trên Colab:
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/TranDuon/anomaly-behavior-detector-system/blob/main/colab/train_fight_drive.ipynb)
 
-Sau khi mở: `Runtime > Change runtime type > T4 GPU` (hoặc L4/A100 với Colab Pro), rồi `Runtime > Run all`, hoặc chạy lần lượt từng cell.
+Sau khi mở: `Runtime > Change runtime type > L4 GPU`, rồi `Runtime > Run all`, hoặc chạy lần lượt từng cell.
+
+## Khối lượng và cách giảm tài nguyên
+
+Tính từ file nhãn của UBI-Fights:
+
+| Tập | Video | Thời lượng | Ghi chú |
+|---|---|---|---|
+| Test (đánh nhau + bình thường) | 67 | 12,9 giờ | Giữ nguyên để so sánh được với bài báo |
+| Train, đánh nhau | 176 | 6,0 giờ | Giữ nguyên |
+| Train, bình thường | 757 | 60,1 giờ → tối đa 12,6 giờ | Cắt 60 giây/video (`MAX_SECONDS_NORMAL`) |
+
+Các bước giảm tài nguyên đã áp dụng:
+
+- **Trích khung xương song song:** `--shard k/n`, notebook chạy `POSE_SHARDS` tiến trình (theo số CPU, tối đa 6) cùng dùng một GPU, vì tracking phải chạy tuần tự trong từng video nên một tiến trình để GPU rảnh phần lớn thời gian.
+- **Dựng cửa sổ dạng ma trận:** khoảng cách và tầm với của mọi cặp người tính một lần thay vì lặp từng cặp. Trên UBI-Fights thật: cảnh quán bar 19 người/frame 79 → 18 ms/cửa sổ, cảnh ít người 8 → 4,5 ms (CPU máy local).
+- **Đánh giá bước 0,3 giây** (`--stride 3`): chấm ít hơn 3 lần số cửa sổ; frame ở giữa được nội suy.
+- **Train dùng mọi CPU** để dựng cửa sổ (`--num-workers`), GPU không phải chờ.
 
 ## Dataset
 
@@ -26,7 +43,7 @@ dedup_videos.py  →  extract_pose.py  →  train_fight.py  →  evaluate_fight.
 Mọi script nhận dataset theo dạng `--dataset tên:đường_dẫn[:split]`, với tên là `ubi`, `scf`, `rlvs` hoặc `ucf`.
 
 1. **Loại video trùng** (`scripts/dedup_videos.py`): so dHash của 16 frame mỗi video. Chỉ cặp trùng giữa hai dataset khác nhau bị loại khỏi train (giữ bản ở tập test). Cặp trong cùng dataset chỉ được ghi vào báo cáo, vì camera cố định quay hai thời điểm khác nhau cũng có hash gần giống, và để giữ tập chia chuẩn của tác giả.
-2. **Trích khung xương** (`scripts/extract_pose.py`): YOLOv8n-pose ở `imgsz=1280` + BoT-SORT có ReID (`configs/botsort_reid.yaml`), lấy mẫu 10 FPS. Mỗi video một file `<pose-root>/<dataset>/<key>.npz`; chạy lại sẽ bỏ qua video đã có. `--max-seconds-normal` cắt bớt video bình thường của tập train.
+2. **Trích khung xương** (`scripts/extract_pose.py`): YOLOv8n-pose ở `imgsz=1280` + BoT-SORT có ReID (`configs/botsort_reid.yaml`), lấy mẫu 10 FPS; `--shard k/n` để chạy song song. Mỗi video một file `<pose-root>/<dataset>/<key>.npz`; chạy lại sẽ bỏ qua video đã có. `--max-seconds-normal` cắt bớt video bình thường của tập train.
 3. **Train** (`scripts/train_fight.py`): cửa sổ 24 mẫu (2,4 giây); nhãn cửa sổ = đánh nhau nếu ≥ 50% frame là đánh nhau, bình thường nếu 0%, bỏ qua nếu ở giữa. Mỗi cửa sổ là một túi gồm tối đa 16 cặp người trong bán kính 1,5 lần chiều cao người, xếp theo mức tương tác (chuyển động tay/chân so với thân, chia cho độ gần hoặc khoảng cách từ tay/chân tới đầu/thân người kia). Khi train, 1/4 số suất chọn ngẫu nhiên ngoài top để cặp đánh nhau bị xếp hạng thấp vẫn vào túi. Điểm của cửa sổ = điểm lớn nhất trong các cặp (MIL). Validation chia theo video từ tập train; checkpoint lưu mỗi epoch, `--resume` để train tiếp.
 4. **Đánh giá** (`scripts/evaluate_fight.py`): UBI-Fights và UCF-Crime theo frame (AUC, AP, F1…), mọi dataset theo clip, và riêng nhóm video đông người (`<dataset>_crowd`, trung bình ≥ 5 người/frame, chỉnh bằng `--crowd-threshold`). Ngưỡng lấy từ validation (`fight_threshold.json`), không chỉnh theo nhãn test. `predict_windows(..., return_pairs=True)` trả thêm ID cặp người có điểm cao nhất để dashboard khoanh đúng người.
 

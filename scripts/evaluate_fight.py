@@ -110,7 +110,10 @@ def main() -> None:
     parser.add_argument("--model", required=True)
     parser.add_argument("--threshold", required=True)
     parser.add_argument("--output-dir", required=True)
-    parser.add_argument("--stride", type=int, default=1, help="Window stride in samples")
+    parser.add_argument(
+        "--stride", type=int, default=3,
+        help="Window stride in samples (3 = 0.3 s at 10 FPS; frames between are interpolated)",
+    )
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--batch-size", type=int, default=64)
     parser.add_argument(

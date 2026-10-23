@@ -4,6 +4,10 @@ One compressed .npz per video in <pose-root>/<dataset>/<key>.npz, so a
 Colab disconnect only loses the video being processed. Frames are sampled at
 --fps (default settings.pose_fps) whatever the source frame rate; the same
 model, rate and tracker must be used at runtime.
+
+Tracking is sequential within a video, so one process leaves the GPU mostly
+idle; --shard k/n runs the k-th of n interleaved slices of the video list,
+and n such processes can share one GPU. Each shard writes its own manifest.
 """
 
 from __future__ import annotations
@@ -138,6 +142,7 @@ def main() -> None:
         help="Cap train videos without any positive label (long normal footage)",
     )
     parser.add_argument("--limit", type=int, default=None)
+    parser.add_argument("--shard", default=None, help="k/n: process every n-th video starting at k")
     parser.add_argument("--force", action="store_true")
     args = parser.parse_args()
 
@@ -149,6 +154,14 @@ def main() -> None:
         items = [item for item in items if item.split == args.split]
     if args.limit is not None:
         items = items[: args.limit]
+    manifest_name = "manifest.json"
+    if args.shard:
+        index_text, _, count_text = args.shard.partition("/")
+        shard_index, shard_count = int(index_text), int(count_text)
+        if not 0 <= shard_index < shard_count:
+            parser.error("--shard must be k/n with 0 <= k < n")
+        items = items[shard_index::shard_count]
+        manifest_name = f"manifest_shard{shard_index}of{shard_count}.json"
     if not items:
         raise RuntimeError("No videos found for the given datasets")
 
@@ -166,7 +179,7 @@ def main() -> None:
     for index, item in enumerate(items, start=1):
         dataset_dir = pose_root / item.dataset
         dataset_dir.mkdir(parents=True, exist_ok=True)
-        manifest_path = dataset_dir / "manifest.json"
+        manifest_path = dataset_dir / manifest_name
         if item.dataset not in manifests:
             manifest = {"config": config, "videos": {}}
             if manifest_path.exists():
@@ -222,7 +235,7 @@ def main() -> None:
         )
 
     for dataset, manifest in manifests.items():
-        write_manifest(pose_root / dataset / "manifest.json", manifest)
+        write_manifest(pose_root / dataset / manifest_name, manifest)
     print("[pose] Complete.", flush=True)
 
 
