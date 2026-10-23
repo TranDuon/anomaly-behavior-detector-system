@@ -6,6 +6,8 @@ Notebook chính: `colab/train_fight_drive.ipynb` — mở thẳng trên Colab:
 
 Sau khi mở: `Runtime > Change runtime type > L4 GPU`, rồi `Runtime > Run all`, hoặc chạy lần lượt từng cell.
 
+**Treo máy:** giữ `AUTO_DISCONNECT = True` (mặc định). Chạy xong — hoặc một mục bị lỗi — notebook ghi lý do vào `MyDrive/SENTINEL/artifacts/fight/run_log.txt`, đồng bộ Drive rồi ngắt runtime để không tốn compute unit. Model được đóng gói vào Drive thay vì mở hộp thoại tải về. Giữ tab trình duyệt mở (Colab Pro không chạy nền khi đóng tab). Chạy lại `train_fight.py --resume` sau khi đã train xong không train thêm; xóa `checkpoint_last.pt` nếu muốn train lại từ đầu.
+
 ## Khối lượng và cách giảm tài nguyên
 
 Chỉ trích khung xương những đoạn cần (video gốc không bị sửa). Tính từ file nhãn của UBI-Fights:

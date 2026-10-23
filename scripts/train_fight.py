@@ -260,6 +260,7 @@ def main() -> None:
 
     checkpoint_path = output_dir / "checkpoint_last.pt"
     start_epoch, best_auc, best_epoch, history = 1, -1.0, 0, []
+    finished = False
     if args.resume and checkpoint_path.exists():
         checkpoint = torch.load(checkpoint_path, map_location=device, weights_only=False)
         model.load_state_dict(checkpoint["model"])
@@ -269,7 +270,29 @@ def main() -> None:
         start_epoch = checkpoint["epoch"] + 1
         best_auc, best_epoch = checkpoint["best_auc"], checkpoint["best_epoch"]
         history = checkpoint["history"]
-        print(f"[train-fight] Resumed after epoch {checkpoint['epoch']}", flush=True)
+        # A finished run (all epochs or early stop) is not trained further by a
+        # rerun, so --resume is safe to repeat; delete the checkpoint to retrain.
+        finished = bool(checkpoint.get("finished", False))
+        state = "already finished; delete checkpoint_last.pt to retrain" if finished else "resuming"
+        print(f"[train-fight] Checkpoint after epoch {checkpoint['epoch']}: {state}", flush=True)
+    if finished:
+        start_epoch = args.epochs + 1
+
+    def save_checkpoint(epoch: int, done: bool) -> None:
+        torch.save(
+            {
+                "model": model.state_dict(),
+                "optimizer": optimizer.state_dict(),
+                "scheduler": scheduler.state_dict(),
+                "scaler": scaler.state_dict(),
+                "epoch": epoch,
+                "best_auc": best_auc,
+                "best_epoch": best_epoch,
+                "history": history,
+                "finished": done,
+            },
+            checkpoint_path,
+        )
 
     print(
         f"[train-fight] device={device} parameters={parameter_count:,} "
@@ -310,27 +333,17 @@ def main() -> None:
         if improved:
             best_auc, best_epoch = validation["auc"], epoch
             model.save(output_dir / "fight_stgcn.pt", {"window": WINDOW, "epoch": epoch, "val_auc": best_auc})
-        torch.save(
-            {
-                "model": model.state_dict(),
-                "optimizer": optimizer.state_dict(),
-                "scheduler": scheduler.state_dict(),
-                "scaler": scaler.state_dict(),
-                "epoch": epoch,
-                "best_auc": best_auc,
-                "best_epoch": best_epoch,
-                "history": history,
-            },
-            checkpoint_path,
-        )
+        stop = epoch == args.epochs or epoch - best_epoch >= args.patience
+        save_checkpoint(epoch, done=stop)
         print(
             f"  Epoch {epoch:3d}/{args.epochs} train={row['train_loss']:.4f} "
             f"val={row['val_loss']:.4f} AUC={row['val_auc']:.4f} AP={row['val_ap']:.4f} "
             f"time={row['seconds']:.1f}s{' *' if improved else ''}",
             flush=True,
         )
-        if epoch - best_epoch >= args.patience:
+        if epoch - best_epoch >= args.patience and epoch < args.epochs:
             print(f"[train-fight] Early stopping at epoch {epoch}.", flush=True)
+        if stop:
             break
 
     best = PairBagClassifier.load(output_dir / "fight_stgcn.pt", device=str(device))
