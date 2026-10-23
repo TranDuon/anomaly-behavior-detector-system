@@ -1,0 +1,15 @@
+# BoT-SORT with appearance ReID for the skeleton stream.
+# Same values as Ultralytics' botsort.yaml except with_reid, so person IDs
+# survive short occlusions inside a fight window.
+tracker_type: botsort
+track_high_thresh: 0.25
+track_low_thresh: 0.1
+new_track_thresh: 0.25
+track_buffer: 30
+match_thresh: 0.8
+fuse_score: True
+gmc_method: sparseOptFlow
+proximity_thresh: 0.5
+appearance_thresh: 0.8
+with_reid: True
+model: auto

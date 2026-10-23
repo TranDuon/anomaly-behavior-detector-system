@@ -241,6 +241,10 @@ Update `ANOMALY_THRESHOLD` in `.env`.
 
 ### Option 3 — Public datasets
 
+For the fight detector (skeleton stream: YOLOv8-pose + BoT-SORT + ST-GCN,
+trained on UBI-Fights), see [`docs/FIGHT_TRAINING.md`](docs/FIGHT_TRAINING.md)
+and [`colab/train_fight_drive.ipynb`](colab/train_fight_drive.ipynb).
+
 For a resumable Google Colab workflow that keeps the repository, feature cache,
 and model artifacts on Google Drive, see
 [`docs/COLAB_DATASET_TRAINING.md`](docs/COLAB_DATASET_TRAINING.md) and

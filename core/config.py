@@ -50,6 +50,23 @@ class Settings(BaseSettings):
     fight_proximity: float = 0.15          # normalised distance to consider "close"
     fight_speed_threshold: float = 0.018
 
+    # ── Skeleton stream (YOLOv8-pose + BoT-SORT + ST-GCN) ──────────────────
+    # n at 1280 finds as many people as s at 1280 in crowds (UMN: 9.6 vs 10.4
+    # per frame; at 640 both find ~2.5) and runs ~4x faster on CPU.
+    pose_model: str = "yolov8n-pose.pt"     # same model for training and runtime
+    pose_imgsz: int = 1280                  # 640 misses most people below ~100 px
+    pose_fps: float = 10.0                  # frames sampled per second for pose
+    pose_conf_threshold: float = 0.25
+    pose_tracker_config: Path = BASE_DIR / "configs" / "botsort_reid.yaml"
+    fight_window: int = 24                  # sampled frames per window (2.4 s)
+    fight_min_presence: int = 8             # samples a track must appear in a window
+    # UBI-Fights fight windows hold 13-130 candidate pairs; 16 pairs cost
+    # ~87 ms per window on CPU (32 pairs: ~230 ms).
+    fight_max_pairs: int = 16               # person pairs scored per window
+    fight_pair_radius: float = 1.5          # max pair distance, in person heights
+    fight_model_path: Path = BASE_DIR / "models" / "fight_stgcn.pt"
+    fight_threshold_path: Path = BASE_DIR / "models" / "fight_threshold.json"
+
     # ── API ────────────────────────────────────────────────────────────────
     api_host: str = "0.0.0.0"
     api_port: int = 8000
