@@ -1,6 +1,10 @@
 # Train hành vi "đánh nhau" (luồng B: khung xương + ST-GCN)
 
-Notebook chính: `colab/train_fight_drive.ipynb`.
+Notebook chính: `colab/train_fight_drive.ipynb` — mở thẳng trên Colab:
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/TranDuon/anomaly-behavior-detector-system/blob/main/colab/train_fight_drive.ipynb)
+
+Sau khi mở: `Runtime > Change runtime type > T4 GPU` (hoặc L4/A100 với Colab Pro), rồi `Runtime > Run all`, hoặc chạy lần lượt từng cell.
 
 ## Dataset
 

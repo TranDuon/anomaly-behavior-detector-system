@@ -243,7 +243,9 @@ Update `ANOMALY_THRESHOLD` in `.env`.
 
 For the fight detector (skeleton stream: YOLOv8-pose + BoT-SORT + ST-GCN,
 trained on UBI-Fights), see [`docs/FIGHT_TRAINING.md`](docs/FIGHT_TRAINING.md)
-and [`colab/train_fight_drive.ipynb`](colab/train_fight_drive.ipynb).
+and [`colab/train_fight_drive.ipynb`](colab/train_fight_drive.ipynb):
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/TranDuon/anomaly-behavior-detector-system/blob/main/colab/train_fight_drive.ipynb)
 
 For a resumable Google Colab workflow that keeps the repository, feature cache,
 and model artifacts on Google Drive, see
