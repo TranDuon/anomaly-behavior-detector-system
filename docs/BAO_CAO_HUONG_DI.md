@@ -133,6 +133,16 @@ Các lựa chọn cấu hình đều dựa trên số đo thật (CPU máy local
 
 Kiểm chứng hiện có: 22 test tự động; chạy thử toàn bộ pipeline trên dữ liệu giả; 225/229 cửa sổ đánh nhau trong 4 video UBI-Fights có ít nhất một cặp ứng viên. Hạn chế đã biết: trên cảnh quán bar rất đông, cặp được xếp hạng cao nhất không trùng nhóm đang xô xát khi kiểm tra bằng mắt; AUC của nhóm đông người sẽ kiểm chứng model có bù được không.
 
+**Kết quả lần train 1 (23/10/2026, GPU L4, khoảng 3 giờ gồm 1 giờ 50 phút tải dataset lần đầu, 47 phút trích khung xương, 23 phút train): model còn yếu.**
+
+| Đánh giá | AUC |
+| --- | --- |
+| UBI-Fights, theo frame (tập test rút gọn) | 0,61 |
+| UBI-Fights, nhóm đông người (≥ 5 người/frame), theo frame | 0,50 |
+| Surveillance Camera Fight, theo clip (test chéo) | 0,72 |
+
+Loss train chỉ giảm từ 0,72 xuống 0,61 (đoán ngẫu nhiên là 0,69), AUC validation cao nhất 0,66 ở epoch 2. AUC theo video của UBI-Fights (0,94) không dùng vì bị thổi phồng do video đánh nhau dài hơn video bình thường. Đã sửa trước lần train 2: các ô đệm toàn số 0 trong túi cặp người không còn đi qua BatchNorm (làm việc học chậm và lệch giữa train và đánh giá), ngưỡng chọn theo balanced accuracy thay vì F1 (ngưỡng cũ báo nhầm 75% frame bình thường), thêm bước chẩn đoán (độ phủ cặp người, đường cơ sở thủ công, thử overfit). Nếu sau lần 2 luồng B vẫn yếu, làm luồng A (đặc trưng hình ảnh) cho đánh nhau rồi hợp nhất A + B.
+
 - [ ] Chạy notebook trên Colab Pro (GPU L4): trích khung xương, train, đánh giá
 - [ ] Cập nhật AUC (UBI-Fights, nhóm đông người) và accuracy (Surveillance Camera Fight) vào mục này
 - [ ] Tích hợp model vào dashboard, thay luật `fighting` cũ, khoanh cặp người bị nghi
