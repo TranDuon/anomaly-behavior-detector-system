@@ -12,17 +12,17 @@ Sau khi mở: `Runtime > Change runtime type > L4 GPU`, rồi `Runtime > Run all
 
 Chỉ trích khung xương những đoạn cần (video gốc không bị sửa). Tính từ file nhãn của UBI-Fights:
 
-| Tập | Video | Toàn bộ | Giai đoạn phát triển | Giai đoạn chốt |
-|---|---|---|---|---|
-| Train, đánh nhau | 176 | 6,0 giờ (29% là đánh nhau) | 3,5 giờ: đoạn đánh nhau ±10 s (`FIGHT_MARGIN_SECONDS`) | không đổi |
-| Train, bình thường | 757 | 60,1 giờ | tối đa 4,2 giờ: 20 s/video (`MAX_SECONDS_NORMAL`) | không đổi |
-| Test, đánh nhau | 40 | 1,5 giờ | 1,5 giờ | 1,5 giờ |
-| Test, bình thường | 27 | 11,4 giờ | 0,45 giờ: 60 s/video | 11,4 giờ (trích thêm một lần, không train lại) |
-| **Tổng** | | **79 giờ** | **~9,7 giờ** | thêm ~11 giờ |
+| Tập | Video | Toàn bộ | Dùng trong đề tài |
+|---|---|---|---|
+| Train, đánh nhau | 176 | 6,0 giờ (29% là đánh nhau) | 3,5 giờ: đoạn đánh nhau ±10 s (`FIGHT_MARGIN_SECONDS`) |
+| Train, bình thường | 757 | 60,1 giờ | tối đa 4,2 giờ: 20 s/video (`MAX_SECONDS_NORMAL`) |
+| Test, đánh nhau | 40 | 1,5 giờ | 1,5 giờ (đầy đủ) |
+| Test, bình thường | 27 | 11,4 giờ | 0,45 giờ: 60 s/video (`TEST_NORMAL_SECONDS`) |
+| **Tổng** | | **79 giờ** | **~9,7 giờ** |
 
 Khoảng đệm ±10 s quanh đoạn đánh nhau giữ lại khoảnh khắc bình thường ngay trước/sau trong cùng khung cảnh — mẫu âm khó nhất. Tracker khởi động lại ở mỗi đoạn, và cửa sổ train không được vắt qua hai đoạn.
 
-Kết quả giai đoạn phát triển ghi `"official_protocol": false` trong `evaluation.json` vì video test bình thường bị rút ngắn; chỉ số liệu giai đoạn chốt mới so sánh được với bài báo. Cache được dùng lại giữa hai giai đoạn: chuyển sang giai đoạn chốt chỉ trích lại những video đã thực sự bị cắt, và một cache đầy đủ hơn mức yêu cầu luôn được giữ.
+**Tập test của đề tài là tập rút gọn:** 40 video đánh nhau đầy đủ (0,48 giờ cảnh đánh nhau, ~1 giờ cảnh bình thường xen kẽ) và 60 s đầu của 27 video bình thường, cộng 300 clip Surveillance Camera Fight. Đề tài không so sánh với bài báo khác nên không trích toàn bộ 11,4 giờ video bình thường; khi báo cáo, ghi rõ cách test này. `evaluation.json` vẫn ghi `"official_protocol": false` và danh sách video bị rút ngắn. Nếu sau này cần số liệu trên tập test đầy đủ, chạy `extract_pose.py` không có `--max-seconds-test-normal` rồi đánh giá lại — chỉ những video đã bị cắt được trích thêm, không phải train lại.
 
 Các bước giảm tài nguyên khác:
 
