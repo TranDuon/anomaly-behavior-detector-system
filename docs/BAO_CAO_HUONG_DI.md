@@ -143,6 +143,18 @@ Kiểm chứng hiện có: 22 test tự động; chạy thử toàn bộ pipelin
 
 Loss train chỉ giảm từ 0,72 xuống 0,61 (đoán ngẫu nhiên là 0,69), AUC validation cao nhất 0,66 ở epoch 2. AUC theo video của UBI-Fights (0,94) không dùng vì bị thổi phồng do video đánh nhau dài hơn video bình thường. Đã sửa trước lần train 2: các ô đệm toàn số 0 trong túi cặp người không còn đi qua BatchNorm (làm việc học chậm và lệch giữa train và đánh giá), ngưỡng chọn theo balanced accuracy thay vì F1 (ngưỡng cũ báo nhầm 75% frame bình thường), thêm bước chẩn đoán (độ phủ cặp người, đường cơ sở thủ công, thử overfit). Nếu sau lần 2 luồng B vẫn yếu, làm luồng A (đặc trưng hình ảnh) cho đánh nhau rồi hợp nhất A + B.
 
+**Kết quả lần train 2 (24/10/2026): sửa lỗi có tác dụng với việc học nhưng chưa cải thiện kết quả test.**
+
+| Đánh giá | Lần 1 | Lần 2 |
+| --- | --- | --- |
+| UBI-Fights, theo frame (tập test rút gọn) | 0,61 | 0,61 |
+| UBI-Fights, nhóm đông người, theo frame | 0,50 | 0,52 |
+| Surveillance Camera Fight, theo clip | 0,72 | 0,72 |
+
+Thử overfit đạt AUC 1,00 và loss train giảm đều (0,69 → 0,56), nên pipeline học được; nhưng val loss tăng từ epoch 4 (overfit), AUC validation cao nhất 0,67. Ở ngưỡng đã chọn, model báo nhầm 47% frame bình thường (nhóm đông người: 77%). Phân tích theo video cho thấy ba nguyên nhân: (1) trong từng video đánh nhau, model không phân biệt đoạn đánh với đoạn yên (AUC trung vị 0,52), khoảng 69% frame bình thường của tập test nằm trong chính các video này; (2) điểm tăng theo số người trong cảnh, vì điểm cửa sổ là max của các cặp; (3) điểm tương tác tự tính chỉ đạt AUC 0,59, tín hiệu khung xương yếu.
+
+Lần 3 bỏ các quyết định cắt dữ liệu để tiết kiệm tài nguyên Colab của lần 1–2: trích khung xương toàn bộ video (~79 giờ thay vì ~9,7 giờ), validation và chọn ngưỡng trên video đầy đủ theo frame, đánh giá trên toàn bộ tập test. Ngoài ra: lấy mẫu cân bằng giữa cảnh bình thường trong video đánh nhau và video bình thường, hard-negative mining, bỏ cửa sổ sát ranh giới nhãn, gộp điểm các cặp bằng smooth max chuẩn hóa theo số cặp, thêm RLVS vào train. Pose model, 10 FPS, cửa sổ và số cặp giữ nguyên vì phải khớp với máy chạy thật chỉ có CPU.
+
 - [ ] Chạy notebook trên Colab Pro (GPU L4): trích khung xương, train, đánh giá
 - [ ] Cập nhật AUC (UBI-Fights, nhóm đông người) và accuracy (Surveillance Camera Fight) vào mục này
 - [ ] Tích hợp model vào dashboard, thay luật `fighting` cũ, khoanh cặp người bị nghi
