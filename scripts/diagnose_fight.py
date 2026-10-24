@@ -73,7 +73,7 @@ def window_summary(pose: PoseTrack, start: int) -> dict:
 
 def coverage(poses, index, sample: int, rng) -> tuple[dict, np.ndarray, np.ndarray]:
     rows = index[rng.choice(len(index), size=min(sample, len(index)), replace=False)]
-    summaries = [window_summary(poses[int(p)], int(s)) for p, s, _ in rows]
+    summaries = [window_summary(poses[int(row[0])], int(row[1])) for row in rows]
     labels = rows[:, 2].astype(np.int32)
     report = {}
     for label, name in ((1, "fight"), (0, "normal")):
@@ -152,7 +152,8 @@ def main() -> None:
     parser.add_argument("--overfit-per-class", type=int, default=128)
     parser.add_argument("--overfit-epochs", type=int, default=60)
     parser.add_argument("--positive-stride", type=int, default=4)
-    parser.add_argument("--normal-stride", type=int, default=20)
+    parser.add_argument("--normal-stride", type=int, default=10)
+    parser.add_argument("--boundary-guard", type=int, default=10)
     parser.add_argument("--device", default=None)
     parser.add_argument("--seed", type=int, default=0)
     args = parser.parse_args()
@@ -174,7 +175,7 @@ def main() -> None:
         and (pose_root / item.dataset / f"{item.key}.npz").exists()
     ]
     poses = [PoseTrack.load(pose_root / item.dataset / f"{item.key}.npz") for item in items]
-    index = build_index(items, poses, args.positive_stride, args.normal_stride)
+    index = build_index(items, poses, args.positive_stride, args.normal_stride, args.boundary_guard)
     print(f"[diagnose] {len(items)} training videos, {len(index)} windows "
           f"({int(index[:, 2].sum())} fight)", flush=True)
 

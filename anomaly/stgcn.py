@@ -5,8 +5,9 @@ Input  : (N, C, T, V) pair tensors from anomaly/skeleton.py
 Output : (N, num_classes) logits per pair
 
 PairBagClassifier scores a window as a bag of pairs (multiple-instance
-learning): the window logit is the max over its pairs, so a window labelled
-"fight" only needs one fighting pair, and the label never has to say which.
+learning): the window logit pools its pair logits (max, or a smooth max that
+does not grow with the number of pairs), so a window labelled "fight" only
+needs one fighting pair, and the label never has to say which.
 """
 
 from __future__ import annotations
@@ -119,15 +120,34 @@ class STGCN(nn.Module):
 
 
 class PairBagClassifier(nn.Module):
-    """Window-level classifier: max over the pair logits of each window."""
+    """Window-level classifier pooling the pair logits of each window.
 
-    def __init__(self, **stgcn_kwargs):
+    pool_r None: max over pairs (models trained before pool_r existed).
+    pool_r = r: mean-normalised log-sum-exp, (1/r) * log(mean_k exp(r * l_k)).
+    The max of more pairs is higher by chance alone, so with max pooling a
+    crowded normal scene scored like a fight (video score rose with the number
+    of people); the mean-normalised smooth max stays put when calm pairs are
+    added and still follows the strongest pair as r grows.
+    """
+
+    def __init__(self, pool_r: float | None = None, **stgcn_kwargs):
         super().__init__()
+        self.pool_r = float(pool_r) if pool_r else None
         self.encoder = STGCN(**stgcn_kwargs)
 
     @property
     def config(self) -> dict:
-        return self.encoder.config
+        config = dict(self.encoder.config)
+        if self.pool_r is not None:
+            config["pool_r"] = self.pool_r
+        return config
+
+    def pool(self, pair_logits: torch.Tensor) -> torch.Tensor:
+        """(B, K, num_classes) pair logits, -inf at padding -> (B, num_classes)."""
+        if self.pool_r is None:
+            return pair_logits.max(dim=1).values
+        count = torch.isfinite(pair_logits).sum(dim=1).clamp(min=1).to(pair_logits.dtype)
+        return (torch.logsumexp(self.pool_r * pair_logits, dim=1) - torch.log(count)) / self.pool_r
 
     def pair_logits(self, bags: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
         """bags (B, K, C, T, V), mask (B, K) bool -> pair logits (B, K, num_classes).
@@ -148,8 +168,8 @@ class PairBagClassifier(nn.Module):
         return logits.view(b, k, -1)
 
     def forward(self, bags: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
-        """Window logits (B, num_classes): the highest-scoring pair of each window."""
-        return self.pair_logits(bags, mask).max(dim=1).values
+        """Window logits (B, num_classes) pooled over each window's pairs."""
+        return self.pool(self.pair_logits(bags, mask))
 
     def save(self, path: Path, metadata: dict | None = None) -> None:
         torch.save(
@@ -194,9 +214,9 @@ def predict_windows(
     def flush() -> None:
         bags, mask = collate_bags(pending_bags)
         with torch.no_grad():
-            logits = model.pair_logits(bags.to(device), mask.to(device))[..., 0]
-        best = logits.argmax(dim=1).cpu().numpy()
-        probabilities[pending_index] = torch.sigmoid(logits.max(dim=1).values).cpu().numpy()
+            pair_logits = model.pair_logits(bags.to(device), mask.to(device))
+        best = pair_logits[..., 0].argmax(dim=1).cpu().numpy()
+        probabilities[pending_index] = torch.sigmoid(model.pool(pair_logits)[:, 0]).cpu().numpy()
         for slot, index in enumerate(pending_index):
             top_pairs[index] = pending_ids[slot][int(best[slot])]
         pending_bags.clear()

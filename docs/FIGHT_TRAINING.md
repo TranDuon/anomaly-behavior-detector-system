@@ -6,23 +6,23 @@ Notebook chính: `colab/train_fight_drive.ipynb` — mở thẳng trên Colab:
 
 Sau khi mở: `Runtime > Change runtime type > L4 GPU`, rồi `Runtime > Run all`, hoặc chạy lần lượt từng cell.
 
-**Treo máy:** giữ `AUTO_DISCONNECT = True` (mặc định). Chạy xong — hoặc một mục bị lỗi — notebook ghi lý do vào `MyDrive/SENTINEL/artifacts/fight/run_log.txt`, đồng bộ Drive rồi ngắt runtime để không tốn compute unit. Model được đóng gói vào Drive thay vì mở hộp thoại tải về. Giữ tab trình duyệt mở (Colab Pro không chạy nền khi đóng tab). Chạy lại `train_fight.py --resume` sau khi đã train xong không train thêm; xóa `checkpoint_last.pt` nếu muốn train lại từ đầu.
+**Treo máy:** giữ `AUTO_DISCONNECT = True` (mặc định). Chạy xong — hoặc một mục bị lỗi — notebook ghi lý do vào `MyDrive/SENTINEL/artifacts/<RUN_NAME>/run_log.txt`, đồng bộ Drive rồi ngắt runtime để không tốn compute unit. Model được đóng gói vào Drive thay vì mở hộp thoại tải về. Giữ tab trình duyệt mở (Colab Pro không chạy nền khi đóng tab). Chạy lại `train_fight.py --resume` sau khi đã train xong không train thêm; xóa `checkpoint_last.pt` nếu muốn train lại từ đầu.
 
-## Khối lượng và cách giảm tài nguyên
+## Khối lượng dữ liệu
 
-Chỉ trích khung xương những đoạn cần (video gốc không bị sửa). Tính từ file nhãn của UBI-Fights:
+Từ lần 3 (`fight_v3`), khung xương được trích trên **toàn bộ** video (video gốc không bị sửa). Tính từ file nhãn của UBI-Fights:
 
-| Tập | Video | Toàn bộ | Dùng trong đề tài |
+| Tập | Video | Toàn bộ (lần 3) | Lần 1–2 |
 |---|---|---|---|
-| Train, đánh nhau | 176 | 6,0 giờ (29% là đánh nhau) | 3,5 giờ: đoạn đánh nhau ±10 s (`FIGHT_MARGIN_SECONDS`) |
-| Train, bình thường | 757 | 60,1 giờ | tối đa 4,2 giờ: 20 s/video (`MAX_SECONDS_NORMAL`) |
-| Test, đánh nhau | 40 | 1,5 giờ | 1,5 giờ (đầy đủ) |
-| Test, bình thường | 27 | 11,4 giờ | 0,45 giờ: 60 s/video (`TEST_NORMAL_SECONDS`) |
-| **Tổng** | | **79 giờ** | **~9,7 giờ** |
+| Train, đánh nhau | 176 | 6,0 giờ (29% là đánh nhau) | 3,5 giờ: đoạn đánh nhau ±10 s |
+| Train, bình thường | 757 | 60,1 giờ | tối đa 4,2 giờ: 20 s/video |
+| Test, đánh nhau | 40 | 1,5 giờ | 1,5 giờ |
+| Test, bình thường | 27 | 11,4 giờ | 0,45 giờ: 60 s/video |
+| **Tổng** | | **79 giờ** (+ ~3 giờ RLVS) | **~9,7 giờ** |
 
-Khoảng đệm ±10 s quanh đoạn đánh nhau giữ lại khoảnh khắc bình thường ngay trước/sau trong cùng khung cảnh — mẫu âm khó nhất. Tracker khởi động lại ở mỗi đoạn, và cửa sổ train không được vắt qua hai đoạn.
+Lần 1–2 cắt video để tiết kiệm thời gian Colab. Lần 2 cho thấy cách cắt đó làm model kém đi: mẫu âm chỉ là đầu video bình thường và vài giây quanh cuộc đánh, validation chạy trên dữ liệu đã cắt nên checkpoint và ngưỡng không khớp với tập test. Các tùy chọn cắt (`--fight-margin-seconds`, `--max-seconds-normal`, `--max-seconds-test-normal`; trong notebook là `FIGHT_MARGIN_SECONDS`, `MAX_SECONDS_NORMAL`, `TEST_NORMAL_SECONDS`, mặc định `None`) vẫn còn để chạy thử nhanh. Cache bị cắt được trích lại khi yêu cầu toàn bộ video; cache đã đầy đủ được dùng lại.
 
-**Tập test của đề tài là tập rút gọn:** 40 video đánh nhau đầy đủ (0,48 giờ cảnh đánh nhau, ~1 giờ cảnh bình thường xen kẽ) và 60 s đầu của 27 video bình thường, cộng 300 clip Surveillance Camera Fight. Đề tài không so sánh với bài báo khác nên không trích toàn bộ 11,4 giờ video bình thường; khi báo cáo, ghi rõ cách test này. `evaluation.json` vẫn ghi `"official_protocol": false` và danh sách video bị rút ngắn. Nếu sau này cần số liệu trên tập test đầy đủ, chạy `extract_pose.py` không có `--max-seconds-test-normal` rồi đánh giá lại — chỉ những video đã bị cắt được trích thêm, không phải train lại.
+Tập test là toàn bộ tập test chuẩn (`evaluation.json` ghi `"official_protocol": true`). Để so với lần 1–2, `evaluate_fight.py --short-normal-seconds 60` báo cáo thêm nhóm `<nhóm>_short`, trong đó video bình thường chỉ tính 60 s đầu như tập test cũ.
 
 Các bước giảm tài nguyên khác:
 
@@ -39,7 +39,7 @@ Các bước giảm tài nguyên khác:
 |---|---|---|
 | UBI-Fights | Bộ chính: train + test chuẩn (`test_videos.csv`), nhãn theo frame | https://socia-lab.di.ubi.pt/EventDetection (zip 8,1 GB, chứng chỉ SSL đã hết hạn nên tải bằng `--no-check-certificate`) |
 | Surveillance Camera Fight | Test chéo theo clip | https://github.com/sayibet/fight-detection-surv-dataset (MIT) |
-| Real Life Violence Situations | Tùy chọn: train thêm | Kaggle `mohamedmustafa/real-life-violence-situations-dataset` (chưa có giấy phép rõ, chỉ dùng nghiên cứu) |
+| Real Life Violence Situations | Train thêm (bật mặc định từ lần 3, cần `kaggle.json`) | Kaggle `mohamedmustafa/real-life-violence-situations-dataset` (chưa có giấy phép rõ, chỉ dùng nghiên cứu) |
 | UCF-Crime (Fighting + Normal, tập test) | Tùy chọn: test chéo theo frame | https://www.crcv.ucf.edu/projects/real-world/ (tải thủ công, kèm `Temporal_Anomaly_Annotation*.txt`) |
 
 RWF-2000 không dùng được: nhóm tác giả đã gỡ video và cấm phân phối lại khi chưa có sự đồng ý của SMIIP Lab.
@@ -53,9 +53,11 @@ dedup_videos.py  →  extract_pose.py  →  train_fight.py  →  evaluate_fight.
 Mọi script nhận dataset theo dạng `--dataset tên:đường_dẫn[:split]`, với tên là `ubi`, `scf`, `rlvs` hoặc `ucf`.
 
 1. **Loại video trùng** (`scripts/dedup_videos.py`): so dHash của 16 frame mỗi video. Chỉ cặp trùng giữa hai dataset khác nhau bị loại khỏi train (giữ bản ở tập test). Cặp trong cùng dataset chỉ được ghi vào báo cáo, vì camera cố định quay hai thời điểm khác nhau cũng có hash gần giống, và để giữ tập chia chuẩn của tác giả.
-2. **Trích khung xương** (`scripts/extract_pose.py`): YOLOv8n-pose ở `imgsz=1280` + BoT-SORT có ReID (`configs/botsort_reid.yaml`), lấy mẫu 10 FPS; `--shard k/n` để chạy song song. Mỗi video một file `<pose-root>/<dataset>/<key>.npz`; chạy lại sẽ bỏ qua video đã có. `--max-seconds-normal` cắt bớt video bình thường của tập train.
-3. **Train** (`scripts/train_fight.py`): cửa sổ 24 mẫu (2,4 giây); nhãn cửa sổ = đánh nhau nếu ≥ 50% frame là đánh nhau, bình thường nếu 0%, bỏ qua nếu ở giữa. Mỗi cửa sổ là một túi gồm tối đa 16 cặp người trong bán kính 1,5 lần chiều cao người, xếp theo mức tương tác (chuyển động tay/chân so với thân, chia cho độ gần hoặc khoảng cách từ tay/chân tới đầu/thân người kia). Khi train, 1/4 số suất chọn ngẫu nhiên ngoài top để cặp đánh nhau bị xếp hạng thấp vẫn vào túi. Điểm của cửa sổ = điểm lớn nhất trong các cặp (MIL). Validation chia theo video từ tập train; checkpoint lưu mỗi epoch, `--resume` để train tiếp.
-4. **Đánh giá** (`scripts/evaluate_fight.py`): UBI-Fights và UCF-Crime theo frame (AUC, AP, F1…), mọi dataset theo clip, và riêng nhóm video đông người (`<dataset>_crowd`, trung bình ≥ 5 người/frame, chỉnh bằng `--crowd-threshold`). Ngưỡng lấy từ validation (`fight_threshold.json`), không chỉnh theo nhãn test. `predict_windows(..., return_pairs=True)` trả thêm ID cặp người có điểm cao nhất để dashboard khoanh đúng người.
+2. **Trích khung xương** (`scripts/extract_pose.py`): YOLOv8n-pose ở `imgsz=1280` + BoT-SORT có ReID (`configs/botsort_reid.yaml`), lấy mẫu 10 FPS; `--shard k/n` để chạy song song. Mỗi video một file `<pose-root>/<dataset>/<key>.npz`; chạy lại sẽ bỏ qua video đã có đủ phần được yêu cầu.
+3. **Train** (`scripts/train_fight.py`): cửa sổ 24 mẫu (2,4 giây); nhãn cửa sổ = đánh nhau nếu ≥ 50% frame là đánh nhau, bình thường nếu 0%, bỏ qua nếu ở giữa. Cửa sổ bình thường cách đoạn đánh nhau dưới 1 s cũng bị bỏ (`--boundary-guard`), vì nhãn ranh giới không chính xác. Mỗi cửa sổ là một túi gồm tối đa 16 cặp người trong bán kính 1,5 lần chiều cao người, xếp theo mức tương tác (chuyển động tay/chân so với thân, chia cho độ gần hoặc khoảng cách từ tay/chân tới đầu/thân người kia). Khi train, 1/4 số suất chọn ngẫu nhiên ngoài top để cặp đánh nhau bị xếp hạng thấp vẫn vào túi. Điểm của cửa sổ gộp điểm các cặp bằng smooth max chuẩn hóa theo số cặp, `(1/r)·log(trung bình exp(r·l))` với `--pool-r 5` (MIL): khác với max, điểm không tăng khi cảnh có thêm cặp người bình thường. Model cũ (không có `pool_r`) vẫn dùng max.
+   - **Lấy mẫu:** mỗi epoch `--samples-per-epoch` cửa sổ: 50% đánh nhau, 25% bình thường trong video có đánh nhau (cùng khung cảnh), 25% video bình thường. Sau `--hard-negative-warmup` epoch, `--hard-negative-fraction` của mỗi nhóm bình thường được lấy tỉ lệ với điểm model chấm gần nhất (hard-negative mining).
+   - **Validation:** 15% video train, chia theo video. Chấm mọi cửa sổ của video đầy đủ (`--val-stride`), trải điểm ra frame như lúc đánh giá; checkpoint chọn theo AUC theo frame, ngưỡng theo balanced accuracy trên frame. Log có thêm AUC trung vị trong từng video đánh nhau. Checkpoint lưu mỗi epoch, `--resume` để train tiếp.
+4. **Đánh giá** (`scripts/evaluate_fight.py`): UBI-Fights và UCF-Crime theo frame (AUC, AP, F1…), mọi dataset theo clip, và riêng nhóm video đông người (`<dataset>_crowd`, trung bình ≥ 5 người/frame, chỉnh bằng `--crowd-threshold`). Mỗi nhóm theo frame có thêm `fight_video_frame_auc_median`: AUC trung vị trong từng video đánh nhau, cho biết model có tìm được đoạn đánh nhau trong video hay chỉ nhận ra video đánh nhau. Ngưỡng lấy từ validation (`fight_threshold.json`), không chỉnh theo nhãn test. `predict_windows(..., return_pairs=True)` trả thêm ID cặp người có điểm cao nhất để dashboard khoanh đúng người.
 
 ## Artifact
 

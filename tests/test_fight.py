@@ -26,7 +26,16 @@ from anomaly.skeleton import (
 )
 from anomaly.stgcn import PairBagClassifier, collate_bags, predict_windows
 from scripts.dedup_videos import hamming, match_fraction
-from scripts.train_fight import best_threshold, split_videos, window_labels
+from scripts.train_fight import (
+    best_threshold,
+    build_eval_index,
+    build_index,
+    frame_level_validation,
+    near_fight,
+    sampling_weights,
+    split_videos,
+    window_labels,
+)
 
 
 def standing_person(x, y, height=100.0, frames=24):
@@ -304,8 +313,85 @@ def test_model_save_and_load_roundtrip(tmp_path):
     path = tmp_path / "fight.pt"
     model.save(path, {"window": {"length": 24}})
     loaded = PairBagClassifier.load(path)
+    assert loaded.pool_r is None                     # models saved before pool_r keep max pooling
     for key, value in model.state_dict().items():
         torch.testing.assert_close(value, loaded.state_dict()[key])
+
+    smooth = PairBagClassifier(pool_r=5.0, channels=(16, 32), strides=(1, 2))
+    smooth.save(path)
+    assert PairBagClassifier.load(path).pool_r == 5.0
+
+
+def test_smooth_max_pooling_ignores_padding_and_extra_calm_pairs():
+    model = PairBagClassifier(pool_r=4.0, channels=(16,), strides=(1,))
+    inf = float("-inf")
+    logits = torch.tensor([[[1.0], [-2.0], [inf]], [[1.0], [-2.0], [-2.0]]])
+    pooled = model.pool(logits)[:, 0]
+    expected = (torch.logsumexp(4.0 * torch.tensor([1.0, -2.0]), 0) - np.log(2)) / 4.0
+    assert pooled[0].item() == pytest.approx(expected.item(), rel=1e-6)
+    assert pooled[1] < pooled[0]                     # another calm pair lowers the score, max would not
+    same = torch.full((1, 5, 1), 0.3)
+    assert model.pool(same).item() == pytest.approx(0.3, rel=1e-6)
+
+    trainable = torch.tensor([[[0.5], [-1.0], [inf]]], requires_grad=True)
+    model.pool(trainable).sum().backward()
+    assert torch.isfinite(trainable.grad).all() and trainable.grad[0, 2, 0] == 0
+
+    plain = PairBagClassifier(channels=(16,), strides=(1,))
+    assert plain.pool(logits)[:, 0].tolist() == [1.0, 1.0]
+
+
+def test_sampling_weights_balance_sources_and_mine_hard_negatives():
+    # rows: pose id, start, label, source (1 = video with a fight)
+    index = np.array(
+        [[0, 0, 1, 1], [0, 4, 1, 1], [0, 8, 0, 1], [1, 0, 0, 0], [1, 10, 0, 0], [1, 20, 0, 0], [1, 30, 0, 0]]
+    )
+    weights = sampling_weights(index)
+    assert weights.sum() == pytest.approx(1.0)
+    assert weights[:2].sum() == pytest.approx(0.5)
+    assert weights[2] == pytest.approx(0.25)             # one same-scene normal window gets a quarter
+    np.testing.assert_allclose(weights[3:], 0.25 / 4)
+
+    scores = np.array([0.9, 0.9, 0.2, 0.8, 0.1, 0.1, np.nan])
+    mined = sampling_weights(index, scores, hard_fraction=0.5)
+    assert mined.sum() == pytest.approx(1.0)
+    assert mined[3:].sum() == pytest.approx(0.25)        # mining moves weight inside a group only
+    assert mined[3] > mined[4] == pytest.approx(mined[5])
+    assert mined[6] == pytest.approx(0.25 * (0.5 / 4 + 0.5 * (1 / 3) / (0.8 + 0.1 + 0.1 + 1 / 3)))
+    np.testing.assert_allclose(mined[:2], weights[:2])  # fight windows are not mined
+
+
+def test_build_index_skips_normal_windows_next_to_a_fight():
+    np.testing.assert_array_equal(near_fight(np.array([0, 0, 0, 1, 0, 0, 0]), 2), [0, 1, 1, 1, 1, 1, 0])
+    pose = make_pose(frames=120)
+    labels = np.zeros(120, dtype=np.int32)
+    labels[60:90] = 1
+    fight_video = VideoItem("ubi", "F_1", None, "train", frame_labels=labels)
+    loose = build_index([fight_video], [pose], positive_stride=4, normal_stride=10)
+    guarded = build_index([fight_video], [pose], positive_stride=4, normal_stride=10, boundary_guard=10)
+    assert loose.shape[1] == 4 and set(loose[:, 3]) == {1}
+    normal_starts = lambda index: set(index[index[:, 2] == 0, 1])
+    assert normal_starts(guarded) < normal_starts(loose)
+    # a guarded normal window ends at least 10 samples before the fight starts
+    assert max(start + 24 for start in normal_starts(guarded) if start < 60) <= 50
+    np.testing.assert_array_equal(guarded[guarded[:, 2] == 1], loose[loose[:, 2] == 1])
+
+
+def test_frame_level_validation_scores_whole_videos():
+    pose = make_pose(frames=120)
+    labels = np.zeros(120, dtype=np.int32)
+    labels[60:] = 1
+    items = [VideoItem("ubi", "F_1", None, "train", frame_labels=labels), VideoItem("ubi", "N_1", None, "train", clip_label=0)]
+    poses = [pose, make_pose(frames=120)]
+    index = build_eval_index(items, poses, stride=5)
+    assert set(index[:, 0]) == {0, 1} and (index[:, 2] == -1).any()
+    # perfect scores: a window is scored 1 exactly when it ends inside the fight
+    probabilities = np.array(
+        [float(row[0] == 0 and labels[pose.sample_frames[min(row[1] + 23, 119)]] == 1) for row in index]
+    )
+    result = frame_level_validation(items, poses, index, probabilities, np.ones(len(index), dtype=bool))
+    assert len(result["labels"]) == 240
+    assert result["auc"] > 0.95 and result["video_auc_median"] > 0.95
 
 
 def test_window_starts_and_labels():

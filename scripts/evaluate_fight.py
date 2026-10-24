@@ -16,6 +16,15 @@ Crowd subset: videos whose pose cache averages at least --crowd-threshold
 tracked people per sampled frame are also reported on their own
 ("<dataset>_crowd"), since pairing and occlusion fail first in crowds.
 
+Each frame-level group also reports the median per-video frame AUC of its
+fight videos: whether the model finds the fight inside a video, not only
+which videos are fight videos.
+
+--short-normal-seconds N adds "<group>_short" groups in which videos without
+a fight keep only their first N seconds: the shortened UBI-Fights test set of
+the first two runs (N = 60), for comparing a model evaluated on whole videos
+with them.
+
 The threshold comes from validation (fight_threshold.json); test labels are
 never used to tune it.
 """
@@ -124,6 +133,10 @@ def main() -> None:
         "--crowd-threshold", type=float, default=5.0,
         help="Mean tracked people per sampled frame for the crowd subset",
     )
+    parser.add_argument(
+        "--short-normal-seconds", type=float, default=None,
+        help="Also report '<group>_short' with videos without a fight cut to their first N seconds",
+    )
     args = parser.parse_args()
 
     device_name = args.device
@@ -141,7 +154,7 @@ def main() -> None:
     threshold = float(threshold_payload["threshold"])
 
     items = [item for spec in args.dataset for item in load_items(spec) if item.split == "test"]
-    frame_data = defaultdict(lambda: {"labels": [], "scores": []})
+    frame_data = defaultdict(lambda: {"labels": [], "scores": [], "video_aucs": []})
     clip_data = defaultdict(lambda: {"labels": [], "scores": []})
     timelines = defaultdict(list)
     video_rows = []
@@ -191,12 +204,20 @@ def main() -> None:
 
         if item.dataset in FRAME_LEVEL_DATASETS:
             frame_scores, _ = aggregate_frame_scores(probabilities, end_frames, pose.frame_count)
-            for group in groups:
-                frame_data[group]["labels"].append(labels)
-                frame_data[group]["scores"].append(frame_scores)
             row["frame_auc"] = None
             if 0 < labels.sum() < len(labels):
                 row["frame_auc"] = round(binary_metrics(labels, frame_scores, threshold)["roc_auc"], 6)
+            kept = len(labels)
+            if args.short_normal_seconds and not labels.any():
+                kept = min(kept, int(round(args.short_normal_seconds * pose.fps)))
+            variants = [(group, len(labels)) for group in groups]
+            if args.short_normal_seconds:
+                variants += [(f"{group}_short", kept) for group in groups]
+            for group, frames in variants:
+                frame_data[group]["labels"].append(labels[:frames])
+                frame_data[group]["scores"].append(frame_scores[:frames])
+                if row["frame_auc"] is not None:
+                    frame_data[group]["video_aucs"].append(row["frame_auc"])
             if labels.any() and len(timelines[item.dataset]) < 9:
                 timelines[item.dataset].append(
                     {"video": item.key, "labels": labels, "scores": frame_scores, "fps": pose.fps}
@@ -224,6 +245,9 @@ def main() -> None:
         labels = np.concatenate(data["labels"])
         scores = np.concatenate(data["scores"])
         metrics = binary_metrics(labels, scores, threshold)
+        video_aucs = data["video_aucs"]
+        metrics["fight_videos"] = len(video_aucs)
+        metrics["fight_video_frame_auc_median"] = float(np.median(video_aucs)) if video_aucs else None
         report["frame_level"][dataset] = metrics
         save_curves(output_dir, f"{dataset}_frame", labels, scores, metrics)
         save_timelines(output_dir, dataset, timelines[dataset], threshold)
