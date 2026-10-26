@@ -2,6 +2,22 @@ import torch
 from torch import nn
 
 
+class ExportSwish(nn.Module):
+    def forward(self, tensor):
+        return tensor * torch.sigmoid(tensor)
+
+
+def prepare_export(module):
+    for name, child in list(module.named_children()):
+        if type(child).__name__ == "Swish" and type(child).__module__.startswith(
+            "pytorchvideo"
+        ):
+            setattr(module, name, ExportSwish())
+        else:
+            prepare_export(child)
+    return module
+
+
 class VideoClassifier(nn.Module):
     def __init__(self, architecture="x3d_s", pretrained=True):
         super().__init__()

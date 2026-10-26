@@ -246,3 +246,22 @@ def test_partial_finetuning_does_not_unfreeze_the_entire_backbone():
         parameter.requires_grad for parameter in model.backbone.blocks[-1].parameters()
     )
     assert all(parameter.requires_grad for parameter in model.head.parameters())
+
+
+def test_real_x3d_can_be_saved_and_loaded_without_python_autograd(tmp_path):
+    pytest.importorskip("pytorchvideo")
+    from fight.model import VideoClassifier, prepare_export
+
+    torch.set_num_threads(4)
+    model = VideoClassifier("x3d_s", pretrained=False).eval()
+    example = torch.zeros(1, 3, 16, 182, 182)
+    with torch.inference_mode():
+        expected = model(example)
+        prepared = prepare_export(model)
+        torch.testing.assert_close(prepared(example), expected, atol=1e-5, rtol=1e-5)
+        traced = torch.jit.trace(prepared, example, check_trace=False)
+        path = tmp_path / "real_x3d.ts"
+        traced.save(str(path))
+        restored = torch.jit.load(str(path))
+        torch.testing.assert_close(restored(example), expected, atol=1e-5, rtol=1e-5)
+        assert restored(example.repeat(2, 1, 1, 1, 1)).shape == (2,)

@@ -19,7 +19,7 @@ from sklearn.metrics import (
 from torch import nn
 
 from anomaly.fight_data import ubi_fights_items
-from fight.model import VideoClassifier
+from fight.model import VideoClassifier, prepare_export
 from fight.vision import (
     ClipConfig,
     clip_tensor,
@@ -255,6 +255,39 @@ def score_rows(model, rows, cache, device, frozen):
     return np.asarray(scores)
 
 
+def save_audit_previews(rows, cache, output):
+    destination = output / "audit_previews"
+    destination.mkdir(exist_ok=True)
+    fight_videos = {row["video"] for row in rows if row["label"] == 1}
+    counts, seen, previews = {}, set(), []
+    for row in rows:
+        category = (
+            "fight"
+            if row["label"] == 1
+            else "same_scene_normal" if row["video"] in fight_videos else "normal_video"
+        )
+        identity = (category, row["video"])
+        if identity in seen or counts.get(category, 0) >= 6:
+            continue
+        with np.load(cache / f"{row['cache']}.npz") as data:
+            clips = data["clips"]
+            image = np.concatenate([clip[len(clip) // 2] for clip in clips], axis=1)
+        filename = f"{category}_{counts.get(category, 0):02d}_{row['key']}.jpg"
+        cv2.imwrite(str(destination / filename), cv2.cvtColor(image, cv2.COLOR_RGB2BGR))
+        previews.append(
+            {
+                "file": filename,
+                "category": category,
+                "video": row["video"],
+                "start_seconds": row["start"] / row["fps"],
+                "split": row["split"],
+            }
+        )
+        counts[category] = counts.get(category, 0) + 1
+        seen.add(identity)
+    write_json(output / "audit_previews.json", previews)
+
+
 def train_stage(
     model, train, validation, cache, device, deadline, epochs, frozen, history, output
 ):
@@ -390,6 +423,11 @@ def main():
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--exclude", default=None)
     parser.add_argument("--device", default="cuda")
+    parser.add_argument(
+        "--evaluate-only",
+        action="store_true",
+        help="Reuse best.pt and cached_manifest.json without training or extraction",
+    )
     args = parser.parse_args()
     if args.budget_minutes <= 0 or args.videos < 8 or args.clips_per_video < 4:
         parser.error(
@@ -441,13 +479,25 @@ def main():
         f"PILOT: {len(manifest['rows'])} clips; budget={args.budget_minutes} min; architecture={args.architecture}",
         flush=True,
     )
-    model = VideoClassifier(args.architecture).to(device).eval()
+    model = (
+        VideoClassifier(args.architecture, pretrained=not args.evaluate_only)
+        .to(device)
+        .eval()
+    )
     from ultralytics import YOLO
 
-    detector = YOLO("yolov8n.pt")
-    ready = []
+    detector = None if args.evaluate_only else YOLO("yolov8n.pt")
+    ready = (
+        json.loads((output / "cached_manifest.json").read_text())["rows"]
+        if args.evaluate_only
+        else []
+    )
+    if args.evaluate_only and not all(
+        (cache / f"{row['cache']}.npz").exists() for row in ready
+    ):
+        raise FileNotFoundError("Evaluation-only requires all existing clip caches")
     (output / "previews").mkdir(exist_ok=True)
-    for index, row in enumerate(manifest["rows"]):
+    for index, row in enumerate([] if args.evaluate_only else manifest["rows"]):
         if time.monotonic() >= deadline:
             break
         row = dict(row, cache=cache_key(row, config, args.architecture))
@@ -507,13 +557,22 @@ def main():
                 flush=True,
             )
     write_json(output / "cached_manifest.json", {**manifest, "rows": ready})
+    save_audit_previews(ready, cache, output)
     train = [row for row in ready if row["split"] == "train"]
     validation = [row for row in ready if row["split"] == "validation"]
-    history = []
-    sanity = None
+    history = (
+        json.loads((output / "history.json").read_text()) if args.evaluate_only else []
+    )
+    sanity = (
+        json.loads((output / "sanity.json").read_text()) if args.evaluate_only else None
+    )
     complete = len(ready) == len(manifest["rows"])
-    if complete and all(
-        len({row["label"] for row in rows}) == 2 for rows in (train, validation)
+    if (
+        not args.evaluate_only
+        and complete
+        and all(
+            len({row["label"] for row in rows}) == 2 for rows in (train, validation)
+        )
     ):
         sanity = sanity_check(
             model, train, cache, device, min(deadline, time.monotonic() + 60)
@@ -550,6 +609,7 @@ def main():
         "architecture": args.architecture,
         "clip": config.to_dict(),
         "approved_for_demo": False,
+        "evaluation_only": args.evaluate_only,
         "decision": "inconclusive",
         "reason": "Budget exhausted or no completed validation epoch.",
         "budget_minutes": args.budget_minutes,
@@ -591,7 +651,8 @@ def main():
                 else "Pilot has not demonstrated sufficient generalization; inspect labels, crops and errors before spending more GPU time."
             ),
         )
-        model = model.cpu().eval()
+        write_json(output / "report.json", report)
+        model = prepare_export(model.cpu().eval())
         torch.set_num_threads(4)
         example = torch.zeros(1, 3, config.frames, config.size, config.size)
         with torch.inference_mode():
@@ -612,6 +673,11 @@ def main():
         export_dir = output / "runtime" / "models"
         export_dir.mkdir(parents=True, exist_ok=True)
         scripted.save(str(export_dir / "fight_model.ts"))
+        restored = torch.jit.load(str(export_dir / "fight_model.ts"))
+        with torch.inference_mode():
+            torch.testing.assert_close(
+                restored(example), model(example), atol=1e-4, rtol=1e-4
+            )
         write_json(export_dir / "fight_runtime.json", report)
         with zipfile.ZipFile(
             output / "sentinel_fight_only_runtime.zip", "w", zipfile.ZIP_DEFLATED
