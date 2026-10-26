@@ -30,7 +30,7 @@ Chọn GPU, chạy tất cả cell. Drive mount/OAuth phải được chủ tài
 9. Thử overfit 8 clip để kiểm tra đường học; sau đó khôi phục head, train probe ngắn và fine-tune hai block cuối trên train.
 10. Chọn checkpoint/ngưỡng bằng validation. Xuất AUC trong video, AUC gộp, precision, recall, FPR, baseline chuyển động, ảnh crop và dự đoán có timestamp.
 
-Ngân sách mặc định 30 phút từ lúc chạy script (chuẩn bị/cài đặt tách riêng). Script kiểm tra deadline giữa các bước; watchdog notebook kết thúc tiến trình khi vượt ngân sách + 120 giây cho đánh giá/xuất. Nếu không đủ kết quả thì báo `inconclusive`, không tự coi là thành công. Chạy lại dùng cache cùng config. Đổi số video/clip hoặc seed thì đổi RUN_NAME; đổi backbone thì dùng cache tương ứng.
+Ngân sách mặc định 30 phút từ lúc chạy script (chuẩn bị/cài đặt tách riêng). Script kiểm tra deadline giữa các bước; watchdog notebook kết thúc tiến trình khi vượt ngân sách + 120 giây cho đánh giá/xuất. Nếu không đủ kết quả thì báo `inconclusive`, không tự coi là thành công. Nếu đã có `best.pt`, cell cấu hình tự đặt `EVALUATE_ONLY=True`: chỉ đánh giá/xuất checkpoint, không train lại. Đổi số video/clip hoặc seed thì đổi RUN_NAME; đổi backbone thì dùng cache tương ứng.
 
 ## Cổng quyết định pilot
 
@@ -42,7 +42,8 @@ Kết quả nằm trong `SENTINEL/artifacts/fight_pilot_x3d_v1/`:
 
 - `manifest.json`, `cached_manifest.json`, `selected_videos.json`, `code_revision.txt`
 - `sanity.json`, `history.json`, `best.pt`, `report.json`, `run_log.txt`
-- `previews/`, `predictions.json`, `validation.png`
+- `audit_previews/`, `audit_previews.json`, `predictions.json`, `validation.png`: audit có cả đánh nhau, bình thường cùng cảnh và video bình thường; ảnh giữa clip không đủ để xác minh hành động theo thời gian
+- `training_code_revision.txt`, `export_code_revision.txt`: tách nguồn code huấn luyện và code xuất lại
 - `sentinel_fight_only_runtime.zip`: `models/fight_model.ts` và `models/fight_runtime.json`
 
 TorchScript chứa trọng số toàn mô hình; local không cần tải X3D/PyTorchVideo riêng. Notebook chỉ xuất checkpoint pilot, luôn `approved_for_demo=false`. Chép ZIP vào Downloads rồi chạy launcher. Tác vụ train toàn bộ và đánh giá test độc lập chỉ nên được thiết kế tiếp sau khi có pilot đạt và kiểm tra trực quan; notebook hiện tại chủ động không chạy phiên train nhiều giờ.
@@ -56,3 +57,7 @@ TorchScript chứa trọng số toàn mô hình; local không cần tải X3D/Py
 - Replay cùng frame và timestamp phải cho cùng kết quả; nguồn live mất frame có thể khác và cần đo riêng.
 
 Training mới có thể cải thiện chất lượng, nhưng pipeline/UI không tự tạo ra độ chính xác. Kết quả pilot thực nghiệm mới quyết định có mở rộng hay đổi phương pháp.
+
+## Kết quả pilot ngày 26/10/2026
+
+Xem [báo cáo thực nghiệm](FIGHT_PILOT_2026-10-26.md). Lần X3D-S đầu tiên xuất checkpoint thành công nhưng **không đạt cổng pilot**; không dùng làm model demo mặc định và chưa chạy train toàn bộ.
