@@ -6,7 +6,13 @@ from pathlib import Path
 import numpy as np
 import torch
 
-from fight.vision import ClipConfig, clip_tensor, prepare_clip, regions_for
+from fight.vision import (
+    ClipConfig,
+    DetectorConfig,
+    clip_regions,
+    clip_tensor,
+    prepare_clip,
+)
 
 
 class EventGate:
@@ -71,6 +77,7 @@ class FightRuntime:
         self.model_ready = predictor is not None
         self.message = "Chưa có checkpoint đánh nhau được kiểm thử."
         self.metadata = {}
+        self.detector_config = DetectorConfig()
         self.gate = EventGate()
         model_path = Path(models_dir) / "fight_model.ts"
         metadata_path = Path(models_dir) / "fight_runtime.json"
@@ -82,6 +89,9 @@ class FightRuntime:
                 if self.metadata.get("schema_version") != 1:
                     raise ValueError("Unsupported runtime schema")
                 self.config = ClipConfig(**self.metadata["clip"])
+                self.detector_config = DetectorConfig(
+                    **self.metadata.get("person_detector", {})
+                )
                 if (
                     not self.metadata.get("approved_for_demo", False)
                     and not allow_pilot
@@ -178,7 +188,9 @@ class FightRuntime:
         if self.detector is None:
             from detection.detector import PersonDetector
 
-            self.detector = PersonDetector()
+            self.detector = PersonDetector(
+                **self.detector_config.to_dict(), device="cpu"
+            )
         boxes = []
         people = 0
         for index in (0, len(frames) // 2, len(frames) - 1):
@@ -186,7 +198,7 @@ class FightRuntime:
             people = max(people, len(detections))
             boxes.extend(detection.bbox_xyxy for detection in detections)
         height, width = frame.shape[:2]
-        regions = regions_for(boxes, width, height, self.config.max_regions)
+        regions = clip_regions(boxes, width, height, self.config)
         clips = np.stack(
             [prepare_clip(frames, region, self.config.size) for region in regions]
         )

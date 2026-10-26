@@ -13,9 +13,31 @@ class ClipConfig:
     stride_seconds: float = 0.5
     max_regions: int = 3
     version: int = 1
+    region_mode: str = "interaction"
+
+    def __post_init__(self):
+        if self.region_mode not in {"interaction", "full"}:
+            raise ValueError("Unsupported region mode")
 
     def to_dict(self):
         return asdict(self)
+
+
+@dataclass(frozen=True)
+class DetectorConfig:
+    model_name: str = "yolov8n.pt"
+    confidence: float = 0.4
+    iou: float = 0.45
+    image_size: int = 640
+
+    def to_dict(self):
+        return asdict(self)
+
+
+def clip_regions(boxes, width, height, config):
+    if config.region_mode == "full":
+        return [(0, 0, width, height)]
+    return regions_for(boxes, width, height, config.max_regions)
 
 
 def regions_for(boxes, width, height, limit=3):

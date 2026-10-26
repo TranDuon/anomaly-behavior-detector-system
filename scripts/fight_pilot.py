@@ -459,7 +459,7 @@ def main():
     if manifest_path.exists():
         manifest = json.loads(manifest_path.read_text())
         if (
-            manifest.get("clip") != config.to_dict()
+            ClipConfig(**manifest["clip"]).to_dict() != config.to_dict()
             or manifest.get("seed") != args.seed
             or manifest.get("run_settings") != run_settings
         ):

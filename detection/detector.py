@@ -17,7 +17,8 @@ from core.config import settings
 @dataclass
 class DetectionResult:
     """Single detected person in one frame."""
-    bbox_xyxy: List[float]      # absolute pixel coords [x1, y1, x2, y2]
+
+    bbox_xyxy: List[float]  # absolute pixel coords [x1, y1, x2, y2]
     confidence: float
     class_id: int = 0
     class_name: str = "person"
@@ -44,14 +45,24 @@ class PersonDetector:
         results = detector.detect(frame)   # frame: BGR np.ndarray
     """
 
-    def __init__(self):
+    def __init__(
+        self, model_name=None, confidence=None, iou=None, image_size=None, device=None
+    ):
         self._model = None
+        self.model_name = model_name if model_name is not None else settings.yolo_model
+        self.confidence = (
+            confidence if confidence is not None else settings.yolo_conf_threshold
+        )
+        self.iou = iou if iou is not None else settings.yolo_iou_threshold
+        self.image_size = image_size if image_size is not None else settings.yolo_imgsz
+        self.device = device if device is not None else settings.yolo_device
 
     def _load(self):
         # Deferred import — ultralytics is heavy
         from ultralytics import YOLO
-        self._model = YOLO(settings.yolo_model)
-        self._model.to(settings.yolo_device)
+
+        self._model = YOLO(self.model_name)
+        self._model.to(self.device)
 
     # ── Public API ──────────────────────────────────────────────────────────
 
@@ -67,10 +78,10 @@ class PersonDetector:
 
         results = self._model.predict(
             frame,
-            conf=settings.yolo_conf_threshold,
-            iou=settings.yolo_iou_threshold,
-            imgsz=settings.yolo_imgsz,
-            device=settings.yolo_device,
+            conf=self.confidence,
+            iou=self.iou,
+            imgsz=self.image_size,
+            device=self.device,
             classes=[settings.person_class_id],
             verbose=False,
         )
