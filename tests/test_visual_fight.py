@@ -188,3 +188,67 @@ def test_scene_removal_is_causal_and_zero_shot_scores_are_probabilities():
     scores = kinetics_fight_score(features, weight, np.zeros(400, np.float32), [3, 7])
     assert scores.shape == (6,) and np.all((scores > 0) & (scores < 1))
     assert np.allclose(kinetics_fight_score(features, weight, np.zeros(400, np.float32), list(range(400))), 1.0)
+
+
+def test_person_groups_merge_close_people_and_rank_by_size():
+    from anomaly.visual_fight import person_groups
+
+    boxes = np.array([
+        [100, 100, 140, 200], [150, 100, 190, 200],          # two people side by side
+        [100, 105, 140, 205],                                 # the first one, a moment later
+        [600, 100, 640, 200],                                 # someone alone far away
+    ], dtype=np.float32)
+    groups = person_groups(boxes, max_groups=3, gap=0.5)
+    np.testing.assert_allclose(groups[0], [100, 100, 190, 205])
+    np.testing.assert_allclose(groups[1], [600, 100, 640, 200])
+    assert len(person_groups(boxes, max_groups=1)) == 1 and person_groups(np.zeros((0, 4))) == []
+
+
+def test_square_crops_stay_square_inside_the_frame():
+    from anomaly.visual_fight import MIN_CROP, crop_frame, square_crop_box
+
+    region = square_crop_box(np.array([0, 10, 40, 110]), frame_w=640, frame_h=360, margin=0.25)
+    assert region[2] - region[0] == pytest.approx(region[3] - region[1]) == pytest.approx(150)
+    assert region[0] == pytest.approx(0) and region[1] >= 0          # shifted inside, not cut
+    tiny = square_crop_box(np.array([300, 200, 310, 220]), 640, 360)
+    assert tiny[2] - tiny[0] == pytest.approx(MIN_CROP)
+    frame = np.full((360, 640, 3), 255, dtype=np.uint8)
+    crop = crop_frame(frame, np.array([-50, -50, 150, 150]))            # partly outside: black border
+    assert crop.shape == (INPUT_SIZE, INPUT_SIZE, 3) and crop[0, 0].sum() == 0 and crop[-1, -1].sum() == 765
+
+
+def test_extract_crop_clips_uses_person_groups_and_falls_back_to_the_whole_frame():
+    from anomaly.visual_fight import MAX_GROUPS, extract_crop_clips
+
+    video = frames(120, size=(360, 640))
+
+    def grid():
+        for index in range(0, 120, 2):
+            yield index, video[index]
+        yield ("end", 120, 30.0)
+
+    def boxes_for(first, last):                               # people only in the second half
+        if first < 60:
+            return np.zeros((0, 4), np.float32)
+        return np.array([[100, 100, 140, 200], [150, 100, 190, 200], [500, 50, 530, 110]], np.float32)
+
+    payload = extract_crop_clips(grid(), boxes_for, MeanExtractor(), torch.device("cpu"), batch_size=3)
+    count = len(clip_starts(60))
+    assert payload["features"].shape == (count, FEATURE_DIM)
+    assert payload["crop_features"].shape == (count, MAX_GROUPS, FEATURE_DIM)
+    assert payload["crop_count"].tolist() == [1, 1, 2]       # whole frame, whole frame, two groups
+    np.testing.assert_allclose(payload["crop_boxes"][0, 0], [0, 0, 640, 360])
+    last = payload["crop_features"][2, :2].astype(np.float32)
+    np.testing.assert_allclose(payload["features"][2].astype(np.float32), last.max(axis=0))
+    assert payload["first_frames"].tolist() == [0, 30, 60]
+
+
+def test_pose_boxes_select_rows_in_the_frame_span(tmp_path):
+    from scripts.extract_visual import pose_boxes
+
+    np.savez(tmp_path / "v.npz", frame_index=np.array([9, 0, 3, 3]),
+             boxes=np.array([[9, 9, 9, 9], [0, 0, 0, 0], [3, 3, 3, 3], [4, 4, 4, 4]], np.float32))
+    boxes_for = pose_boxes(tmp_path / "v.npz")
+    assert boxes_for(1, 5).tolist() == [[3, 3, 3, 3], [4, 4, 4, 4]]
+    assert boxes_for(0, 9).shape == (4, 4)
+    assert pose_boxes(tmp_path / "missing.npz")(0, 9).shape == (0, 4)

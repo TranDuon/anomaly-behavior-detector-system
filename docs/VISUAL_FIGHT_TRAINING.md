@@ -15,6 +15,14 @@ Luồng B (khung xương + ST-GCN, [FIGHT_TRAINING.md](FIGHT_TRAINING.md)) sau 3
    - **Validation:** 15% video train (chia theo video), chấm trên video đầy đủ, trải điểm ra frame như lúc test. Checkpoint chọn theo `--select-on` (mặc định trung bình của AUC gộp và AUC trung vị trong video), ngưỡng theo balanced accuracy trên frame. Đường cơ sở năng lượng chuyển động được tính trên cùng frame.
 3. **Đánh giá** (`scripts/evaluate_visual_fight.py`): cùng giao thức với luồng B: UBI-Fights theo frame trên toàn bộ tập test và nhóm `_short`; nhóm `_crowd` (≥ 5 người/frame, đếm từ khung xương của luồng B khi có `--pose-root`); Surveillance Camera Fight theo clip; AUC trung vị trong từng video đánh nhau; mọi chỉ số kèm bản `motion_baseline_*`.
 
+## Kết quả và chẩn đoán
+
+`visual_fight_v1` (chỉ UBI-Fights): AUC theo frame 0,872 trên toàn bộ tập test, nhưng AUC trung vị trong từng video đánh nhau 0,495, thấp hơn đường cơ sở chuyển động (0,562). Loss xếp hạng khi train về 0,002 trong khi AUC trong video ở validation giảm 0,50 → 0,41: đầu dự đoán học thuộc cảnh.
+
+`scripts/diagnose_visual_fight.py` ([notebook](../colab/diagnose_visual_fight_drive.ipynb)) kiểm tra trên đặc trưng đã trích: zero-shot các lớp đánh nhau của Kinetics (lớp phân loại của S3D là phép tuyến tính trên đặc trưng trung bình đã lưu, nên tính chính xác, không train), linear probe, đầu dự đoán nhỏ, và các biến thể bỏ bối cảnh (trừ trung bình các clip trước đó của cùng camera; hoặc trung bình cả video). Kết quả trên toàn khung hình: không cách nào vượt chuyển động trong video (tốt nhất 0,589; zero-shot 0,513), bỏ bối cảnh thì AUC theo frame rơi 0,82 → 0,52 — S3D toàn khung hình thấy cảnh, không thấy hành động.
+
+**Vùng người** (`extract_visual.py --crops --pose-root ...`): mỗi giây cắt vùng vuông quanh tối đa 3 nhóm người lớn nhất (khung người từ khung xương của luồng B; nhóm = người cách nhau dưới 0,5 chiều cao), chạy S3D trên từng vùng, đặc trưng clip = max theo vùng; giây không có người dùng cả khung hình. File cache cùng định dạng, thêm `crop_features`, `crop_count`, `crop_boxes`. Thử nghiệm trên video đánh nhau: [notebook](../colab/visual_crops_pilot_drive.ipynb).
+
 ## Chạy thật (CPU)
 
 `StreamingFightScorer` nhận từng frame của camera, lấy mẫu đúng lưới 15 FPS như lúc trích, chạy S3D mỗi giây một lần và chạy head trên 15 clip gần nhất. Test xác nhận điểm chạy trực tiếp bằng điểm offline của cùng clip. Đo trên Ryzen 7 7735HS (8 luồng): S3D ~390 ms/clip, cả pipeline (giải mã + S3D) ~4,7 lần thời gian thực, tức ~1/5 CPU cho một camera.

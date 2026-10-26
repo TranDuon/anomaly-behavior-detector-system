@@ -9,6 +9,11 @@ of the clips in flight are held in memory.
 Decoding is the bottleneck, not the GPU; --shard k/n runs the k-th of n
 interleaved slices of the video list, and n such processes share one GPU.
 Each shard writes its own manifest.
+
+--crops runs the backbone on crops around the largest groups of people of
+each clip instead of the whole frame (person boxes from the skeleton
+stream's pose caches in --pose-root); --fight-only limits extraction to
+videos that contain a fight, enough to measure the in-video AUC.
 """
 
 from __future__ import annotations
@@ -28,7 +33,32 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from anomaly.fight_data import load_items
-from anomaly.visual_fight import EXTRACTION_CONFIG, ClipFeatureExtractor, extract_clips, sample_video
+from anomaly.visual_fight import (
+    CROP_EXTRACTION_CONFIG,
+    EXTRACTION_CONFIG,
+    ClipFeatureExtractor,
+    extract_clips,
+    extract_crop_clips,
+    grid_frames,
+    sample_video,
+)
+
+
+def pose_boxes(pose_path: Path):
+    """boxes_for(first, last) from a pose cache: person boxes detected in that frame span."""
+    if not pose_path.exists():
+        return lambda first, last: np.zeros((0, 4), dtype=np.float32)
+    with np.load(pose_path) as data:
+        frames = np.asarray(data["frame_index"], dtype=np.int64)
+        boxes = np.asarray(data["boxes"], dtype=np.float32)
+    order = np.argsort(frames, kind="stable")
+    frames, boxes = frames[order], boxes[order]
+
+    def boxes_for(first: int, last: int) -> np.ndarray:
+        lo, hi = np.searchsorted(frames, first, "left"), np.searchsorted(frames, last, "right")
+        return boxes[lo:hi]
+
+    return boxes_for
 
 
 def write_manifest(path: Path, manifest: dict) -> None:
@@ -48,6 +78,9 @@ def main() -> None:
         "--half", choices=("auto", "on", "off"), default="auto",
         help="FP16 autocast; auto = on for CUDA devices",
     )
+    parser.add_argument("--crops", action="store_true", help="Backbone on person-group crops, not the whole frame")
+    parser.add_argument("--pose-root", default=None, help="Pose caches giving the person boxes (needed with --crops)")
+    parser.add_argument("--fight-only", action="store_true", help="Only videos that contain a fight")
     parser.add_argument("--limit", type=int, default=None)
     parser.add_argument("--shard", default=None, help="k/n: process every n-th video starting at k")
     parser.add_argument("--force", action="store_true")
@@ -64,6 +97,12 @@ def main() -> None:
     items = [item for spec in args.dataset for item in load_items(spec)]
     if args.split != "all":
         items = [item for item in items if item.split == args.split]
+    if args.fight_only:
+        items = [item for item in items if item.has_positive]
+    if args.crops and not args.pose_root:
+        parser.error("--crops needs --pose-root")
+    config = CROP_EXTRACTION_CONFIG if args.crops else EXTRACTION_CONFIG
+    pose_root = Path(args.pose_root).resolve() if args.pose_root else None
     if args.limit is not None:
         items = items[: args.limit]
     manifest_name = "manifest.json"
@@ -86,15 +125,15 @@ def main() -> None:
         dataset_dir.mkdir(parents=True, exist_ok=True)
         manifest_path = dataset_dir / manifest_name
         if item.dataset not in manifests:
-            manifest = {"config": EXTRACTION_CONFIG, "videos": {}}
+            manifest = {"config": config, "videos": {}}
             if manifest_path.exists():
                 manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-                if manifest.get("config") != EXTRACTION_CONFIG and not args.force:
+                if manifest.get("config") != config and not args.force:
                     raise RuntimeError(
                         f"Feature cache {dataset_dir} was built with {manifest.get('config')}; "
                         "use a new --feature-root or --force."
                     )
-                manifest["config"] = EXTRACTION_CONFIG
+                manifest["config"] = config
             manifests[item.dataset] = manifest
         manifest = manifests[item.dataset]
 
@@ -103,7 +142,11 @@ def main() -> None:
             print(f"[{index}/{len(items)}] Skip {item.uid}: cached", flush=True)
             continue
         started = time.perf_counter()
-        payload = extract_clips(sample_video(item.path), extractor, device, args.batch_size, half)
+        if args.crops:
+            boxes_for = pose_boxes(pose_root / item.dataset / f"{item.key}.npz")
+            payload = extract_crop_clips(grid_frames(item.path), boxes_for, extractor, device, args.batch_size, half)
+        else:
+            payload = extract_clips(sample_video(item.path), extractor, device, args.batch_size, half)
         temporary_path = output_path.with_name(output_path.stem + ".partial.npz")
         np.savez_compressed(temporary_path, **payload)
         temporary_path.replace(output_path)

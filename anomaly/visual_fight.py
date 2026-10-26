@@ -24,7 +24,7 @@ from __future__ import annotations
 
 from collections import deque
 from pathlib import Path
-from typing import Iterable, Iterator, Optional
+from typing import Callable, Iterable, Iterator, Optional
 
 import cv2
 import numpy as np
@@ -67,9 +67,15 @@ def prepare_frame(frame_bgr: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
 
 
 def sample_video(path: Path, max_seconds: Optional[float] = None) -> Iterator[tuple]:
-    """Yield (frame_index, rgb, grey) on a CLIP_FPS grid, then a final ("end", frame_count, fps).
+    """Yield (frame_index, rgb, grey) on a CLIP_FPS grid, then a final ("end", frame_count, fps)."""
+    for sample in grid_frames(path, max_seconds):
+        yield sample if sample[0] == "end" else (sample[0], *prepare_frame(sample[1]))
 
-    Frames off the grid are only grabbed (no colour conversion or resize).
+
+def grid_frames(path: Path, max_seconds: Optional[float] = None) -> Iterator[tuple]:
+    """Yield (frame_index, full-resolution BGR frame) on a CLIP_FPS grid, then ("end", frame_count, fps).
+
+    Frames off the grid are only grabbed (no colour conversion).
     """
     capture = cv2.VideoCapture(str(path))
     if not capture.isOpened():
@@ -91,7 +97,7 @@ def sample_video(path: Path, max_seconds: Optional[float] = None) -> Iterator[tu
                 break
             if wanted:
                 next_sample += step
-                yield (decoded, *prepare_frame(frame))
+                yield decoded, frame
             decoded += 1
     finally:
         capture.release()
@@ -197,6 +203,169 @@ def extract_clips(
         flush()
     return {
         "features": np.concatenate(features) if features else np.zeros((0, FEATURE_DIM), np.float16),
+        "motion": np.asarray(motions, dtype=np.float32),
+        "first_frames": np.asarray(first_frames, dtype=np.int32),
+        "last_frames": np.asarray(last_frames, dtype=np.int32),
+        "frame_count": np.int32(frame_count),
+        "fps": np.float32(source_fps),
+    }
+
+
+# ── Person-group crops ─────────────────────────────────────────────────────
+# Whole-frame S3D at 224 px sees the scene, not the fight (visual_fight_v1:
+# zero-shot Kinetics in-video AUC 0.51; removing the scene drops frame AUC
+# from 0.82 to 0.52). Crops give the people the backbone's full resolution.
+
+MAX_GROUPS = 3            # crops per clip: the largest groups of people
+GROUP_GAP = 0.5           # boxes join a group when they come within this many person heights
+CROP_MARGIN = 0.25        # extra context around a group, as a share of its size
+MIN_CROP = 96             # pixels: very small groups are upsampled from at least this
+
+
+CROP_EXTRACTION_CONFIG = {
+    **EXTRACTION_CONFIG,
+    "crops": f"up to {MAX_GROUPS} person-group crops per clip (gap {GROUP_GAP} heights, margin {CROP_MARGIN}, "
+             f"min {MIN_CROP} px); features = max over crops",
+    "person_boxes": "skeleton-stream pose caches (YOLOv8n-pose 1280, BoT-SORT, 10 FPS)",
+}
+
+
+def person_groups(boxes: np.ndarray, max_groups: int = MAX_GROUPS, gap: float = GROUP_GAP) -> list[np.ndarray]:
+    """Union boxes of people close together, most people first.
+
+    `boxes` (N, 4) xyxy may hold the same person at several moments of a
+    clip: a group is the region where its people were during that second.
+    """
+    boxes = np.asarray(boxes, dtype=np.float32).reshape(-1, 4)
+    if len(boxes) == 0:
+        return []
+    pad = gap * (boxes[:, 3] - boxes[:, 1])[:, None] * np.array([-1, -1, 1, 1], dtype=np.float32)
+    grown = boxes + pad
+    touching = (
+        (grown[:, None, 0] <= grown[None, :, 2]) & (grown[None, :, 0] <= grown[:, None, 2])
+        & (grown[:, None, 1] <= grown[None, :, 3]) & (grown[None, :, 1] <= grown[:, None, 3])
+    )
+    parent = list(range(len(boxes)))
+
+    def find(index: int) -> int:
+        while parent[index] != index:
+            parent[index] = parent[parent[index]]
+            index = parent[index]
+        return index
+
+    for a, b in zip(*np.nonzero(np.triu(touching, k=1))):
+        parent[find(int(a))] = find(int(b))
+    members: dict[int, list[int]] = {}
+    for index in range(len(boxes)):
+        members.setdefault(find(index), []).append(index)
+    groups = sorted(members.values(), key=len, reverse=True)[:max_groups]
+    return [
+        np.array([boxes[group, 0].min(), boxes[group, 1].min(), boxes[group, 2].max(), boxes[group, 3].max()])
+        for group in groups
+    ]
+
+
+def square_crop_box(box: np.ndarray, frame_w: int, frame_h: int, margin: float = CROP_MARGIN) -> np.ndarray:
+    """Square xyxy region around `box` with margin, at least MIN_CROP, kept inside the frame when possible."""
+    x1, y1, x2, y2 = (float(value) for value in box)
+    side = max(x2 - x1, y2 - y1) * (1 + 2 * margin)
+    side = min(max(side, MIN_CROP), max(frame_w, frame_h))
+    cx = min(max((x1 + x2) / 2, side / 2), frame_w - side / 2) if side <= frame_w else frame_w / 2
+    cy = min(max((y1 + y2) / 2, side / 2), frame_h - side / 2) if side <= frame_h else frame_h / 2
+    return np.array([cx - side / 2, cy - side / 2, cx + side / 2, cy + side / 2], dtype=np.float32)
+
+
+def crop_frame(frame_bgr: np.ndarray, region: np.ndarray) -> np.ndarray:
+    """INPUT_SIZE x INPUT_SIZE RGB crop of `region`; parts outside the frame are black."""
+    height, width = frame_bgr.shape[:2]
+    x1, y1, x2, y2 = (int(round(value)) for value in region)
+    top, left = max(-y1, 0), max(-x1, 0)
+    bottom, right = max(y2 - height, 0), max(x2 - width, 0)
+    patch = frame_bgr[max(y1, 0):min(y2, height), max(x1, 0):min(x2, width)]
+    if top or left or bottom or right:
+        patch = cv2.copyMakeBorder(patch, top, bottom, left, right, cv2.BORDER_CONSTANT, value=0)
+    return cv2.cvtColor(cv2.resize(patch, (INPUT_SIZE, INPUT_SIZE), interpolation=cv2.INTER_AREA), cv2.COLOR_BGR2RGB)
+
+
+def extract_crop_clips(
+    frames: Iterable[tuple],
+    boxes_for: Callable[[int, int], np.ndarray],
+    extractor: ClipFeatureExtractor,
+    device: torch.device,
+    batch_size: int = 16,
+    half: bool = False,
+) -> dict:
+    """Like extract_clips, on crops around the largest groups of people of each clip.
+
+    `frames` is grid_frames()'s stream; `boxes_for(first_frame, last_frame)`
+    returns the person boxes (xyxy, source pixels) detected in that span. A
+    clip without people uses the whole frame. `features` is the max over a
+    clip's crops; `crop_features` (N, MAX_GROUPS, D) and `crop_boxes` keep
+    each crop (unused slots are zero, `crop_count` says how many are used).
+    """
+    buffer: deque = deque()
+    pending, crop_features = [], []
+    motions, first_frames, last_frames, counts, regions = [], [], [], [], []
+    next_start, position, frame_count, source_fps = 0, 0, 0, CLIP_FPS
+
+    def flush() -> None:
+        clips = torch.from_numpy(np.stack(pending)).to(device)
+        with torch.autocast(device_type=device.type, enabled=half):
+            output = extractor(clips)
+        crop_features.append(output.cpu().numpy().astype(np.float16))
+        pending.clear()
+
+    def emit(window: list) -> None:
+        frames_bgr = [frame for _, _, frame, _ in window]
+        height, width = frames_bgr[0].shape[:2]
+        first, last = window[0][1], window[-1][1]
+        groups = person_groups(boxes_for(first, last))
+        crops = [square_crop_box(group, width, height) for group in groups] or [
+            np.array([0, 0, width, height], dtype=np.float32)
+        ]
+        for region in crops:
+            pending.append(pad_clip([crop_frame(frame, region) for frame in frames_bgr]))
+            if len(pending) >= batch_size:
+                flush()
+        slots = np.zeros((MAX_GROUPS, 4), dtype=np.float32)
+        slots[: len(crops)] = crops
+        regions.append(slots)
+        counts.append(len(crops))
+        motions.append(motion_energy(np.stack([grey for _, _, _, grey in window])))
+        first_frames.append(first)
+        last_frames.append(last)
+
+    for sample in frames:
+        if sample[0] == "end":
+            _, frame_count, source_fps = sample
+            break
+        frame_index, frame = sample
+        grey = cv2.cvtColor(cv2.resize(frame, MOTION_SIZE, interpolation=cv2.INTER_AREA), cv2.COLOR_BGR2GRAY)
+        buffer.append((position, frame_index, frame, grey.astype(np.float32) / 255.0))
+        position += 1
+        if position == next_start + CLIP_FRAMES:
+            emit([entry for entry in buffer if entry[0] >= next_start])
+            next_start += CLIP_STRIDE
+            while buffer and buffer[0][0] < next_start:
+                buffer.popleft()
+    if next_start == 0 and buffer:
+        emit(list(buffer))
+    if pending:
+        flush()
+
+    flat = np.concatenate(crop_features) if crop_features else np.zeros((0, FEATURE_DIM), np.float16)
+    per_clip = np.zeros((len(counts), MAX_GROUPS, FEATURE_DIM), dtype=np.float16)
+    offset = 0
+    for index, count in enumerate(counts):
+        per_clip[index, :count] = flat[offset: offset + count]
+        offset += count
+    pooled = np.stack([per_clip[index, :count].max(axis=0) for index, count in enumerate(counts)]) \
+        if counts else np.zeros((0, FEATURE_DIM), np.float16)
+    return {
+        "features": pooled.astype(np.float16),
+        "crop_features": per_clip,
+        "crop_count": np.asarray(counts, dtype=np.int8),
+        "crop_boxes": np.asarray(regions, dtype=np.float32).reshape(-1, MAX_GROUPS, 4),
         "motion": np.asarray(motions, dtype=np.float32),
         "first_frames": np.asarray(first_frames, dtype=np.int32),
         "last_frames": np.asarray(last_frames, dtype=np.int32),

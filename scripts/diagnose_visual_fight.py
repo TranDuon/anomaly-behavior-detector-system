@@ -190,11 +190,29 @@ def main() -> None:
 
     items = [item for spec in args.dataset for item in load_items(spec)]
     cached = [item for item in items if (feature_root / item.dataset / f"{item.key}.npz").exists()]
+    weight, bias, fight_index = load_kinetics_head()
 
     def load(group):
-        videos = [VideoData(item, ClipFeatures.load(feature_root / item.dataset / f"{item.key}.npz"), 1.0)
-                  for item in group]
-        return [video for video in videos if len(video.clips)]
+        videos = []
+        for item in group:
+            path = feature_root / item.dataset / f"{item.key}.npz"
+            video = VideoData(item, ClipFeatures.load(path), 1.0)
+            video.crop_features = video.crop_count = None
+            with np.load(path) as data:
+                if "crop_features" in data:                 # person-group crops (extract_visual.py --crops)
+                    video.crop_features, video.crop_count = data["crop_features"], data["crop_count"]
+            if len(video.clips):
+                videos.append(video)
+        return videos
+
+    def zero_shot(video) -> np.ndarray:
+        if video.crop_features is None:
+            return kinetics_fight_score(video.clips.features, weight, bias, fight_index)
+        clips, slots, dim = video.crop_features.shape
+        scores = kinetics_fight_score(video.crop_features.reshape(-1, dim), weight, bias, fight_index)
+        scores = scores.reshape(clips, slots)
+        scores[np.arange(slots)[None, :] >= video.crop_count[:, None]] = 0.0
+        return scores.max(axis=1)                            # the most fight-like crop of each clip
 
     usable = [item for item in cached if item.dataset == "ubi" and item.split == "train" and item.uid not in excluded]
     train_items, val_items = split_videos(usable, args.val_ratio, args.seed)
@@ -208,7 +226,6 @@ def main() -> None:
         flush=True,
     )
 
-    weight, bias, fight_index = load_kinetics_head()
     rng = np.random.default_rng(args.seed)
     results, histories = {}, {}
 
@@ -231,7 +248,7 @@ def main() -> None:
     test_ubi_view = {mode: transformed(test_ubi, mode) for mode in (None, "scene", "videomean")}
 
     record("motion", val, lambda video: video.clips.motion.astype(np.float64))
-    record("zero_shot", val, lambda video: kinetics_fight_score(video.clips.features, weight, bias, fight_index))
+    record("zero_shot", val, zero_shot)
 
     heads = {
         "linear": {"hidden": 64, "layers": 0, "dropout": 0.0, "input_dropout": 0.2},
