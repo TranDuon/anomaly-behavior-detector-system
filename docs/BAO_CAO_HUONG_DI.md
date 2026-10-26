@@ -110,11 +110,15 @@ Triển khai theo 5 giai đoạn, từ phần không cần train đến phần c
 4. **Phát hiện bất thường giám sát yếu:** train mô hình MIL (ví dụ RTFM) trên đặc trưng I3D đã trích sẵn của UCF-Crime và XD-Violence, cho điểm bất thường và lớp của các hành vi trộm, cướp, phá hoại.
 5. **Tích hợp và đánh giá:** hợp nhất kết quả các nhánh, lọc cảnh báo qua k frame liên tiếp. Đo metric trên tập test của từng dataset, đo FPS trên CPU, và chạy thử trên bộ video kịch bản tự quay của nhóm.
 
-## 6. Tiến độ: hành vi đánh nhau (luồng B)
+## 6. Tiến độ: hành vi đánh nhau
 
-Code luồng B cho hành vi đánh nhau đã hoàn thành và đưa lên repository (commit 24c004a, 23/10/2026). Bước tiếp theo là trích khung xương và train trên Colab Pro với UBI-Fights; kết quả AUC sẽ được cập nhật vào mục này sau khi train.
+**Tình trạng (26/10/2026): chưa có model dùng được.** Đã thử 3 lần luồng B (khung xương + ST-GCN) và 1 lần luồng A (đặc trưng hình ảnh S3D). Cả hai đạt AUC theo frame gộp trên UBI-Fights ở mức 0,81–0,87, nhưng **không phân biệt được đoạn đánh nhau với đoạn yên trong cùng một video** — model nhận ra *cảnh* có đánh nhau (đông người, khung hình rõ), không nhận ra *hành động*. Bước tiếp theo đang chờ chạy: thử nghiệm luồng A trên vùng cắt quanh người (mục 6.4). Hướng dẫn tiếp nhận ở mục 6.5.
 
-Pipeline gồm 4 bước, chạy bằng notebook `colab/train_fight_drive.ipynb`:
+Thước đo chính từ lần 3 trở đi là **AUC trong video**: trung vị AUC theo frame tính riêng trong từng video đánh nhau của tập test (40 video). AUC gộp chủ yếu đo việc phân biệt video đánh nhau với video bình thường, nên cao ngay cả khi model không tìm được lúc đánh nhau. Mỗi lần chạy so thêm với một **đường cơ sở** không học gì (đếm số cặp người, hoặc năng lượng chuyển động = độ sai khác giữa các frame); model chỉ được coi là học được hành động khi vượt rõ đường cơ sở trong video.
+
+### 6.1. Luồng B: khung xương + ST-GCN (lần 1–3, 23–25/10)
+
+Code luồng B đưa lên repository ở commit 24c004a (23/10/2026). Pipeline gồm 4 bước, chạy bằng notebook `colab/train_fight_drive.ipynb`:
 
 1. **Loại video trùng** giữa các dataset bằng hash ảnh. Chỉ cặp khác dataset bị loại khỏi train; cặp trong cùng dataset được giữ để không phá tập chia chuẩn của tác giả.
 2. **Trích khung xương** bằng YOLOv8n-pose + BoT-SORT, lưu từng video lên Drive, chạy tiếp được khi Colab ngắt; nhiều tiến trình chạy song song trên GPU L4, chỉ trích đoạn cần cho train — đoạn đánh nhau ±10 giây (6,0 → 3,5 giờ) và 20 giây mỗi video bình thường (60,1 → tối đa 4,2 giờ); tập test lấy đủ 40 video đánh nhau và 60 giây đầu mỗi video bình thường (tổng 79 giờ video → khoảng 9,7 giờ).
@@ -153,12 +157,107 @@ Loss train chỉ giảm từ 0,72 xuống 0,61 (đoán ngẫu nhiên là 0,69), 
 
 Thử overfit đạt AUC 1,00 và loss train giảm đều (0,69 → 0,56), nên pipeline học được; nhưng val loss tăng từ epoch 4 (overfit), AUC validation cao nhất 0,67. Ở ngưỡng đã chọn, model báo nhầm 47% frame bình thường (nhóm đông người: 77%). Phân tích theo video cho thấy ba nguyên nhân: (1) trong từng video đánh nhau, model không phân biệt đoạn đánh với đoạn yên (AUC trung vị 0,52), khoảng 69% frame bình thường của tập test nằm trong chính các video này; (2) điểm tăng theo số người trong cảnh, vì điểm cửa sổ là max của các cặp; (3) điểm tương tác tự tính chỉ đạt AUC 0,59, tín hiệu khung xương yếu.
 
-Lần 3 bỏ các quyết định cắt dữ liệu để tiết kiệm tài nguyên Colab của lần 1–2: trích khung xương toàn bộ video (~79 giờ thay vì ~9,7 giờ), validation và chọn ngưỡng trên video đầy đủ theo frame, đánh giá trên toàn bộ tập test. Ngoài ra: lấy mẫu cân bằng giữa cảnh bình thường trong video đánh nhau và video bình thường, hard-negative mining, bỏ cửa sổ sát ranh giới nhãn, gộp điểm các cặp bằng smooth max chuẩn hóa theo số cặp, thêm RLVS vào train. Pose model, 10 FPS, cửa sổ và số cặp giữ nguyên vì phải khớp với máy chạy thật chỉ có CPU.
+Lần 3 bỏ các quyết định cắt dữ liệu để tiết kiệm tài nguyên Colab của lần 1–2: trích khung xương toàn bộ video (~79 giờ thay vì ~9,7 giờ), validation và chọn ngưỡng trên video đầy đủ theo frame, đánh giá trên toàn bộ tập test. Ngoài ra: lấy mẫu cân bằng giữa cảnh bình thường trong video đánh nhau và video bình thường, hard-negative mining, bỏ cửa sổ sát ranh giới nhãn, gộp điểm các cặp bằng smooth max chuẩn hóa theo số cặp. Pose model, 10 FPS, cửa sổ và số cặp giữ nguyên vì phải khớp với máy chạy thật chỉ có CPU. RLVS dự kiến thêm vào train nhưng **không được dùng** (thiếu `kaggle.json` trên Drive).
 
-- [ ] Chạy notebook trên Colab Pro (GPU L4): trích khung xương, train, đánh giá
-- [ ] Cập nhật AUC (UBI-Fights, nhóm đông người) và accuracy (Surveillance Camera Fight) vào mục này
-- [ ] Tích hợp model vào dashboard, thay luật `fighting` cũ, khoanh cặp người bị nghi
-- [ ] Luồng A (I3D + MIL) cho đánh nhau, rồi hợp nhất A + B
+**Kết quả lần train 3 (`fight_v3`, 25/10/2026): AUC gộp tăng chỉ vì đổi giao thức đánh giá; trong từng video vẫn ngang đoán ngẫu nhiên.**
+
+| Đánh giá (AUC) | Lần 1 | Lần 2 | Lần 3 |
+| --- | --- | --- | --- |
+| UBI-Fights theo frame, tập test rút gọn (`_short`) | 0,61 | 0,61 | 0,62 |
+| UBI-Fights đông người, tập test rút gọn | 0,50 | 0,52 | 0,54 |
+| UBI-Fights theo frame, **toàn bộ** tập test | – | – | 0,81 (AP 0,18) |
+| UBI-Fights đông người, toàn bộ tập test | – | – | 0,60 |
+| **AUC trong video** (trung vị 40 video đánh nhau) | – | 0,52 | **0,54** |
+| Surveillance Camera Fight theo clip | 0,72 | 0,72 | 0,74 |
+
+- AUC gộp 0,81 cao vì toàn bộ tập test thêm 1,18 triệu frame của video bình thường dài, phần lớn gần như vắng người (dễ đoán đúng). Trên tập rút gọn, lần 3 chỉ hơn lần 2 khoảng 0,01.
+- Trong quá trình train, AUC gộp trên validation đạt 0,86 ngay sau epoch 1, còn AUC trong video đứng quanh 0,49–0,57 suốt 16 epoch: model học ngay một dấu hiệu dễ (cảnh), không học hành động.
+- **Đường tắt "số người":** chỉ đếm số người trong video đã phân biệt video đánh nhau / bình thường tốt hơn model (AUC 0,80 so với 0,76); điểm của model tương quan với số người (Spearman 0,30 trên UBI, 0,40 trên SCF); cửa sổ đánh nhau có khung xương rõ hơn (độ tin cậy khớp trung bình 0,60 so với 0,41), model nhận được giá trị này trực tiếp qua kênh đầu vào thứ 3.
+- Ở ngưỡng 0,373 chọn trên validation: báo nhầm 27% frame bình thường của toàn bộ tập test (61% trên tập rút gọn), precision 10%; 26/27 video bình thường có lúc vượt ngưỡng. 18/40 video đánh nhau có AUC trong video dưới 0,5.
+- Thử chạy model lần 3 trên máy local (CPU, chấm mỗi 0,3 s như lúc đánh giá): video người đi bộ có 61% lần chấm vượt ngưỡng, đám đông chạy (UMN) 98%; 4 clip đánh nhau của SCF cho điểm cao nhất 0,42–0,78, cùng khoảng với cảnh không đánh nhau. Phần tích hợp vào dashboard đã viết và chạy thử ở máy nhưng **không đưa lên repository** vì model chưa dùng được.
+
+**Quyết định (26/10/2026): dừng luồng B cho hành vi đánh nhau, chuyển sang luồng A.** Ba lần train với các cách sửa khác nhau không cải thiện được việc tìm đoạn đánh nhau (AUC trong video 0,52 ở lần 2, 0,54 ở lần 3; lần 1 chưa đo); ngoài các đường tắt trên, giới hạn còn đến từ đầu vào: YOLOv8n-pose ở 10 FPS (một cú đấm chỉ 2–3 mẫu), khung xương chồng lên nhau khi vật lộn, và luật chọn cặp người chọn sai nhóm trong cảnh đông.
+
+### 6.2. Luồng A: đặc trưng hình ảnh S3D (`visual_fight_v1`, 26/10)
+
+Notebook `colab/train_visual_fight_drive.ipynb`, chi tiết kỹ thuật ở `docs/VISUAL_FIGHT_TRAINING.md`. Thiết kế áp dụng bài học của luồng B ngay từ đầu:
+
+| Thành phần | Lựa chọn | Lý do |
+| --- | --- | --- |
+| Backbone | S3D pretrain Kinetics-400 (torchvision), đóng băng | Họ I3D; chạy được trên CPU máy thật: \~390 ms/clip, cả pipeline \~4,7 lần thời gian thực (MViT, Swin3D > 1 s/clip) |
+| Clip | 16 frame lấy ở 15 FPS (\~1 s), mỗi giây một clip, cả khung hình resize về 224 | Không cắt mép |
+| Đặc trưng | 2048 chiều = trung bình + max theo không gian | Đám đánh nhau nhỏ không bị trung bình hóa mất |
+| Đầu dự đoán | Tích chập nhân quả 3 tầng, 15 s ngữ cảnh | Chỉ nhìn quá khứ như camera trực tiếp |
+| Loss | BCE cân bằng hai lớp + xếp hạng trong cùng video | Buộc phân biệt đoạn đánh với đoạn yên của cùng cảnh |
+| Đường cơ sở | Năng lượng chuyển động | Model phải làm tốt hơn "phát hiện chuyển động mạnh" |
+
+Trích đặc trưng toàn bộ \~80 giờ video và train mất khoảng 1 giờ trên L4 (đặc trưng lưu ở `features/s3d_v1`, dùng lại được). Chỉ train trên UBI-Fights (lại thiếu `kaggle.json`, không có RLVS).
+
+| Đánh giá (AUC) | Luồng B lần 3 | Luồng A v1 | Đường cơ sở chuyển động |
+| --- | --- | --- | --- |
+| UBI-Fights theo frame, toàn bộ tập test | 0,810 | **0,872** (AP 0,247) | 0,781 |
+| UBI-Fights `_short` | 0,618 | 0,671 | 0,575 |
+| UBI-Fights đông người | 0,604 | **0,766** | 0,414 |
+| **AUC trong video** | 0,537 | **0,495** | **0,562** |
+| Surveillance Camera Fight theo clip | 0,743 | 0,701 | 0,750 |
+
+Ở cấp cảnh, đặc trưng hình ảnh tốt hơn khung xương (rõ nhất ở cảnh đông người), nhưng trong từng video model không hơn đoán ngẫu nhiên và thua cả đường cơ sở chuyển động; 22/27 video bình thường có lúc vượt ngưỡng, điểm cao nhất của mỗi video tương quan với số người (Spearman 0,68). Khi train, loss xếp hạng giảm từ 0,47 xuống 0,002 (xếp đúng hoàn toàn trong 145 video train) trong khi AUC trong video ở validation giảm từ 0,50 xuống 0,41: đầu dự đoán học thuộc cảnh. Ngưỡng chọn trên validation chỉ 0,0077 (đầu ra quá tự tin).
+### 6.3. Chẩn đoán đặc trưng toàn khung hình (26/10)
+
+Notebook `colab/diagnose_visual_fight_drive.ipynb` (script `scripts/diagnose_visual_fight.py`) chỉ đọc đặc trưng đã trích, khoảng 15 phút. Mục đích: phân biệt (a) đặc trưng có tín hiệu nhưng đầu dự đoán học thuộc, với (b) S3D nhìn toàn khung hình không thấy đánh nhau.
+
+| Cách (chọn epoch theo AUC trong video trên validation) | Test trong video | Test theo frame | SCF |
+| --- | --- | --- | --- |
+| Đường cơ sở chuyển động | 0,562 | 0,781 | 0,750 |
+| Zero-shot các lớp đánh nhau của Kinetics (không train) | 0,513 | 0,598 | 0,744 |
+| Linear probe | 0,560 | 0,823 | 0,735 |
+| Đầu dự đoán nhỏ (64 đơn vị, dropout 0,5) | 0,589 | 0,819 | 0,723 |
+| Linear probe, bỏ bối cảnh (trừ trung bình các giây trước của cùng camera) | 0,535 | 0,519 | – |
+| Đầu dự đoán nhỏ, bỏ bối cảnh | 0,490 | 0,644 | – |
+
+Kết luận **(b)**: zero-shot 0,513 nghĩa là chính S3D không nhận ra cảnh đánh nhau của UBI-Fights là đấm, vật, đá; bỏ bối cảnh thì AUC theo frame rơi từ 0,82 xuống 0,52 — toàn bộ AUC gộp đến từ nhận ra cảnh. Không cách nào vượt đường cơ sở chuyển động quá 0,03 trong video. Nguyên nhân khả dĩ: camera giám sát quay xa, người chỉ chiếm vài chục điểm ảnh sau khi thu cả khung hình về 224 px.
+
+### 6.4. Bước tiếp theo đang chờ: luồng A trên vùng người
+
+Notebook `colab/visual_crops_pilot_drive.ipynb` (đã đưa lên repository, **chưa chạy**). Mỗi giây cắt vùng vuông quanh tối đa 3 nhóm người lớn nhất (khung người lấy từ khung xương đã trích của luồng B, `features/pose_v1`; nhóm = người cách nhau dưới 0,5 chiều cao), chạy S3D trên từng vùng, đặc trưng clip = max theo vùng. Thử nghiệm chỉ trích video UBI-Fights có đánh nhau (đủ để đo AUC trong video) và Surveillance Camera Fight, rồi chạy lại bảng chẩn đoán 6.3 cạnh kết quả toàn khung hình; dự kiến 45–90 phút trên L4. AUC theo frame của lần này chỉ tính trên video đánh nhau, không so được với các lần trước.
+
+- **Vượt rõ đường cơ sở chuyển động trong video** (dòng `KẾT LUẬN ... SIGNAL` trong `artifacts/visual_crops_pilot/run_log.txt`): trích vùng người cho toàn bộ dataset (cả video bình thường), train lại luồng A trên đó (`train_visual_fight.py` đọc được định dạng mới), cân nhắc thêm RLVS — khi đó phải sửa phần lấy mẫu trước, vì hiện tại lấy đều theo video nên khoảng 85% chuỗi "đánh nhau" sẽ là clip RLVS 5 giây và loss xếp hạng trong video gần như mất tác dụng.
+- **Vẫn không vượt:** cả khung xương lẫn hình ảnh vùng người đều không tách được đoạn đánh với đoạn yên. Nên dừng lại kiểm tra chính nhãn và thước đo (xem trực tiếp các video có AUC trong video thấp ở cả hai luồng, ví dụ F_112, F_187, F_140, F_32, F_136 của tập test — xem `per_video.csv` của `fight_v3` và `visual_fight_v1`) trước khi đầu tư thêm vào model.
+
+Các việc còn lại:
+
+- [x] Luồng B lần 1–3: trích khung xương, train, đánh giá
+- [x] Luồng A v1: trích đặc trưng S3D toàn khung hình, train, đánh giá; chẩn đoán
+- [ ] Thử nghiệm luồng A trên vùng người (6.4)
+- [ ] Train lại luồng A theo kết quả thử nghiệm; đạt AUC trong video vượt rõ đường cơ sở chuyển động
+- [ ] Tích hợp model vào dashboard, thay luật `fighting` cũ (đã có bản thử cho luồng B ở máy local, chưa đưa lên repository)
+
+### 6.5. Hướng dẫn tiếp nhận
+
+Dữ liệu và kết quả nằm trên Google Drive (thư mục `SENTINEL` của người phụ trách trước), không nằm trên GitHub. Mọi notebook đọc cố định đường dẫn `/content/drive/MyDrive/SENTINEL`:
+
+1. Người phụ trách trước chia sẻ thư mục `SENTINEL` với quyền **Editor** (notebook ghi kết quả vào đó).
+2. Người tiếp nhận vào "Shared with me", chuột phải `SENTINEL` → **Organize → Add shortcut**, đặt shortcut ngay trong **My Drive**.
+3. Mở notebook trên Colab bằng đường dẫn `https://colab.research.google.com/github/TranDuon/anomaly-behavior-detector-system/blob/main/colab/<tên notebook>`, chọn GPU L4, `Runtime → Run all`. Notebook tự đồng bộ code từ nhánh `main`, chạy tiếp được khi Colab ngắt, chạy xong hoặc lỗi thì ghi lý do vào `artifacts/<tên lần chạy>/run_log.txt` và tự ngắt runtime.
+
+| Trên Drive (`SENTINEL/`) | Nội dung |
+| --- | --- |
+| `datasets/fight/UBI_FIGHTS.zip` | UBI-Fights gốc (8,1 GB); notebook giải nén vào máy Colab mỗi phiên |
+| `features/pose_v1/` | Khung xương của toàn bộ UBI-Fights và SCF (luồng B; luồng A dùng làm khung người) |
+| `features/s3d_v1/` | Đặc trưng S3D toàn khung hình |
+| `artifacts/fight_v1` … `fight_v3`, `visual_fight_v1` | Model, ngưỡng, lịch sử train, `evaluation/evaluation.json`, `per_video.csv`, biểu đồ |
+| `artifacts/visual_fight_v1/diagnostics/` | Kết quả chẩn đoán 6.3 |
+| `artifacts/fight/dedup/exclude.json` | Danh sách video trùng giữa các dataset (loại khỏi train) |
+| `kaggle.json` (chưa có) | Cần để thêm RLVS vào train |
+
+| Notebook (`colab/`) | Dùng để |
+| --- | --- |
+| `train_fight_drive.ipynb` | Luồng B (khung xương), lần 1–3 |
+| `train_visual_fight_drive.ipynb` | Luồng A: trích đặc trưng, train, đánh giá |
+| `diagnose_visual_fight_drive.ipynb` | Chẩn đoán đặc trưng (6.3) |
+| `visual_crops_pilot_drive.ipynb` | Thử nghiệm vùng người (6.4) — bước tiếp theo |
+
+Kiểm thử: `python -m pytest` (các test của luồng A và B chạy được trên CPU với dữ liệu giả).
 
 ## 7. Khó khăn gặp phải và hướng xử lý
 
