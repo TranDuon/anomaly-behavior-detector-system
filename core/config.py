@@ -66,6 +66,7 @@ class Settings(BaseSettings):
     fight_pair_radius: float = 1.5          # max pair distance, in person heights
     fight_model_path: Path = BASE_DIR / "models" / "fight_stgcn.pt"
     fight_threshold_path: Path = BASE_DIR / "models" / "fight_threshold.json"
+    fight_allow_pilot: bool = False
 
     # ── API ────────────────────────────────────────────────────────────────
     api_host: str = "0.0.0.0"

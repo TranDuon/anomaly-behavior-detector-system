@@ -13,6 +13,7 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 $env:PYTHONUTF8 = "1"
+Add-Type -AssemblyName System.IO.Compression.FileSystem
 
 $ProjectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $VenvDir = Join-Path $ProjectRoot ".venv"
@@ -21,9 +22,8 @@ $RequirementsPath = Join-Path $ProjectRoot "requirements.txt"
 $SetupStatePath = Join-Path $VenvDir ".sentinel-setup-state"
 $ModelsDir = Join-Path $ProjectRoot "models"
 $RequiredArtifacts = @(
-    "lstm_autoencoder.pt",
-    "feature_scaler.npz",
-    "threshold.json"
+    "fight_model.ts",
+    "fight_runtime.json"
 )
 
 function Write-Step {
@@ -144,7 +144,7 @@ function Resolve-RuntimeBundle {
     }
 
     $Candidate = Get-ChildItem -LiteralPath $DownloadsDir -File |
-        Where-Object { $_.Name -like "sentinel_ucsd_ped2_runtime*.zip" } |
+        Where-Object { $_.Name -like "sentinel_fight_only_runtime*.zip" } |
         Sort-Object LastWriteTime -Descending |
         Select-Object -First 1
     if ($null -eq $Candidate) {
@@ -157,19 +157,18 @@ function Install-RuntimeArtifacts {
     $ResolvedBundle = Resolve-RuntimeBundle
     if ($null -ne $ResolvedBundle) {
         Write-Step "Installing runtime bundle: $ResolvedBundle"
-        Expand-Archive -LiteralPath $ResolvedBundle -DestinationPath $ProjectRoot -Force
+        $Archive = [System.IO.Compression.ZipFile]::OpenRead($ResolvedBundle)
+        try {
+            foreach ($Name in $RequiredArtifacts) {
+                $Entry = $Archive.GetEntry("models/$Name")
+                if ($null -eq $Entry) { throw "Fight runtime bundle is missing models/$Name" }
+                [System.IO.Compression.ZipFileExtensions]::ExtractToFile($Entry, (Join-Path $ModelsDir $Name), $true)
+            }
+        } finally { $Archive.Dispose() }
     } elseif (-not (Test-RuntimeArtifacts)) {
-        throw @"
-Runtime artifacts were not found.
-Download sentinel_ucsd_ped2_runtime.zip from the final Colab cell and place it in:
-$env:USERPROFILE\Downloads
-Then run run_local.cmd again.
-"@
+        Write-Step "No fight checkpoint yet. Dashboard and camera preview remain available."
     }
 
-    if (-not (Test-RuntimeArtifacts)) {
-        throw "The runtime bundle is missing model, scaler, or threshold files."
-    }
 }
 
 function Set-CpuEnvironment {
@@ -196,8 +195,8 @@ function Set-CpuEnvironment {
 }
 
 function Test-RuntimeModel {
-    Write-Step "Verifying checkpoint, scaler, and threshold on CPU"
-    Invoke-Checked $PythonExe @("-m", "scripts.verify_runtime")
+    Write-Step "Checking fight-only runtime on CPU"
+    Invoke-Checked $PythonExe @("-m", "scripts.verify_fight_runtime")
 }
 
 Set-Location $ProjectRoot

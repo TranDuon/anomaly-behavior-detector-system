@@ -18,3 +18,6 @@ sentinel_results.zip
 sentinel_ucsd_ped2_runtime*.zip
 .venv/
 samples/
+models/*.ts
+sentinel_fight_only_runtime*.zip
+fightwatch_source*.zip
