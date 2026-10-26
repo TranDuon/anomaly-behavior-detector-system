@@ -1,0 +1,271 @@
+{
+  "training_code_revision": "ffd954a",
+  "scope": "People-centred development cohort; changed validation scope, not comparable directly with old headline metrics.",
+  "policy": {
+    "min_people": 2,
+    "min_height_ratio": 0.18,
+    "min_area_ratio": 0.008,
+    "support_frames": 2,
+    "max_single_control_fraction": 0.15
+  },
+  "coverage": {
+    "train": {
+      "0": {
+        "source_clips": 203,
+        "domains": {
+          "no_detected_people": 55,
+          "small_or_unstable_people": 45,
+          "people_interaction": 71,
+          "single_person_control": 32
+        }
+      },
+      "1": {
+        "source_clips": 68,
+        "domains": {
+          "small_or_unstable_people": 10,
+          "people_interaction": 42,
+          "single_person_control": 11,
+          "no_detected_people": 5
+        }
+      }
+    },
+    "validation": {
+      "0": {
+        "source_clips": 84,
+        "domains": {
+          "people_interaction": 14,
+          "small_or_unstable_people": 20,
+          "single_person_control": 28,
+          "no_detected_people": 22
+        }
+      },
+      "1": {
+        "source_clips": 25,
+        "domains": {
+          "small_or_unstable_people": 3,
+          "no_detected_people": 9,
+          "single_person_control": 3,
+          "people_interaction": 10
+        }
+      }
+    }
+  },
+  "train_clips": 132,
+  "validation_clips": 24,
+  "original_validation_clips": 109,
+  "official_test_used": false,
+  "approved_for_demo": false,
+  "decision": "stop_and_review",
+  "reason": "Independent test and full-video event evaluation still required; no automatic demo promotion.",
+  "baselines_on_same_cohort": {
+    "baseline_v1": {
+      "people_scope": {
+        "validation": {
+          "metric_scope": "selected pilot clips, not full-video frame-level evaluation",
+          "auc": 0.6785714285714286,
+          "ap": 0.616158846313645,
+          "precision": 0.6363636363636364,
+          "recall": 0.7,
+          "f1": 0.6666666666666666,
+          "false_positive_rate": 0.2857142857142857,
+          "in_video_auc": 0.5,
+          "mixed_label_videos": 2,
+          "clips": 24
+        },
+        "threshold": 0.5074449181556702,
+        "at_half": {
+          "metric_scope": "selected pilot clips, not full-video frame-level evaluation",
+          "auc": 0.6785714285714286,
+          "ap": 0.616158846313645,
+          "precision": 0.6363636363636364,
+          "recall": 0.7,
+          "f1": 0.6666666666666666,
+          "false_positive_rate": 0.2857142857142857,
+          "in_video_auc": 0.5,
+          "mixed_label_videos": 2,
+          "clips": 24
+        },
+        "best_recall_at_precision75": 0.1,
+        "best_precision_at_recall60": 0.6363636363636364,
+        "threshold_note": "Development validation only; thresholds are not independent test results."
+      },
+      "people_at_original_threshold": {
+        "metric_scope": "selected pilot clips, not full-video frame-level evaluation",
+        "auc": 0.6785714285714286,
+        "ap": 0.616158846313645,
+        "precision": 0.43478260869565216,
+        "recall": 1,
+        "f1": 0.6060606060606061,
+        "false_positive_rate": 0.9285714285714286,
+        "in_video_auc": 0.5,
+        "mixed_label_videos": 2,
+        "clips": 24
+      },
+      "original_scope_at_original_threshold": {
+        "metric_scope": "selected pilot clips, not full-video frame-level evaluation",
+        "auc": 0.71,
+        "ap": 0.4487281577241373,
+        "precision": 0.3392857142857143,
+        "recall": 0.76,
+        "f1": 0.4691358024691358,
+        "false_positive_rate": 0.44047619047619047,
+        "in_video_auc": 0.75,
+        "mixed_label_videos": 7,
+        "clips": 109
+      }
+    },
+    "interaction_v2": {
+      "people_scope": {
+        "validation": {
+          "metric_scope": "selected pilot clips, not full-video frame-level evaluation",
+          "auc": 0.7214285714285714,
+          "ap": 0.6952747252747253,
+          "precision": 0.5,
+          "recall": 1,
+          "f1": 0.6666666666666666,
+          "false_positive_rate": 0.7142857142857143,
+          "in_video_auc": 0.5,
+          "mixed_label_videos": 2,
+          "clips": 24
+        },
+        "threshold": 0.38333559036254883,
+        "at_half": {
+          "metric_scope": "selected pilot clips, not full-video frame-level evaluation",
+          "auc": 0.7214285714285714,
+          "ap": 0.6952747252747253,
+          "precision": 0.5333333333333333,
+          "recall": 0.8,
+          "f1": 0.64,
+          "false_positive_rate": 0.5,
+          "in_video_auc": 0.5,
+          "mixed_label_videos": 2,
+          "clips": 24
+        },
+        "best_recall_at_precision75": 0.6,
+        "best_precision_at_recall60": 0.75,
+        "threshold_note": "Development validation only; thresholds are not independent test results."
+      },
+      "people_at_original_threshold": {
+        "metric_scope": "selected pilot clips, not full-video frame-level evaluation",
+        "auc": 0.7214285714285714,
+        "ap": 0.6952747252747253,
+        "precision": 0.4166666666666667,
+        "recall": 1,
+        "f1": 0.5882352941176471,
+        "false_positive_rate": 1,
+        "in_video_auc": 0.5,
+        "mixed_label_videos": 2,
+        "clips": 24
+      },
+      "original_scope_at_original_threshold": {
+        "metric_scope": "selected pilot clips, not full-video frame-level evaluation",
+        "auc": 0.6638095238095238,
+        "ap": 0.46662820053683945,
+        "precision": 0.25842696629213485,
+        "recall": 0.92,
+        "f1": 0.40350877192982454,
+        "false_positive_rate": 0.7857142857142857,
+        "in_video_auc": 0.5,
+        "mixed_label_videos": 7,
+        "clips": 109
+      }
+    },
+    "full_hardneg_v2": {
+      "people_scope": {
+        "validation": {
+          "metric_scope": "selected pilot clips, not full-video frame-level evaluation",
+          "auc": 0.6428571428571428,
+          "ap": 0.596744227994228,
+          "precision": 0.45454545454545453,
+          "recall": 1,
+          "f1": 0.625,
+          "false_positive_rate": 0.8571428571428571,
+          "in_video_auc": 0.5833333333333334,
+          "mixed_label_videos": 2,
+          "clips": 24
+        },
+        "threshold": 0.06752033531665802,
+        "at_half": {
+          "metric_scope": "selected pilot clips, not full-video frame-level evaluation",
+          "auc": 0.6428571428571428,
+          "ap": 0.596744227994228,
+          "precision": 0.5454545454545454,
+          "recall": 0.6,
+          "f1": 0.5714285714285714,
+          "false_positive_rate": 0.35714285714285715,
+          "in_video_auc": 0.5833333333333334,
+          "mixed_label_videos": 2,
+          "clips": 24
+        },
+        "best_recall_at_precision75": 0.6,
+        "best_precision_at_recall60": 0.75,
+        "threshold_note": "Development validation only; thresholds are not independent test results."
+      },
+      "people_at_original_threshold": {
+        "metric_scope": "selected pilot clips, not full-video frame-level evaluation",
+        "auc": 0.6428571428571428,
+        "ap": 0.596744227994228,
+        "precision": 0.45,
+        "recall": 0.9,
+        "f1": 0.6,
+        "false_positive_rate": 0.7857142857142857,
+        "in_video_auc": 0.5833333333333334,
+        "mixed_label_videos": 2,
+        "clips": 24
+      },
+      "original_scope_at_original_threshold": {
+        "metric_scope": "selected pilot clips, not full-video frame-level evaluation",
+        "auc": 0.6566666666666667,
+        "ap": 0.46970530198386007,
+        "precision": 0.2903225806451613,
+        "recall": 0.72,
+        "f1": 0.41379310344827586,
+        "false_positive_rate": 0.5238095238095238,
+        "in_video_auc": 0.4375,
+        "mixed_label_videos": 7,
+        "clips": 109
+      }
+    }
+  },
+  "validation": {
+    "metric_scope": "selected pilot clips, not full-video frame-level evaluation",
+    "auc": 0.5785714285714285,
+    "ap": 0.5297783262489145,
+    "precision": 0.5,
+    "recall": 1,
+    "f1": 0.6666666666666666,
+    "false_positive_rate": 0.7142857142857143,
+    "in_video_auc": 0.5,
+    "mixed_label_videos": 2,
+    "clips": 24
+  },
+  "threshold": 0.3755509555339813,
+  "at_half": {
+    "metric_scope": "selected pilot clips, not full-video frame-level evaluation",
+    "auc": 0.5785714285714285,
+    "ap": 0.5297783262489145,
+    "precision": 0.46153846153846156,
+    "recall": 0.6,
+    "f1": 0.5217391304347826,
+    "false_positive_rate": 0.5,
+    "in_video_auc": 0.5,
+    "mixed_label_videos": 2,
+    "clips": 24
+  },
+  "best_recall_at_precision75": 0.1,
+  "best_precision_at_recall60": 0.5,
+  "threshold_note": "Development validation only; thresholds are not independent test results.",
+  "original_scope_at_people_threshold": {
+    "metric_scope": "selected pilot clips, not full-video frame-level evaluation",
+    "auc": 0.6623809523809524,
+    "ap": 0.38399303870353424,
+    "precision": 0.3870967741935484,
+    "recall": 0.48,
+    "f1": 0.42857142857142855,
+    "false_positive_rate": 0.2261904761904762,
+    "in_video_auc": 0.5625,
+    "mixed_label_videos": 7,
+    "clips": 109
+  },
+  "seconds": 77.56267358000014
+}

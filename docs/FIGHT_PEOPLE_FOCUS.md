@@ -1,5 +1,7 @@
 # Ưu tiên bối cảnh có người — people_focus_v1
 
+Đã chạy trên Colab; xem [kết quả và giới hạn](FIGHT_PEOPLE_RESULTS.md). Không kết luận mô hình tốt hơn chỉ vì thay đổi cohort.
+
 Không gán nhãn giao thông theo tên video hay giả định có xe là nhiễu. Bộ lọc tự động chỉ xác định có người đủ rõ để phù hợp demo; không phân loại xe. Người đánh nhau ở ngoài đường vẫn thuộc phạm vi, đám đông đi bộ bình thường vẫn là mẫu âm quan trọng.
 
 ## Quy tắc khóa trước khi xem kết quả
