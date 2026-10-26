@@ -32,6 +32,36 @@ def row_id(row):
     return (row["video"], row["start"], row["label"])
 
 
+def annotation_alignment(dataset_root):
+    records = []
+    for item in ubi_fights_items(Path(dataset_root)):
+        capture = cv2.VideoCapture(str(item.path))
+        try:
+            fps = float(capture.get(cv2.CAP_PROP_FPS))
+            count = int(capture.get(cv2.CAP_PROP_FRAME_COUNT))
+        finally:
+            capture.release()
+        if fps <= 0 or item.frame_labels is None:
+            raise ValueError(f"Missing frame timing or annotation: {item.uid}")
+        labels = np.asarray(item.frame_labels)
+        changes = np.diff(np.r_[0, labels, 0])
+        starts, ends = np.flatnonzero(changes == 1), np.flatnonzero(changes == -1)
+        records.append(
+            {
+                "video": item.uid,
+                "fps": fps,
+                "frames": count,
+                "annotation_frames": len(labels),
+                "difference": len(labels) - count,
+                "positive_intervals_seconds": [
+                    [round(float(start / fps), 3), round(float(end / fps), 3)]
+                    for start, end in zip(starts, ends)
+                ],
+            }
+        )
+    return records
+
+
 def fixed_manifest(source, dataset_root):
     manifest = json.loads(Path(source).read_text())
     if manifest.get("official_test_used") is not False:
@@ -397,6 +427,12 @@ def main():
     cache.mkdir(parents=True, exist_ok=True)
     manifest = fixed_manifest(source / "manifest.json", args.dataset_root)
     write_json(output / "source_manifest.json", manifest)
+    alignment = annotation_alignment(args.dataset_root)
+    write_json(output / "annotation_alignment.json", alignment)
+    if any(abs(row["difference"]) > 2 for row in alignment):
+        raise ValueError(
+            "Annotation/frame-count mismatch; inspect alignment report before training"
+        )
     detector_config = DetectorConfig()
     detector = PersonDetector(**detector_config.to_dict(), device="cuda")
     started = time.monotonic()

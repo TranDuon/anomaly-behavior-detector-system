@@ -9,11 +9,34 @@ from torch import nn
 
 from fight.vision import ClipConfig, DetectorConfig, clip_regions
 from scripts.fight_ablation import (
+    annotation_alignment,
     extra_negative_candidates,
     fixed_manifest,
     stable_train,
     threshold_report,
 )
+
+
+def test_annotation_alignment_reports_raw_frame_count_difference(tmp_path, monkeypatch):
+    import scripts.fight_ablation as ablation
+
+    class Capture:
+        def get(self, property_id):
+            return 10 if property_id == ablation.cv2.CAP_PROP_FPS else 51
+
+        def release(self):
+            pass
+
+    item = SimpleNamespace(
+        uid="ubi/example",
+        path=tmp_path / "sample.mp4",
+        frame_labels=np.r_[np.zeros(10), np.ones(20), np.zeros(20)],
+    )
+    monkeypatch.setattr(ablation, "ubi_fights_items", lambda root: [item])
+    monkeypatch.setattr(ablation.cv2, "VideoCapture", lambda path: Capture())
+    record = annotation_alignment(tmp_path)[0]
+    assert record["difference"] == -1
+    assert record["positive_intervals_seconds"] == [[1.0, 3.0]]
 
 
 def test_full_frame_mode_and_legacy_clip_metadata():

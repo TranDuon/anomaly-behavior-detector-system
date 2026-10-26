@@ -1,0 +1,221 @@
+{
+  "training_code_revision": "636f3b9fa83cbebd36bd1bf45e4efc5cc845df82",
+  "official_test_used": false,
+  "approved_for_demo": false,
+  "scope": "Repeated development validation on the original fixed split; independent test still required.",
+  "baseline": {
+    "schema_version": 1,
+    "architecture": "x3d_s",
+    "clip": {
+      "frames": 16,
+      "fps": 8,
+      "size": 182,
+      "stride_seconds": 0.5,
+      "max_regions": 3,
+      "version": 1
+    },
+    "approved_for_demo": false,
+    "evaluation_only": true,
+    "decision": "stop_and_review",
+    "reason": "Pilot has not demonstrated sufficient generalization; inspect labels, crops and errors before spending more GPU time.",
+    "budget_minutes": 5,
+    "seconds": 12.397371856000063,
+    "cached_clips": 380,
+    "planned_clips": 380,
+    "official_test_used": false,
+    "sanity": {
+      "clips": 8,
+      "initial_loss": 0.6404367685317993,
+      "final_loss": 0.000006981269052630523,
+      "passed": true,
+      "meaning": "Training plumbing only; does not measure generalization."
+    },
+    "caveat": "Pilot validation only. Scene grouping is approximate; inspect previews before full training.",
+    "validation": {
+      "metric_scope": "selected pilot clips, not full-video frame-level evaluation",
+      "auc": 0.71,
+      "ap": 0.4487281577241373,
+      "precision": 0.3392857142857143,
+      "recall": 0.76,
+      "f1": 0.4691358024691358,
+      "false_positive_rate": 0.44047619047619047,
+      "in_video_auc": 0.75,
+      "mixed_label_videos": 7,
+      "clips": 109
+    },
+    "motion_baseline": {
+      "metric_scope": "selected pilot clips, not full-video frame-level evaluation",
+      "auc": 0.5514285714285715,
+      "ap": 0.2918976381512502,
+      "precision": 1,
+      "recall": 0.04,
+      "f1": 0.07692307692307693,
+      "false_positive_rate": 0,
+      "in_video_auc": 0.25,
+      "mixed_label_videos": 7,
+      "clips": 109
+    },
+    "threshold": 0.11372881355932203,
+    "cpu_single_region_seconds": 0.12638852999998562,
+    "cpu_measurement_note": "Colab CPU, 4 threads, classifier only; local CPU + person detector must be measured separately."
+  },
+  "variants": {
+    "interaction": {
+      "validation": {
+        "metric_scope": "selected pilot clips, not full-video frame-level evaluation",
+        "auc": 0.6638095238095238,
+        "ap": 0.46662820053683945,
+        "precision": 0.25842696629213485,
+        "recall": 0.92,
+        "f1": 0.40350877192982454,
+        "false_positive_rate": 0.7857142857142857,
+        "in_video_auc": 0.5,
+        "mixed_label_videos": 7,
+        "clips": 109
+      },
+      "threshold": 0.07592114806175232,
+      "at_half": {
+        "metric_scope": "selected pilot clips, not full-video frame-level evaluation",
+        "auc": 0.6638095238095238,
+        "ap": 0.46662820053683945,
+        "precision": 0.45,
+        "recall": 0.36,
+        "f1": 0.4,
+        "false_positive_rate": 0.13095238095238096,
+        "in_video_auc": 0.5,
+        "mixed_label_videos": 7,
+        "clips": 109
+      },
+      "best_recall_at_precision75": 0.24,
+      "best_precision_at_recall60": 0.45454545454545453,
+      "threshold_note": "Development validation only; thresholds are not independent test results.",
+      "variant": "interaction",
+      "train_clips": 271,
+      "validation_clips": 109,
+      "approved_for_demo": false,
+      "official_test_used": false,
+      "selection_metric": "validation average_precision",
+      "clip": {
+        "frames": 16,
+        "fps": 8,
+        "size": 182,
+        "stride_seconds": 0.5,
+        "max_regions": 3,
+        "version": 1,
+        "region_mode": "interaction"
+      },
+      "person_detector": {
+        "model_name": "yolov8n.pt",
+        "confidence": 0.4,
+        "iou": 0.45,
+        "image_size": 640
+      },
+      "decision": "stop_and_review"
+    },
+    "full": {
+      "validation": {
+        "metric_scope": "selected pilot clips, not full-video frame-level evaluation",
+        "auc": 0.641904761904762,
+        "ap": 0.4194729629183453,
+        "precision": 0.28378378378378377,
+        "recall": 0.84,
+        "f1": 0.42424242424242425,
+        "false_positive_rate": 0.6309523809523809,
+        "in_video_auc": 0.5,
+        "mixed_label_videos": 7,
+        "clips": 109
+      },
+      "threshold": 0.04692880064249039,
+      "at_half": {
+        "metric_scope": "selected pilot clips, not full-video frame-level evaluation",
+        "auc": 0.641904761904762,
+        "ap": 0.4194729629183453,
+        "precision": 0.5625,
+        "recall": 0.36,
+        "f1": 0.43902439024390244,
+        "false_positive_rate": 0.08333333333333333,
+        "in_video_auc": 0.5,
+        "mixed_label_videos": 7,
+        "clips": 109
+      },
+      "best_recall_at_precision75": 0,
+      "best_precision_at_recall60": 0.2909090909090909,
+      "threshold_note": "Development validation only; thresholds are not independent test results.",
+      "variant": "full",
+      "train_clips": 271,
+      "validation_clips": 109,
+      "approved_for_demo": false,
+      "official_test_used": false,
+      "selection_metric": "validation average_precision",
+      "clip": {
+        "frames": 16,
+        "fps": 8,
+        "size": 182,
+        "stride_seconds": 0.5,
+        "max_regions": 3,
+        "version": 1,
+        "region_mode": "full"
+      },
+      "person_detector": {
+        "model_name": "yolov8n.pt",
+        "confidence": 0.4,
+        "iou": 0.45,
+        "image_size": 640
+      },
+      "decision": "stop_and_review"
+    },
+    "full_hardneg": {
+      "validation": {
+        "metric_scope": "selected pilot clips, not full-video frame-level evaluation",
+        "auc": 0.6566666666666667,
+        "ap": 0.46970530198386007,
+        "precision": 0.2903225806451613,
+        "recall": 0.72,
+        "f1": 0.41379310344827586,
+        "false_positive_rate": 0.5238095238095238,
+        "in_video_auc": 0.4375,
+        "mixed_label_videos": 7,
+        "clips": 109
+      },
+      "threshold": 0.11840837448835373,
+      "at_half": {
+        "metric_scope": "selected pilot clips, not full-video frame-level evaluation",
+        "auc": 0.6566666666666667,
+        "ap": 0.46970530198386007,
+        "precision": 0.6,
+        "recall": 0.36,
+        "f1": 0.45,
+        "false_positive_rate": 0.07142857142857142,
+        "in_video_auc": 0.4375,
+        "mixed_label_videos": 7,
+        "clips": 109
+      },
+      "best_recall_at_precision75": 0.36,
+      "best_precision_at_recall60": 0.3191489361702128,
+      "threshold_note": "Development validation only; thresholds are not independent test results.",
+      "variant": "full_hardneg",
+      "train_clips": 303,
+      "validation_clips": 109,
+      "approved_for_demo": false,
+      "official_test_used": false,
+      "selection_metric": "validation average_precision",
+      "clip": {
+        "frames": 16,
+        "fps": 8,
+        "size": 182,
+        "stride_seconds": 0.5,
+        "max_regions": 3,
+        "version": 1,
+        "region_mode": "full"
+      },
+      "person_detector": {
+        "model_name": "yolov8n.pt",
+        "confidence": 0.4,
+        "iou": 0.45,
+        "image_size": 640
+      },
+      "decision": "stop_and_review"
+    }
+  },
+  "seconds": 673.063532942
+}

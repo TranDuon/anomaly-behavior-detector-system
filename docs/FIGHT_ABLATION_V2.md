@@ -1,5 +1,7 @@
 # Fixed-split pilot v2
 
+Actual run results: [FIGHT_ABLATION_V2_RESULTS.md](FIGHT_ABLATION_V2_RESULTS.md). All three branches completed in ~11 minutes; none passed the development gate.
+
 Notebook: `colab/fight_ablation_drive.ipynb`. Source: `SENTINEL/artifacts/fight_pilot_x3d_v1/`. Outputs/cache go to new `fight_ablation_v2` directories, not over the original checkpoint.
 
 ## Comparisons
