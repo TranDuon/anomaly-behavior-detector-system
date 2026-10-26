@@ -106,6 +106,19 @@ def test_stream_gap_resets_stale_alerts():
         runtime.push(np.zeros((32, 32, 3), np.uint8), 19)
 
 
+def test_low_fps_is_insufficient_instead_of_stretching_the_action():
+    runtime = FightRuntime(
+        predictor=ConstantModel(),
+        config=ClipConfig(frames=4, fps=8, size=16),
+        detector=Detector(),
+    )
+    results = [
+        runtime.push(np.zeros((32, 32, 3), np.uint8), index / 2) for index in range(20)
+    ]
+    assert results[-1]["state"] == "insufficient"
+    assert all(result["event"] is None for result in results)
+
+
 def test_regions_preserve_both_people_and_do_not_distort():
     region = regions_for([[1, 3, 12, 28], [14, 4, 26, 27]], 40, 32)[0]
     assert region[0] <= 1 and region[2] >= 26

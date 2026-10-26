@@ -109,6 +109,7 @@ class FightRuntime:
 
     def reset(self):
         self.samples = deque(maxlen=self.config.frames)
+        self.sample_times = deque(maxlen=self.config.frames)
         self.next_sample = None
         self.last_input = None
         self.last_prediction = None
@@ -150,9 +151,22 @@ class FightRuntime:
         while self.next_sample <= timestamp + 1e-6:
             self.next_sample += 1 / self.config.fps
         self.samples.append(frame.copy())
+        self.sample_times.append(timestamp)
         if not predict:
             return dict(self.result)
         if len(self.samples) < self.config.frames:
+            return dict(self.result)
+        expected_span = (self.config.frames - 1) / self.config.fps
+        if self.sample_times[-1] - self.sample_times[0] > expected_span * 1.5:
+            was_active = self.gate.active
+            self.gate = EventGate(self.gate.threshold, self.gate.release_threshold)
+            self.result = {
+                **self.result,
+                "state": "insufficient",
+                "score": None,
+                "event": "ended" if was_active else None,
+                "message": "FPS nguồn hình quá thấp hoặc mất nhiều frame; chưa đủ dữ liệu theo thời gian.",
+            }
             return dict(self.result)
         if (
             self.last_prediction is not None

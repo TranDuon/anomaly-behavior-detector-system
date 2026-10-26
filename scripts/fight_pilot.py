@@ -58,6 +58,7 @@ def metrics(rows, scores, threshold):
             per_video.append(video_auc)
     normal = labels == 0
     return {
+        "metric_scope": "selected pilot clips, not full-video frame-level evaluation",
         "auc": auc(labels, scores),
         "ap": float(average_precision_score(labels, scores)) if labels.any() else None,
         "precision": float(precision),
@@ -197,6 +198,7 @@ def build_manifest(items, videos, clips_per_video, config, seed, excluded=()):
         "rows": rows,
         "split_policy": "official train only; near-duplicate first-frame hashes grouped before splitting; visual scene audit still required",
         "official_test_used": False,
+        "metric_scope": "selected pilot clips from official training videos only",
     }
 
 
