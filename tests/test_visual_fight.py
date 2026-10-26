@@ -169,3 +169,22 @@ def test_make_batch_pads_and_frame_level_scores_whole_videos():
     assert perfect["auc"] > 0.95 and perfect["video_auc_median"] > 0.95
     assert selection_score(perfect, "mean") == pytest.approx((perfect["auc"] + perfect["video_auc_median"]) / 2)
     assert selection_score({"auc": 0.8, "video_auc_median": float("nan")}, "video_auc") == 0.0
+
+
+def test_scene_removal_is_causal_and_zero_shot_scores_are_probabilities():
+    from scripts.diagnose_visual_fight import kinetics_fight_score, remove_scene
+
+    features = np.random.default_rng(0).normal(size=(6, FEATURE_DIM)).astype(np.float16)
+    scene = remove_scene(features, "scene").astype(np.float32)
+    assert np.allclose(scene[0], 0.0)
+    expected = features[3].astype(np.float32) - features[:3].astype(np.float32).mean(axis=0)
+    np.testing.assert_allclose(scene[3], expected, atol=1e-2)
+    changed = features.copy()
+    changed[5] += 3.0                                           # a later clip does not move earlier ones
+    np.testing.assert_array_equal(remove_scene(changed, "scene")[:5], remove_scene(features, "scene")[:5])
+    assert np.allclose(remove_scene(features, "videomean").astype(np.float32).mean(axis=0), 0.0, atol=1e-2)
+
+    weight = np.random.default_rng(1).normal(size=(400, 1024)).astype(np.float32) / 30
+    scores = kinetics_fight_score(features, weight, np.zeros(400, np.float32), [3, 7])
+    assert scores.shape == (6,) and np.all((scores > 0) & (scores < 1))
+    assert np.allclose(kinetics_fight_score(features, weight, np.zeros(400, np.float32), list(range(400))), 1.0)
