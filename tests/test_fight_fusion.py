@@ -108,6 +108,35 @@ def test_cpu_acceptance_installs_pose_weights_into_isolated_candidate(tmp_path):
     assert (models / "yolov8n-pose.pt").read_bytes() == b"yolov8n-pose.pt"
 
 
+def test_hard_negative_report_does_not_count_paired_views_as_independent():
+    from scripts.fight_fusion_report import grouped_negatives
+
+    rows = [
+        {
+            "video": "cam1",
+            "performance": "hug1",
+            "label": 0,
+            "actions": ["hug", "greet"],
+            "score": 0.9,
+        },
+        {
+            "video": "cam2",
+            "performance": "hug1",
+            "label": 0,
+            "actions": ["hug", "greet"],
+            "score": 0.1,
+        },
+        {"video": "fight", "label": 1, "actions": ["hug"], "score": 0.9},
+    ]
+    result = grouped_negatives(rows, 0.5)["hug"]
+    assert result["clips"] == 2 and result["performances"] == 1
+    assert (
+        result["false_positive_clips"]
+        == result["performances_with_false_positive"]
+        == 1
+    )
+
+
 def test_residual_fusion_starts_at_rgb_baseline_and_has_finite_missing_pose():
     torch.set_num_threads(2)
     model = InteractionFusion().eval()

@@ -22,6 +22,8 @@ Global threshold chosen from independent calibration score-group midpoints. Conf
 
 ## Runtime / delivery
 
+Baseline is also evaluated with matched new pose-derived regions/12fps windows, with its own independent calibration, to avoid attributing preprocessing changes to fusion learning. Saved reports distinguish paired camera clips from unique performances. The report renderer only reads saved predictions/history and generates learning curves and timelines; it cannot tune thresholds or promote a checkpoint.
+
 Backward-compatible `input_kind=rgb` or `rgb_pose` metadata. Fusion bundle includes TorchScript, JSON and fixed-basename official pose weights; missing pose file blocks activation rather than silently changing input. Shared pose preprocessing/model/gate applies to upload, paced replay and live sources. Existing stale-result, source-gap and insufficient-FPS protections remain. CPU tests must include model export and actual upload/replay, not only fake predictors. Do not claim iPhone acceptance until connected and measured.
 
 Notebook: `colab/fight_fusion_drive.ipynb`. Drive run directory: `SENTINEL/artifacts/fight_fusion_v1`. Existing run is read-only, never automatic retry. Cache archive backed up after the run. Failure reason and completed checkpoint/history remain saved. Next phase only if results justify it: true multi-scale temporal branch, additional independent action sources, and physical-phone/crowd acceptance.
