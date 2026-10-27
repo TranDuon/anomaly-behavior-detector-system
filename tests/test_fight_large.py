@@ -1,0 +1,165 @@
+import random
+import zipfile
+from types import SimpleNamespace
+
+import cv2
+import numpy as np
+import pytest
+import torch
+
+from fight.runtime import EventGate, FightRuntime
+from fight.vision import ClipConfig
+from scripts.fight_large_train import operating_point, validate_manifest
+from scripts.fight_public_data import airtlab_items, assign_groups, validate_zip
+
+
+def public_rows():
+    generator = random.Random(17)
+    return [
+        {
+            "video": f"source/{index}",
+            "dataset": "rlvs",
+            "label": index % 2,
+            "sha256": str(index),
+            "scene_hashes": [generator.getrandbits(64) for _ in range(3)],
+        }
+        for index in range(400)
+    ]
+
+
+def test_grouped_four_way_split_keeps_camera_pairs_and_scene_negatives():
+    rows = public_rows()
+    rows.extend(
+        [
+            {
+                **rows[0],
+                "video": "airtlab/cam1/1",
+                "dataset": "airtlab",
+                "sha256": "cam1",
+                "performance": "same_performance",
+            },
+            {
+                **rows[2],
+                "video": "airtlab/cam2/1",
+                "dataset": "airtlab",
+                "sha256": "cam2",
+                "performance": "same_performance",
+            },
+        ]
+    )
+    rows[1]["scene_hashes"] = rows[0]["scene_hashes"]
+    accepted, conflicts = assign_groups(rows)
+    assert not conflicts
+    validate_manifest({"rows": accepted})
+    pair = [row for row in accepted if row.get("performance")]
+    assert len({row["scene_group"] for row in pair}) == 1
+    scene = [row for row in accepted if row["video"] in {"source/0", "source/1"}]
+    assert len({row["scene_group"] for row in scene}) == 1
+    assert {row["label"] for row in scene} == {0, 1}
+    accepted[0]["scene_group"] = next(
+        row["scene_group"] for row in accepted if row["split"] != accepted[0]["split"]
+    )
+    with pytest.raises(ValueError, match="leakage"):
+        validate_manifest({"rows": accepted})
+
+
+def test_airtlab_excludes_weapons_but_keeps_hard_negatives(tmp_path):
+    (tmp_path / "violent-action-classes.csv").write_text(
+        "FILE;ACTION CLASSES\n1.mp4;punch,fight\n2.mp4;club,fight\n3.mp4;gunshot\n4.mp4;push\n"
+    )
+    for category in ("violent", "non-violent"):
+        for camera in ("cam1", "cam2"):
+            directory = tmp_path / category / camera
+            directory.mkdir(parents=True)
+            for index in range(1, 5):
+                (directory / f"{index}.mp4").touch()
+    rows = airtlab_items(tmp_path)
+    assert sum(row["label"] for row in rows) == 2
+    assert sum(row["label"] == 0 for row in rows) == 8
+    assert len({row["performance"] for row in rows if row["label"]}) == 1
+
+
+def test_zip_traversal_and_incomplete_download_rejected(tmp_path):
+    archive = tmp_path / "source.zip"
+    with zipfile.ZipFile(archive, "w") as handle:
+        handle.writestr("../escape.mp4", "bad")
+    with pytest.raises(ValueError, match="Unsafe"):
+        validate_zip(archive, 1)
+    with zipfile.ZipFile(archive, "w") as handle:
+        handle.writestr("clip.mp4", "video")
+    with pytest.raises(ValueError, match="Incomplete"):
+        validate_zip(archive, 2)
+
+
+def test_calibration_never_claims_impossible_precision_recall():
+    rows = [
+        {"label": label, "video": str(index)} for index, label in enumerate([0, 1] * 10)
+    ]
+    failed = operating_point(rows, [0.5] * 20)
+    assert not failed["target_feasible_on_calibration"]
+    passed = operating_point(rows, [0.1, 0.9] * 10)
+    assert passed["target_feasible_on_calibration"]
+    assert passed["calibration"]["precision"] == 1
+    assert passed["calibration"]["recall"] == 1
+    assert passed["calibration"]["precision_wilson95"][0] < 0.8
+
+
+def test_gate_does_not_join_distant_high_predictions():
+    gate = EventGate(confirm_seconds=0.8, max_observation_gap=1.5)
+    assert gate.update(0.95, 0) == ("verifying", None)
+    assert gate.update(0.95, 10) == ("verifying", None)
+    assert gate.update(0.95, 11) == ("fighting", "started")
+    assert gate.update(0.95, 15) == ("insufficient", "ended")
+    assert gate.update(0.95, 15.5) == ("verifying", None)
+    with pytest.raises(ValueError):
+        gate.update(float("nan"), 16)
+    with pytest.raises(ValueError):
+        gate.update(0.9, 14)
+    assert gate.fresh().max_observation_gap == 1.5
+
+
+class BrightModel(torch.nn.Module):
+    def forward(self, values):
+        return values.mean(dim=(1, 2, 3, 4)) * 0 + 5
+
+
+class People:
+    def detect(self, frame):
+        return [SimpleNamespace(bbox_xyxy=[1, 1, 22, 30])]
+
+
+def test_processor_uploaded_file_and_paced_camera_replay(tmp_path):
+    from api.fight_server import FightProcessor
+
+    source = tmp_path / "recorded.avi"
+    writer = cv2.VideoWriter(str(source), cv2.VideoWriter_fourcc(*"MJPG"), 8, (40, 32))
+    for index in range(32):
+        writer.write(np.full((32, 40, 3), index * 5, np.uint8))
+    writer.release()
+    outcomes = []
+    for replay in (False, True):
+        processor = FightProcessor()
+        processor.runtime = FightRuntime(
+            predictor=BrightModel(),
+            config=ClipConfig(frames=4, fps=4, size=16, stride_seconds=0.25),
+            detector=People(),
+        )
+        processor.preview = False
+        processor.replay = replay
+        processor.evidence_dir = tmp_path
+        records = []
+        processor.record = lambda frame, result: records.append(
+            (processor.timestamp, dict(result))
+        )
+        processor.run(str(source))
+        assert processor.phase == "completed", processor.error
+        assert processor.frame_count == 32
+        assert len(records) == 16
+        outcomes.append(
+            [
+                (round(timestamp, 2), result["event"], result["state"])
+                for timestamp, result in records
+            ]
+        )
+    assert outcomes[0] == outcomes[1]
+    assert sum(event == "started" for _, event, _ in outcomes[1]) == 1

@@ -12,6 +12,8 @@ Mở http://localhost:8000. Chưa có checkpoint đánh nhau mới vẫn xem đ�
 
 ## Thử phương pháp trước khi train lớn
 
+Lượt mở rộng sau audit nhãn UBI: [notebook RLVS + AIRTLab](https://colab.research.google.com/github/TranDuon/anomaly-behavior-detector-system/blob/main/colab/fight_large_drive.ipynb), [quy trình và giới hạn](docs/FIGHT_LARGE_TRAINING.md). Train/development/calibration/test tách nhóm trước khi tạo clip; không dùng lại nhãn frame UBI bị cảnh báo. Mục tiêu precision và recall cùng đạt 80%, không bảo đảm trước kết quả hoặc độ chính xác iPhone thật. Giao diện có **Phát lại theo thời gian thực** để kiểm thử luồng camera bằng video khi chưa nối điện thoại.
+
 [Open in Colab — FightWatch pilot](https://colab.research.google.com/github/TranDuon/anomaly-behavior-detector-system/blob/main/colab/fight_pilot_drive.ipynb)
 
 Notebook tự đồng bộ code, dùng archive UBI-Fights đã có trên Drive, chỉ chọn 48 video từ phần train, lưu cache và chạy trong budget 30 phút. Pipeline thử sanity → probe → fine-tune ngắn → validation theo thời gian. Official test được giữ riêng. Không tự train toàn bộ dataset nhiều giờ.

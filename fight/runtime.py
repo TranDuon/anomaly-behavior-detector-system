@@ -21,16 +21,51 @@ class EventGate:
         release_threshold=0.5,
         confirm_seconds=0.8,
         release_seconds=1.0,
+        max_observation_gap=1.5,
     ):
+        values = (
+            threshold,
+            release_threshold,
+            confirm_seconds,
+            release_seconds,
+            max_observation_gap,
+        )
+        if (
+            not all(math.isfinite(value) for value in values)
+            or not 0 < release_threshold <= threshold < 1
+            or min(confirm_seconds, release_seconds) < 0
+            or max_observation_gap <= 0
+        ):
+            raise ValueError("Invalid event gate configuration")
         self.threshold = threshold
         self.release_threshold = release_threshold
         self.confirm_seconds = confirm_seconds
         self.release_seconds = release_seconds
+        self.max_observation_gap = max_observation_gap
+        self.last_observation = None
         self.pending_since = None
         self.low_since = None
         self.active = False
 
     def update(self, score, timestamp):
+        if (
+            not math.isfinite(score)
+            or not 0 <= score <= 1
+            or not math.isfinite(timestamp)
+            or (self.last_observation is not None and timestamp < self.last_observation)
+        ):
+            raise ValueError("Finite probabilities and monotonic timestamps required")
+        stale = (
+            self.last_observation is not None
+            and timestamp - self.last_observation > self.max_observation_gap
+        )
+        self.last_observation = timestamp
+        if stale:
+            was_active = self.active
+            self.pending_since = self.low_since = None
+            self.active = False
+            if was_active:
+                return "insufficient", "ended"
         event = None
         if score >= self.threshold:
             self.low_since = None
@@ -59,6 +94,15 @@ class EventGate:
             else ("verifying" if self.pending_since is not None else "normal")
         )
         return state, event
+
+    def fresh(self):
+        return EventGate(
+            self.threshold,
+            self.release_threshold,
+            self.confirm_seconds,
+            self.release_seconds,
+            self.max_observation_gap,
+        )
 
 
 class FightRuntime:
@@ -104,7 +148,9 @@ class FightRuntime:
                 self.predictor = torch.jit.load(
                     str(model_path), map_location="cpu"
                 ).eval()
-                self.gate = EventGate(threshold, threshold * 0.7)
+                self.gate = EventGate(
+                    threshold, threshold * 0.7, **self.metadata.get("event_gate", {})
+                )
                 self.model_ready = True
                 self.message = (
                     "Checkpoint thử nghiệm"
@@ -122,12 +168,7 @@ class FightRuntime:
         self.next_sample = None
         self.last_input = None
         self.last_prediction = None
-        self.gate = EventGate(
-            self.gate.threshold,
-            self.gate.release_threshold,
-            self.gate.confirm_seconds,
-            self.gate.release_seconds,
-        )
+        self.gate = self.gate.fresh()
         self.result = {
             "state": "warming_up" if self.model_ready else "unavailable",
             "score": None,
@@ -168,7 +209,7 @@ class FightRuntime:
         expected_span = (self.config.frames - 1) / self.config.fps
         if self.sample_times[-1] - self.sample_times[0] > expected_span * 1.5:
             was_active = self.gate.active
-            self.gate = EventGate(self.gate.threshold, self.gate.release_threshold)
+            self.gate = self.gate.fresh()
             self.result = {
                 **self.result,
                 "state": "insufficient",

@@ -62,6 +62,7 @@ class FightProcessor:
         self.phase = "idle"
         self.error = None
         self.source = None
+        self.replay = False
         self.frame_count = self.total_frames = 0
         self.timestamp = self.latency = 0.0
         self.output = None
@@ -79,7 +80,7 @@ class FightProcessor:
         if self.thread and self.thread is not threading.current_thread():
             self.thread.join(timeout=8)
 
-    def start(self, source, allow_pilot=False, preview=False):
+    def start(self, source, allow_pilot=False, preview=False, replay=False):
         with self.lifecycle:
             self.stop()
             if self.is_running():
@@ -89,6 +90,7 @@ class FightProcessor:
                 raise ValueError(self.runtime.message)
             self.stop_event.clear()
             self.preview = preview
+            self.replay = replay
             self.source, self.phase, self.error = source, "opening", None
             self.frame_count = self.total_frames = 0
             self.timestamp = self.latency = 0.0
@@ -102,6 +104,11 @@ class FightProcessor:
             "running": self.is_running(),
             "phase": self.phase,
             "source": str(self.source) if self.source is not None else None,
+            "source_kind": (
+                "replay"
+                if self.replay
+                else ("video" if self.total_frames else "camera")
+            ),
             "frame_count": self.frame_count,
             "total_frames": self.total_frames,
             "timestamp": self.timestamp,
@@ -189,6 +196,7 @@ class FightProcessor:
 
     def run(self, source):
         is_file = isinstance(source, str) and Path(source).is_file()
+        live_mode = not is_file or self.replay
         capture = cv2.VideoCapture(source)
         writer = reader = None
         pending = deque(maxlen=self.runtime.config.frames * 2)
@@ -205,20 +213,31 @@ class FightProcessor:
             )
             self.phase = "processing"
             output_path = self.evidence_dir / f"{uuid.uuid4().hex}.mp4"
-            if not is_file:
+            if live_mode:
 
                 def read_live():
                     next_sample = 0.0
+                    source_index = 0
                     while not self.stop_event.is_set():
                         ok, frame = capture.read()
                         if not ok:
                             break
-                        timestamp = time.monotonic() - started
+                        timestamp = (
+                            source_index / fps
+                            if is_file
+                            else time.monotonic() - started
+                        )
+                        source_index += 1
+                        if is_file and self.stop_event.wait(
+                            max(0.0, started + timestamp - time.monotonic())
+                        ):
+                            break
                         with live_lock:
                             latest.update(frame=frame, count=latest["count"] + 1)
-                            if timestamp >= next_sample:
+                            if timestamp + 1e-6 >= next_sample:
                                 pending.append((frame, timestamp))
-                                next_sample = timestamp + 1 / self.runtime.config.fps
+                                while next_sample <= timestamp + 1e-6:
+                                    next_sample += 1 / self.runtime.config.fps
                     with live_lock:
                         latest["ended"] = True
 
@@ -226,7 +245,7 @@ class FightProcessor:
                 reader.start()
             last_evidence = -1.0
             while not self.stop_event.is_set():
-                if is_file:
+                if not live_mode:
                     ok, frame = capture.read()
                     if not ok:
                         break
@@ -244,6 +263,8 @@ class FightProcessor:
                         self.frame_count = latest["count"]
                     if not samples:
                         if ended:
+                            if is_file:
+                                break
                             raise ValueError("Camera mất kết nối.")
                         self.stop_event.wait(0.02)
                         continue
@@ -263,22 +284,24 @@ class FightProcessor:
                             sample, sample_time, predict=index == len(samples) - 1
                         )
                     )
+                    self.timestamp = sample_time
+                    if (
+                        sample_time - last_evidence + 1e-6
+                        >= 1 / self.runtime.config.fps
+                        or result.get("event")
+                    ):
+                        self.record(sample, result)
+                        last_evidence = sample_time
                 if self.preview:
                     self.runtime.result = result
                 self.timestamp = timestamp
                 self.latency = (
                     max(0.0, time.monotonic() - started - timestamp)
-                    if not is_file
+                    if live_mode
                     else 0.0
                 )
-                if (
-                    timestamp - last_evidence >= 1 / self.runtime.config.fps
-                    or result.get("event")
-                ):
-                    self.record(frame, result)
-                    last_evidence = timestamp
                 image = annotate(frame, result)
-                if is_file:
+                if not live_mode:
                     if writer is None:
                         writer = cv2.VideoWriter(
                             str(output_path),
@@ -333,16 +356,21 @@ def events():
     return {"events": [dict(event) for event in processor.events[-100:]]}
 
 
-def start_source(source, allow_pilot, preview=False):
+def start_source(source, allow_pilot, preview=False, replay=False):
     try:
-        processor.start(source, allow_pilot, preview)
+        if replay:
+            processor.start(source, allow_pilot, preview, replay=True)
+        else:
+            processor.start(source, allow_pilot, preview)
     except (ValueError, RuntimeError) as error:
         raise HTTPException(409, str(error)) from error
     return {"status": "started"}
 
 
 @app.post("/api/upload")
-async def upload(file: UploadFile = File(...), allow_pilot: bool = False):
+async def upload(
+    file: UploadFile = File(...), allow_pilot: bool = False, replay: bool = False
+):
     suffix = Path(file.filename or "").suffix.lower()
     if suffix not in {".mp4", ".avi", ".mov", ".mkv", ".webm", ".m4v"}:
         raise HTTPException(400, "Chọn một file video hợp lệ.")
@@ -350,7 +378,7 @@ async def upload(file: UploadFile = File(...), allow_pilot: bool = False):
     with destination.open("wb") as handle:
         while chunk := await file.read(1024 * 1024):
             handle.write(chunk)
-    return start_source(str(destination), allow_pilot)
+    return start_source(str(destination), allow_pilot, replay=replay)
 
 
 @app.post("/api/stream/camera")
