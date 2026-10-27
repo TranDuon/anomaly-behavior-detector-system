@@ -122,6 +122,7 @@ class FightRuntime:
         self.predictor = predictor
         self.detector = detector
         self.model_ready = predictor is not None
+        self.pilot_required = False
         self.message = "Chưa có checkpoint đánh nhau được kiểm thử."
         self.metadata = {}
         self.models_dir = Path(models_dir)
@@ -156,8 +157,9 @@ class FightRuntime:
                     not self.metadata.get("approved_for_demo", False)
                     and not allow_pilot
                 ):
+                    self.pilot_required = True
                     raise ValueError(
-                        "Checkpoint pilot chưa đạt cổng kiểm thử; chỉ bật chế độ thử nghiệm khi cần."
+                        "Đã có checkpoint thử nghiệm; hãy tích Cho phép checkpoint pilot để chạy. Chưa nghiệm thu demo."
                     )
                 threshold = float(self.metadata["threshold"])
                 if not 0 < threshold < 1:

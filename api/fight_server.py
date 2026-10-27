@@ -1,4 +1,6 @@
 import json
+import hashlib
+import os
 import threading
 import time
 import uuid
@@ -12,6 +14,26 @@ from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
 from core.config import BASE_DIR, settings
 from fight.runtime import FightRuntime
 from fight.session_recording import SessionRecording
+
+UI_PATH = BASE_DIR / "frontend" / "fight.html"
+SERVER_INSTANCE = uuid.uuid4().hex[:12]
+BACKEND_REVISION = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()[:12]
+
+
+def ui_revision(source=None):
+    source = UI_PATH.read_text(encoding="utf-8") if source is None else source
+    return hashlib.sha256(source.encode("utf-8")).hexdigest()[:12]
+
+
+def server_identity():
+    return {
+        "instance_id": SERVER_INSTANCE,
+        "process_id": os.getpid(),
+        "project_dir": str(BASE_DIR),
+        "backend_revision": BACKEND_REVISION,
+        "ui_revision": ui_revision(),
+    }
+
 
 LABELS = {
     "normal": "NO FIGHT CONFIRMED",
@@ -109,6 +131,7 @@ class FightProcessor:
         self.error = None
         self.source = None
         self.replay = False
+        self.preview = False
         self.record_test = False
         self.recording = None
         self.session_started = None
@@ -138,19 +161,20 @@ class FightProcessor:
                 raise ValueError(
                     "Ghi test phải chạy cùng nhận diện, không dùng chế độ Xem thử."
                 )
+            if self.recording and self.recording.thread.is_alive():
+                raise RuntimeError(
+                    "Phiên ghi trước chưa kết thúc; hãy Dừng/chờ hoàn tất rồi thử lại."
+                )
+            candidate = FightRuntime(settings.models_dir, allow_pilot)
+            if not candidate.model_ready and not preview:
+                raise ValueError(candidate.message)
             self.stop()
             if self.is_running():
                 raise RuntimeError("Nguồn trước chưa dừng; vui lòng thử lại.")
-            if self.recording and self.recording.thread.is_alive():
-                raise RuntimeError(
-                    "Phiên ghi trước đang hoàn tất file; vui lòng chờ rồi thử lại."
-                )
-            self.runtime = FightRuntime(settings.models_dir, allow_pilot)
             cv2.setNumThreads(1)
-            if not self.runtime.model_ready and not preview:
-                raise ValueError(self.runtime.message)
             if not preview:
-                self.runtime.warmup()
+                candidate.warmup()
+            self.runtime = candidate
             self.stop_event.clear()
             self.preview = preview
             self.replay = replay
@@ -192,7 +216,9 @@ class FightProcessor:
             )
         prediction["score_stale"] = stale
         return {
+            "server": server_identity(),
             "running": self.is_running(),
+            "preview_mode": self.preview,
             "phase": self.phase,
             "source": str(self.source) if self.source is not None else None,
             "source_kind": (
@@ -212,6 +238,8 @@ class FightProcessor:
             "model": {
                 "architecture": self.runtime.metadata.get("architecture"),
                 "input_kind": self.runtime.input_kind,
+                "pilot_required": getattr(self.runtime, "pilot_required", False),
+                "pilot_default_allowed": settings.fight_allow_pilot,
                 "deployment": self.runtime.metadata.get("deployment", {}),
                 "approved_for_demo": self.runtime.metadata.get(
                     "approved_for_demo", False
@@ -530,11 +558,23 @@ app = FastAPI(title="FightWatch", version="2.0.0")
 processor = FightProcessor()
 
 
+@app.middleware("http")
+async def prevent_stale_local_state(request, call_next):
+    response = await call_next(request)
+    response.headers["Cache-Control"] = "no-store, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    response.headers["X-FightWatch-Instance"] = SERVER_INSTANCE
+    return response
+
+
 @app.get("/", response_class=HTMLResponse)
 def frontend():
-    return HTMLResponse(
-        (BASE_DIR / "frontend" / "fight.html").read_text(encoding="utf-8")
-    )
+    source = UI_PATH.read_text(encoding="utf-8")
+    revision = ui_revision(source)
+    source = source.replace("__FIGHTWATCH_UI_VERSION__", revision)
+    source = source.replace("__FIGHTWATCH_SERVER_INSTANCE__", SERVER_INSTANCE)
+    return HTMLResponse(source, headers={"X-FightWatch-UI-Version": revision})
 
 
 @app.get("/api/status")

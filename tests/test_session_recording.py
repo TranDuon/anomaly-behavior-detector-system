@@ -202,7 +202,7 @@ def test_new_source_cannot_accumulate_unfinished_recording_workers(monkeypatch):
     processor = server.FightProcessor()
     monkeypatch.setattr(processor, "stop", lambda: None)
     processor.recording = SimpleNamespace(thread=SimpleNamespace(is_alive=lambda: True))
-    with pytest.raises(RuntimeError, match="đang hoàn tất"):
+    with pytest.raises(RuntimeError, match="Phiên ghi"):
         processor.start(0)
 
 
