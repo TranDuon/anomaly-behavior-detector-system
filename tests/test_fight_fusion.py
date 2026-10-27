@@ -318,3 +318,132 @@ def test_qa_unpack_rejects_traversal_and_preserves_existing_data(tmp_path):
     with pytest.raises(ValueError, match="overwriting"):
         unpack(archive, tmp_path / "qa")
     assert (tmp_path / "qa/keep.txt").read_text() == "keep"
+
+
+def test_rgb_aux_explicitly_disabled_pose_is_output_invariant_and_skips_temporal_extraction():
+    model = InteractionFusion(use_pose=False).eval()
+    with torch.no_grad():
+        model.delta.weight.fill_(0.1)
+    features = torch.randn(2, 2048)
+    random_pose = torch.rand(2, 8, 2, 17, 3)
+    torch.testing.assert_close(
+        model.classify_features(features, random_pose)[0],
+        model.classify_features(features, torch.zeros_like(random_pose))[0],
+    )
+
+    class CountingPose(MockPose):
+        def __init__(self):
+            self.calls = 0
+            self.cache = {}
+
+        def poses(self, frame):
+            self.calls += 1
+            return super().poses(frame)
+
+    detector = CountingPose()
+    runtime = FightRuntime(
+        predictor=FusionPredictor(),
+        config=ClipConfig(frames=4, fps=4, size=16),
+        pose_detector=detector,
+        input_kind="rgb_pose",
+    )
+    runtime.metadata["use_pose"] = False
+    for index in range(4):
+        runtime.push(np.zeros((120, 160, 3), np.uint8), index / 4)
+    assert detector.calls == 3
+
+
+def test_output_preview_resizing_does_not_mutate_or_upscale_inference_frame():
+    from api.fight_server import bounded_image
+
+    frame = np.zeros((1080, 1920, 3), np.uint8)
+    assert bounded_image(frame, 960).shape == (540, 960, 3)
+    assert bounded_image(frame, 1280).shape == (720, 1280, 3)
+    assert frame.shape == (1080, 1920, 3)
+    small = np.zeros((180, 320, 3), np.uint8)
+    assert bounded_image(small, 960) is small
+
+
+def test_decoder_thread_limit_falls_back_without_breaking_native_camera(monkeypatch):
+    import api.fight_server as server
+
+    calls, released = [], []
+
+    class Capture:
+        def __init__(self, opened):
+            self.opened = opened
+
+        def isOpened(self):
+            return self.opened
+
+        def release(self):
+            released.append(1)
+
+    def factory(*arguments):
+        calls.append(arguments)
+        return Capture(len(arguments) == 1)
+
+    monkeypatch.setattr(server.cv2, "VideoCapture", factory)
+    assert server.open_capture("sample.mp4").isOpened()
+    assert len(calls) == 2 and len(calls[0]) == 3 and released == [1]
+    calls.clear()
+    assert server.open_capture(0).isOpened() and calls == [(0,)]
+
+
+def test_warmup_restores_cpu_thread_limit_after_detector_backend_resets_it(monkeypatch):
+    state = {"threads": 8}
+    monkeypatch.setattr(torch, "get_num_threads", lambda: state["threads"])
+    monkeypatch.setattr(
+        torch, "set_num_threads", lambda count: state.update(threads=count)
+    )
+
+    class Detector:
+        def warmup(self, size):
+            state["threads"] = 8
+
+    runtime = FightRuntime(
+        predictor=FusionPredictor(),
+        config=ClipConfig(frames=4, fps=4, size=16),
+        detector=Detector(),
+    )
+    runtime.predictor = nn.Sequential(nn.AdaptiveAvgPool3d(1), nn.Flatten())
+    runtime.warmup()
+    assert state["threads"] == 4
+
+
+def test_cpu_summary_does_not_confuse_export_or_event_count_parity_with_accuracy():
+    from scripts.fight_cpu_acceptance import diagnostic_summary
+
+    results = [
+        {
+            "mode": mode,
+            "publisher_clip_label": label,
+            "events": events,
+            "stale_status_polls": int(mode == "camera_replay"),
+            "dropped_samples": 0,
+        }
+        for mode in ("uploaded_file", "camera_replay")
+        for label, events in ((0, ["false_hug_alarm"]), (1, ["fight"]), (None, []))
+    ]
+    comparisons = [
+        {
+            "matching_prediction_timestamps": 2,
+            "maximum_matching_score_difference": 0.0,
+            "offline_events": 1,
+            "replay_events": 1,
+        }
+        for index in range(3)
+    ]
+    summary = diagnostic_summary(results, comparisons)
+    assert summary["public_clip_any_alarm"]["uploaded_file"] == {
+        "tp": 1,
+        "tn": 0,
+        "fp": 1,
+        "fn": 0,
+    }
+    assert summary["matching_score_and_event_count_parity"]
+    assert not summary["replay_freshness_passed"]
+    assert not summary["integration_smoke_passed"]
+    assert not summary["approved_for_demo"]
+    assert not summary["physical_phone_tested"]
+    assert not diagnostic_summary([], [])["integration_smoke_passed"]

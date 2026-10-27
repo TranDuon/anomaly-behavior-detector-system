@@ -22,6 +22,33 @@ LABELS = {
 }
 
 
+def bounded_image(image, maximum_width):
+    height, width = image.shape[:2]
+    if width <= maximum_width:
+        return image
+    return cv2.resize(
+        image,
+        (maximum_width, max(1, round(height * maximum_width / width))),
+        interpolation=cv2.INTER_AREA,
+    )
+
+
+def open_capture(source):
+    if isinstance(source, str) and hasattr(cv2, "CAP_PROP_N_THREADS"):
+        try:
+            capture = cv2.VideoCapture(
+                source,
+                cv2.CAP_FFMPEG,
+                [cv2.CAP_PROP_N_THREADS, settings.fight_decode_threads],
+            )
+            if capture.isOpened():
+                return capture
+            capture.release()
+        except (cv2.error, TypeError):
+            pass
+    return cv2.VideoCapture(source)
+
+
 def annotate(frame, result):
     image = frame.copy()
     color = (
@@ -88,6 +115,7 @@ class FightProcessor:
             if self.is_running():
                 raise RuntimeError("Nguồn trước chưa dừng; vui lòng thử lại.")
             self.runtime = FightRuntime(settings.models_dir, allow_pilot)
+            cv2.setNumThreads(1)
             if not self.runtime.model_ready and not preview:
                 raise ValueError(self.runtime.message)
             if not preview:
@@ -265,7 +293,7 @@ class FightProcessor:
     def run(self, source):
         is_file = isinstance(source, str) and Path(source).is_file()
         live_mode = not is_file or self.replay
-        capture = cv2.VideoCapture(source)
+        capture = open_capture(source)
         writer = reader = None
         pending = deque(maxlen=self.runtime.config.frames * 2)
         live_lock = threading.Lock()
@@ -372,17 +400,23 @@ class FightProcessor:
                 )
                 image = annotate(frame, result)
                 if not live_mode:
+                    output_image = bounded_image(image, settings.fight_output_max_width)
                     if writer is None:
                         writer = cv2.VideoWriter(
                             str(output_path),
                             cv2.VideoWriter_fourcc(*"mp4v"),
                             fps,
-                            (image.shape[1], image.shape[0]),
+                            (output_image.shape[1], output_image.shape[0]),
                         )
                         if not writer.isOpened():
                             raise RuntimeError("Không tạo được video kết quả.")
-                    writer.write(image)
-                ok, encoded = cv2.imencode(".jpg", image)
+                    writer.write(output_image)
+                preview_image = bounded_image(image, settings.fight_preview_max_width)
+                ok, encoded = cv2.imencode(
+                    ".jpg",
+                    preview_image,
+                    [cv2.IMWRITE_JPEG_QUALITY, settings.jpeg_quality],
+                )
                 if ok:
                     with self.condition:
                         self.jpeg = encoded.tobytes()

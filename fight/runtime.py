@@ -269,8 +269,12 @@ class FightRuntime:
             if self.input_kind == "rgb_pose":
                 from fight.pose import pose_inputs
 
-                poses = torch.from_numpy(
-                    pose_inputs(frames, regions, self.pose_detector)
+                poses = (
+                    torch.zeros(len(clips), 8, 2, 17, 3)
+                    if self.metadata.get("use_pose") is False
+                    else torch.from_numpy(
+                        pose_inputs(frames, regions, self.pose_detector)
+                    )
                 )
                 logits = self.predictor(clip_tensor(clips), poses)
             else:
@@ -313,6 +317,7 @@ class FightRuntime:
             )
         if hasattr(self.detector, "warmup"):
             self.detector.warmup(self.detector_config.image_size)
+        torch.set_num_threads(min(torch.get_num_threads(), 4))
         example = torch.zeros(
             1, 3, self.config.frames, self.config.size, self.config.size
         )

@@ -12,6 +12,44 @@ import torch
 from scripts.fight_pilot import write_json
 
 
+def diagnostic_summary(results, comparisons):
+    modes = {}
+    for mode in ("uploaded_file", "camera_replay"):
+        counts = {"tp": 0, "tn": 0, "fp": 0, "fn": 0}
+        for row in results:
+            if row["mode"] != mode or row.get("publisher_clip_label") not in (0, 1):
+                continue
+            positive = row["publisher_clip_label"] == 1
+            alarm = bool(row["events"])
+            key = ("tp" if alarm else "fn") if positive else ("fp" if alarm else "tn")
+            counts[key] += 1
+        modes[mode] = counts
+    replay = [row for row in results if row["mode"] == "camera_replay"]
+    fresh = bool(replay) and all(
+        row["stale_status_polls"] == 0 and row["dropped_samples"] == 0 for row in replay
+    )
+    parity = (
+        len(comparisons) == len(replay)
+        and bool(comparisons)
+        and all(
+            row["matching_prediction_timestamps"] > 0
+            and row["maximum_matching_score_difference"] <= 1e-4
+            and row["offline_events"] == row["replay_events"]
+            for row in comparisons
+        )
+    )
+    return {
+        "public_clip_any_alarm": modes,
+        "label_scope": "Publisher whole-clip any-alarm diagnostic only; not action timestamps or independent acceptance",
+        "replay_freshness_passed": fresh,
+        "matching_score_and_event_count_parity": parity,
+        "integration_smoke_passed": fresh and parity,
+        "integration_scope": "Freshness, matching-window scores and event counts only; equal counts do not prove equal event intervals or action correctness",
+        "approved_for_demo": False,
+        "physical_phone_tested": False,
+    }
+
+
 def install_candidate(bundle, output):
     models = output / "candidate_models"
     models.mkdir(parents=True, exist_ok=True)
@@ -181,6 +219,7 @@ def run(args):
             "physical_phone_tested": False,
             "results": results,
             "comparisons": comparisons,
+            "diagnostic_summary": diagnostic_summary(results, comparisons),
         }
         write_json(args.output / "cpu_acceptance.json", report)
         print("CPU_ACCEPTANCE_COMPLETED " + json.dumps(comparisons), flush=True)
