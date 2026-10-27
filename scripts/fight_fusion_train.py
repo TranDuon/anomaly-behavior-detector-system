@@ -465,6 +465,10 @@ def run(args):
             partitions["development"],
             score_rows(model, partitions["development"], args.cache, True),
         )
+        summary["baseline_reprocessed_calibration"] = balanced_calibration(
+            partitions["calibration"],
+            score_rows(model, partitions["calibration"], args.cache, True),
+        )
         write_json(args.output / "run.json", summary)
         selected_rows = []
         for dataset in ("airtlab", "rlvs"):
@@ -518,6 +522,9 @@ def run(args):
                 "approved_for_demo": False,
                 "real_phone_tested": False,
             }
+            report["protected_development_progress"] = progress_allowed(
+                summary["baseline_reprocessed_development"], development
+            )
             write_json(destination / "development_traces.json", traces)
             write_json(destination / "protocol_frozen.json", report)
             trained_rgb = {
@@ -542,6 +549,34 @@ def run(args):
                 deadline - 150,
             )
             model.rgb.load_state_dict(trained_rgb)
+            if "baseline_reprocessed_test" not in summary:
+                baseline_scores = []
+                with torch.inference_mode():
+                    for row in test_rows:
+                        with np.load(args.cache / (row["cache"] + ".npz")) as data:
+                            baseline_scores.append(
+                                float(
+                                    torch.sigmoid(
+                                        model.rgb.head(
+                                            torch.from_numpy(data["features"]).cuda()
+                                        ).max()
+                                    )
+                                )
+                            )
+                baseline_scores = np.asarray(baseline_scores)
+                baseline_threshold = summary["baseline_reprocessed_calibration"][
+                    "threshold"
+                ]
+                summary["baseline_reprocessed_test"] = {
+                    dataset: measured(
+                        [row for row in test_rows if row["dataset"] == dataset],
+                        baseline_scores[
+                            [row["dataset"] == dataset for row in test_rows]
+                        ],
+                        baseline_threshold,
+                    )
+                    for dataset in ("airtlab", "rlvs")
+                }
             test_scores = score_rows(model, test_rows, args.cache)
             report["test"] = measured(test_rows, test_scores, report["threshold"])
             report["test_by_dataset"] = {
