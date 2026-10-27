@@ -22,7 +22,7 @@ Theo phạm vi demo có người là chủ thể, dùng [notebook people-focused
 
 ## Gói runtime
 
-Pilot tiếp theo cho nhóm đông trong lớp học/hành lang/ngoài trời: [mở notebook mở rộng](https://colab.research.google.com/github/TranDuon/anomaly-behavior-detector-system/blob/main/colab/fight_expand_drive.ipynb). Không dùng NTU, không lọc bỏ mẫu đánh nhau vì đếm thiếu người; chọn thêm video UBI, sửa crop và đối chứng baseline trên cùng validation. Xem [quy trình và giới hạn](docs/FIGHT_EXPANDED_PILOT.md). Chưa có kết quả mới hoặc model được duyệt cho đến khi pilot thực sự chạy xong.
+Pilot cho nhóm đông trong lớp học/hành lang/ngoài trời: [mở notebook mở rộng](https://colab.research.google.com/github/TranDuon/anomaly-behavior-detector-system/blob/main/colab/fight_expand_drive.ipynb). Không dùng NTU, không lọc bỏ mẫu đánh nhau vì đếm thiếu người; chọn thêm video UBI, sửa crop và đối chứng baseline trên cùng validation. Xem [quy trình](docs/FIGHT_EXPANDED_PILOT.md) và [kết quả đã chạy](docs/FIGHT_EXPANDED_RESULTS.md): 2.157 clip train, 568 validation, vẫn chưa đạt demo; không tự thay checkpoint.
 
 Đặt `sentinel_fight_only_runtime.zip` tải từ Colab trong Downloads rồi chạy launcher. Gói chứa `models/fight_model.ts` và `models/fight_runtime.json`; không cần ba file LSTM cũ.
 

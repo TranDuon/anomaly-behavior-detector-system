@@ -1,0 +1,193 @@
+{
+  "training_code_revision": "d851f5284a9c97a9e6dfe09bb00f5b829e67a0d1",
+  "diagnostic_code_revision": "bc8bf1e2bc76acccc80547bbba9a833cd2b0f31a",
+  "report": {
+    "validation": {
+      "metric_scope": "selected pilot clips, not full-video frame-level evaluation",
+      "auc": 0.6962628769080382,
+      "ap": 0.4259217506757812,
+      "precision": 0.3954154727793696,
+      "recall": 0.8363636363636363,
+      "f1": 0.5369649805447471,
+      "false_positive_rate": 0.5235732009925558,
+      "in_video_auc": 0.5119047619047619,
+      "mixed_label_videos": 19,
+      "clips": 568
+    },
+    "threshold": 0.27479562163352966,
+    "at_half": {
+      "metric_scope": "selected pilot clips, not full-video frame-level evaluation",
+      "auc": 0.6962628769080382,
+      "ap": 0.4259217506757812,
+      "precision": 0.45410628019323673,
+      "recall": 0.5696969696969697,
+      "f1": 0.5053763440860215,
+      "false_positive_rate": 0.2803970223325062,
+      "in_video_auc": 0.5119047619047619,
+      "mixed_label_videos": 19,
+      "clips": 568
+    },
+    "best_recall_at_precision75": 0,
+    "best_precision_at_recall60": 0.4611872146118721,
+    "threshold_note": "Development validation only; thresholds are not independent test results.",
+    "baseline_on_same_validation": {
+      "validation": {
+        "metric_scope": "selected pilot clips, not full-video frame-level evaluation",
+        "auc": 0.6452816001203097,
+        "ap": 0.43242536651094415,
+        "precision": 0.41134751773049644,
+        "recall": 0.703030303030303,
+        "f1": 0.5190156599552572,
+        "false_positive_rate": 0.4119106699751861,
+        "in_video_auc": 0.5208333333333333,
+        "mixed_label_videos": 19,
+        "clips": 568
+      },
+      "threshold": 0.2731756567955017,
+      "at_half": {
+        "metric_scope": "selected pilot clips, not full-video frame-level evaluation",
+        "auc": 0.6452816001203097,
+        "ap": 0.43242536651094415,
+        "precision": 0.4393939393939394,
+        "recall": 0.3515151515151515,
+        "f1": 0.39057239057239057,
+        "false_positive_rate": 0.18362282878411912,
+        "in_video_auc": 0.5208333333333333,
+        "mixed_label_videos": 19,
+        "clips": 568
+      },
+      "best_recall_at_precision75": 0.006060606060606061,
+      "best_precision_at_recall60": 0.4246031746031746,
+      "threshold_note": "Development validation only; thresholds are not independent test results."
+    },
+    "official_test_used": false,
+    "approved_for_demo": false,
+    "scope": "Expanded UBI development validation; public data and simulated mild camera motion, not a real-phone acceptance test.",
+    "train_clips": 2157,
+    "validation_clips": 568,
+    "validation_videos": 40,
+    "target_context": [
+      "crowded_classroom",
+      "crowded_hallway",
+      "outdoor_crowd"
+    ],
+    "decision": "stop_and_review",
+    "training_budget_exhausted": false,
+    "completed_epochs": {
+      "probe": 4,
+      "finetune": 6
+    },
+    "seconds": 1585.2488971969988
+  },
+  "controls": {
+    "scope": "Paired counterfactual diagnostics on development validation, not a new test or model-selection score.",
+    "threshold": 0.27479562163352966,
+    "original": {
+      "metric_scope": "selected pilot clips, not full-video frame-level evaluation",
+      "auc": 0.6962628769080382,
+      "ap": 0.4259217506757812,
+      "precision": 0.3954154727793696,
+      "recall": 0.8363636363636363,
+      "f1": 0.5369649805447471,
+      "false_positive_rate": 0.5235732009925558,
+      "in_video_auc": 0.5119047619047619,
+      "mixed_label_videos": 19,
+      "clips": 568
+    },
+    "controls": {
+      "static_middle": {
+        "metrics_at_original_threshold": {
+          "metric_scope": "selected pilot clips, not full-video frame-level evaluation",
+          "auc": 0.6185427475750056,
+          "ap": 0.3906417477757045,
+          "precision": 0.34441805225653205,
+          "recall": 0.8787878787878788,
+          "f1": 0.4948805460750853,
+          "false_positive_rate": 0.684863523573201,
+          "in_video_auc": 0.41666666666666663,
+          "mixed_label_videos": 19,
+          "clips": 568
+        },
+        "mean_absolute_score_change": 0.16675998639433423,
+        "prediction_agreement": 0.7570422535211268,
+        "score_correlation": 0.6228654404664417
+      },
+      "shuffled": {
+        "metrics_at_original_threshold": {
+          "metric_scope": "selected pilot clips, not full-video frame-level evaluation",
+          "auc": 0.689254831190315,
+          "ap": 0.4349516306432145,
+          "precision": 0.35180722891566263,
+          "recall": 0.8848484848484849,
+          "f1": 0.503448275862069,
+          "false_positive_rate": 0.6674937965260546,
+          "in_video_auc": 0.4305555555555555,
+          "mixed_label_videos": 19,
+          "clips": 568
+        },
+        "mean_absolute_score_change": 0.13355071133438787,
+        "prediction_agreement": 0.8274647887323944,
+        "score_correlation": 0.8728611748091858
+      }
+    },
+    "interpretation_note": "Similar static/shuffled scores suggest reliance on appearance; these out-of-distribution interventions alone do not prove a causal failure or phone accuracy.",
+    "approved_for_demo": false,
+    "seconds": 42.90991224500067
+  },
+  "semantic_review_candidates": [
+    {
+      "video": "F_21_0_0_0_0",
+      "fps": 30,
+      "video_frames": 2880,
+      "annotation_frames": 2880,
+      "start_seconds": 18,
+      "window_positive_fraction": 0,
+      "positive_intervals": [
+        [
+          5.066666666666666,
+          16
+        ],
+        [
+          48,
+          80.13333333333334
+        ],
+        [
+          82.76666666666667,
+          90.93333333333334
+        ]
+      ],
+      "status": "needs_human_semantic_review_no_labels_changed"
+    },
+    {
+      "video": "F_175_0_1_0_0",
+      "fps": 30,
+      "video_frames": 4320,
+      "annotation_frames": 4320,
+      "start_seconds": 53,
+      "window_positive_fraction": 1,
+      "positive_intervals": [
+        [
+          14.433333333333334,
+          32
+        ],
+        [
+          48,
+          64
+        ],
+        [
+          80,
+          85.46666666666667
+        ],
+        [
+          97.36666666666666,
+          112
+        ],
+        [
+          128,
+          141.1
+        ]
+      ],
+      "status": "needs_human_semantic_review_no_labels_changed"
+    }
+  ]
+}
