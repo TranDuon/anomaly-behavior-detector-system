@@ -11,6 +11,7 @@ from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
 
 from core.config import BASE_DIR, settings
 from fight.runtime import FightRuntime
+from fight.session_recording import SessionRecording
 
 LABELS = {
     "normal": "NO FIGHT CONFIRMED",
@@ -108,6 +109,8 @@ class FightProcessor:
         self.error = None
         self.source = None
         self.replay = False
+        self.record_test = False
+        self.recording = None
         self.session_started = None
         self.dropped_samples = 0
         self.frame_count = self.total_frames = 0
@@ -127,11 +130,21 @@ class FightProcessor:
         if self.thread and self.thread is not threading.current_thread():
             self.thread.join(timeout=8)
 
-    def start(self, source, allow_pilot=False, preview=False, replay=False):
+    def start(
+        self, source, allow_pilot=False, preview=False, replay=False, record_test=False
+    ):
         with self.lifecycle:
+            if preview and record_test:
+                raise ValueError(
+                    "Ghi test phải chạy cùng nhận diện, không dùng chế độ Xem thử."
+                )
             self.stop()
             if self.is_running():
                 raise RuntimeError("Nguồn trước chưa dừng; vui lòng thử lại.")
+            if self.recording and self.recording.thread.is_alive():
+                raise RuntimeError(
+                    "Phiên ghi trước đang hoàn tất file; vui lòng chờ rồi thử lại."
+                )
             self.runtime = FightRuntime(settings.models_dir, allow_pilot)
             cv2.setNumThreads(1)
             if not self.runtime.model_ready and not preview:
@@ -141,6 +154,8 @@ class FightProcessor:
             self.stop_event.clear()
             self.preview = preview
             self.replay = replay
+            self.record_test = record_test
+            self.recording = None
             self.source, self.phase, self.error = source, "opening", None
             self.frame_count = self.total_frames = 0
             self.timestamp = self.latency = 0.0
@@ -214,6 +229,7 @@ class FightProcessor:
             "error": self.error,
             "event_count": len(self.events),
             "output": self.output,
+            "recording": self.recording.status() if self.recording else None,
         }
 
     def frames(self):
@@ -318,7 +334,7 @@ class FightProcessor:
         writer = reader = None
         pending = deque(maxlen=self.runtime.config.frames * 2)
         live_lock = threading.Lock()
-        latest = {"frame": None, "ended": False, "count": 0}
+        latest = {"frame": None, "ended": False, "count": 0, "limit_reached": False}
         started = self.session_started or time.monotonic()
         try:
             if not capture.isOpened():
@@ -330,6 +346,33 @@ class FightProcessor:
             )
             self.phase = "processing"
             output_path = self.evidence_dir / f"{uuid.uuid4().hex}.mp4"
+            recording = None
+            if self.record_test:
+                if not live_mode:
+                    raise ValueError(
+                        "Ghi test chỉ dành cho luồng camera hoặc phát lại realtime."
+                    )
+                recording = self.recording = SessionRecording(
+                    self.evidence_dir,
+                    self.runtime.config.fps,
+                    {
+                        "deployment": self.runtime.metadata.get("deployment", {}),
+                        "clip": self.runtime.config.to_dict(),
+                        "input_kind": self.runtime.input_kind,
+                        "use_pose": self.runtime.metadata.get("use_pose"),
+                        "pose": self.runtime.metadata.get("pose"),
+                        "threshold": self.runtime.gate.threshold,
+                        "event_gate": {
+                            "confirm_seconds": self.runtime.gate.confirm_seconds,
+                            "release_seconds": self.runtime.gate.release_seconds,
+                            "release_threshold": self.runtime.gate.release_threshold,
+                            "max_observation_gap": self.runtime.gate.max_observation_gap,
+                        },
+                        "source_kind": "replay" if self.replay else "camera",
+                        "reported_source_fps": fps,
+                    },
+                    limit_seconds=settings.fight_test_record_seconds,
+                )
             if live_mode:
 
                 def read_live():
@@ -349,9 +392,15 @@ class FightProcessor:
                             max(0.0, started + timestamp - time.monotonic())
                         ):
                             break
+                        if recording and timestamp >= recording.limit_seconds:
+                            with live_lock:
+                                latest["limit_reached"] = True
+                            break
                         with live_lock:
                             latest.update(frame=frame, count=latest["count"] + 1)
                             if timestamp + 1e-6 >= next_sample:
+                                if recording:
+                                    recording.offer(frame, timestamp)
                                 if len(pending) == pending.maxlen:
                                     self.dropped_samples += 1
                                 pending.append((frame, timestamp))
@@ -382,7 +431,7 @@ class FightProcessor:
                         self.frame_count = latest["count"]
                     if not samples:
                         if ended:
-                            if is_file:
+                            if is_file or latest["limit_reached"]:
                                 break
                             raise ValueError("Camera mất kết nối.")
                         self.stop_event.wait(0.02)
@@ -400,9 +449,16 @@ class FightProcessor:
                         }
                         if self.preview
                         else self.runtime.push(
-                            sample, sample_time, predict=index == len(samples) - 1
+                            sample,
+                            sample_time,
+                            predict=index == len(samples) - 1,
+                            sampled=live_mode,
                         )
                     )
+                    if recording:
+                        recording.observe(
+                            result, time.monotonic() - started, sample_time
+                        )
                     self.timestamp = sample_time
                     if (
                         sample_time - last_evidence + 1e-6
@@ -456,6 +512,16 @@ class FightProcessor:
             if writer:
                 writer.release()
             self.finish_event()
+            if self.recording:
+                self.recording.finish(
+                    outcome={
+                        "phase": self.phase,
+                        "error": self.error,
+                        "dropped_model_samples": self.dropped_samples,
+                        "source_frames": self.frame_count,
+                        "source_seconds": self.timestamp,
+                    }
+                )
             with self.condition:
                 self.condition.notify_all()
 
@@ -481,9 +547,13 @@ def events():
     return {"events": [dict(event) for event in processor.events[-100:]]}
 
 
-def start_source(source, allow_pilot, preview=False, replay=False):
+def start_source(source, allow_pilot, preview=False, replay=False, record_test=False):
     try:
-        if replay:
+        if record_test:
+            processor.start(
+                source, allow_pilot, preview, replay=replay, record_test=True
+            )
+        elif replay:
             processor.start(source, allow_pilot, preview, replay=True)
         else:
             processor.start(source, allow_pilot, preview)
@@ -507,10 +577,15 @@ async def upload(
 
 
 @app.post("/api/stream/camera")
-def camera(index: int = 0, allow_pilot: bool = False, preview: bool = False):
+def camera(
+    index: int = 0,
+    allow_pilot: bool = False,
+    preview: bool = False,
+    record_test: bool = False,
+):
     if not 0 <= index <= 20:
         raise HTTPException(400, "Camera index không hợp lệ.")
-    return start_source(index, allow_pilot, preview)
+    return start_source(index, allow_pilot, preview, record_test=record_test)
 
 
 @app.get("/api/cameras")

@@ -202,7 +202,7 @@ class FightRuntime:
             "inference_seconds": None,
         }
 
-    def push(self, frame, timestamp, predict=True):
+    def push(self, frame, timestamp, predict=True, *, sampled=False):
         if not math.isfinite(timestamp) or (
             self.last_input is not None and timestamp < self.last_input
         ):
@@ -218,7 +218,11 @@ class FightRuntime:
             self.result["message"] = "Nguồn hình bị gián đoạn; đang thu lại clip."
             self.result["event"] = "ended" if was_active else None
         self.last_input = timestamp
-        if self.next_sample is not None and timestamp + 1e-6 < self.next_sample:
+        if (
+            not sampled
+            and self.next_sample is not None
+            and timestamp + 1e-6 < self.next_sample
+        ):
             return dict(self.result)
         if self.next_sample is None:
             self.next_sample = timestamp

@@ -13,6 +13,17 @@ Chạy `run_local.cmd`, mở http://localhost:8000. Chưa có checkpoint mới v
 
 Khi bấm **Bật nhận diện**, khung xanh `PERSON` là người detector tìm thấy; `PERSONS` đếm người ở frame cuối của lượt chấm. Khung vàng là vùng đang xác minh, đỏ là vùng cảnh báo đánh nhau; không có nghĩa mọi người trong vùng đều tham gia. Khung cập nhật theo lượt phân tích, không phải tracking từng frame. Tái dùng detection có sẵn, không thêm lượt chạy YOLO. **Xem thử** chỉ truyền hình, không chạy model/vẽ khung người. Trạng thái **Chưa xác nhận đánh nhau** không chứng minh hành vi an toàn: model vẫn có thể bỏ sót. Lỗi khung hiển thị và lỗi phân loại hành vi phải kiểm tra riêng.
 
+## Quay và phân tích phiên test
+
+- **Quay & phân tích 30 giây**: chỉ bắt đầu khi người dùng bấm, vừa chạy model vừa lưu cả phiên, kể cả không có cảnh báo. Tự ngắt nguồn sau tối đa 30 giây theo đồng hồ nguồn; xử lý/hoàn tất file có thể kết thúc muộn hơn một chút. Có thể bấm **Dừng** sớm. Không tự mở camera khi khởi động app.
+- **Nhận diện không ghi toàn phiên**: tiếp tục giám sát như trước, chỉ lưu clip cảnh báo. **Xem thử** không phân tích và không ghi.
+- Mục **Video phiên test** hiển thị trạng thái ghi/hoàn tất/lỗi và hai link tải MP4, JSON. File được giữ trong `uploads/evidence/session_<id>.mp4` và `.json` trên máy, không tự đưa lên Drive/GitHub. Phiên không được ghi trước đây không thể khôi phục.
+- MP4 không âm thanh, không vẽ đè annotation vào hình gốc; ghi theo FPS lấy mẫu của model (bản fusion hiện tại 12fps), tối đa 1080p. Không có nghĩa lưu mọi frame 30fps của camera. Video nén không phải đầu vào model bit-identical.
+- Encoder chạy riêng với hàng đợi hữu hạn. Nếu ghi chậm, số frame rơi và frame lặp bù thời gian được ghi rõ, không âm thầm nén mất đoạn thời gian. Không thay đổi ảnh đưa vào model, checkpoint hoặc ngưỡng để làm test có cảnh báo.
+- JSON lưu phiên bản model, ngưỡng, gate, timestamp gốc từng frame đã ghi, điểm/trạng thái/số người/vùng ở từng lượt chấm, thời gian xử lý, sự kiện và lý do kết thúc. Đây là dữ liệu chẩn đoán, chưa phải nhãn đúng/sai. Dùng nó để tách lỗi detector, score thấp, gate xác minh và trễ/bỏ nhịp trước khi sửa model.
+- Luồng realtime đã lấy mẫu tại reader được chuyển vào runtime với `sampled=True`, tránh lấy mẫu lần hai khi timestamp có jitter. Kiểm tra span/FPS và reset khi nguồn gián đoạn vẫn giữ nguyên. Luồng đọc file thông thường tiếp tục tự lấy mẫu trong runtime. Đây là sửa nhịp đầu vào, không đổi checkpoint/threshold; các đo replay cũ không được coi là nghiệm thu lại cho bản runtime đã sửa.
+- Chỉ link file đã ghi xong mới được mở. Lỗi ghi được hiển thị, không giả báo lưu thành công; giữ nguyên bằng chứng cũ, không tự xóa video để tiết kiệm đĩa. Sau khi tải hoặc kiểm tra, người dùng tự quản lý dung lượng của các phiên test.
+
 Kết quả gồm mốc sự kiện, ảnh, clip bằng chứng (tối đa 30 giây mỗi phần) và video đã đánh dấu. File lưu trong `uploads/evidence/`. Nút xuất JSON lưu báo cáo phiên. Nhiều frame của một sự kiện không tạo nhiều cảnh báo bắt đầu.
 
 ## Notebook Colab
