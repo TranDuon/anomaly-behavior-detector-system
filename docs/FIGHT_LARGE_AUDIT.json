@@ -1,0 +1,207 @@
+{
+  "rater_type": "AI-assisted six-frame visual review; not independent human temporal gold",
+  "scores_and_source_labels_hidden": true,
+  "scope": "40 stratified random train/development samples only; audit, not final test or dataset-wide error estimate",
+  "judgments": [
+    {
+      "audit_id": "P001",
+      "judgment": "uncertain",
+      "reason": "Sports contact aftermath; no clear directed strike in the sampled frames."
+    },
+    {
+      "audit_id": "P002",
+      "judgment": "uncertain",
+      "reason": "Distant hockey huddle; cannot distinguish fighting from ordinary play from six stills."
+    },
+    {
+      "audit_id": "P003",
+      "judgment": "nonfight",
+      "reason": "Solo presenter and edited portrait."
+    },
+    {
+      "audit_id": "P004",
+      "judgment": "nonfight",
+      "reason": "Gesturing while standing apart."
+    },
+    {
+      "audit_id": "P005",
+      "judgment": "nonfight",
+      "reason": "Tennis movement."
+    },
+    {
+      "audit_id": "P006",
+      "judgment": "nonfight",
+      "reason": "Crowd walking outdoors."
+    },
+    {
+      "audit_id": "P007",
+      "judgment": "fight",
+      "reason": "Two people exchange directed blows beside road."
+    },
+    {
+      "audit_id": "P008",
+      "judgment": "nonfight",
+      "reason": "Solo presenter gestures."
+    },
+    {
+      "audit_id": "P009",
+      "judgment": "uncertain",
+      "reason": "Raised arms and approach; impact unclear in six frames."
+    },
+    {
+      "audit_id": "P010",
+      "judgment": "fight",
+      "reason": "Directed kicks toward person on floor."
+    },
+    {
+      "audit_id": "P011",
+      "judgment": "uncertain",
+      "reason": "Close raised-arm interaction; cannot distinguish high-five from strike confidently."
+    },
+    {
+      "audit_id": "P012",
+      "judgment": "fight",
+      "reason": "Repeated directed downward arm strikes."
+    },
+    {
+      "audit_id": "P013",
+      "judgment": "fight",
+      "reason": "Directed arm strike in close interaction."
+    },
+    {
+      "audit_id": "P014",
+      "judgment": "fight",
+      "reason": "Repeated downward strikes at prone person."
+    },
+    {
+      "audit_id": "P015",
+      "judgment": "fight",
+      "reason": "Directed physical strikes in close interaction."
+    },
+    {
+      "audit_id": "P016",
+      "judgment": "fight",
+      "reason": "Group altercation with forceful physical contact."
+    },
+    {
+      "audit_id": "P017",
+      "judgment": "nonfight",
+      "reason": "Conversation in edited television scene."
+    },
+    {
+      "audit_id": "P018",
+      "judgment": "nonfight",
+      "reason": "Celebratory raised hands and high-five gestures."
+    },
+    {
+      "audit_id": "P019",
+      "judgment": "fight",
+      "reason": "Directed kick during group interaction."
+    },
+    {
+      "audit_id": "P020",
+      "judgment": "nonfight",
+      "reason": "Standing and gesturing without clear assault."
+    },
+    {
+      "audit_id": "P021",
+      "judgment": "fight",
+      "reason": "Directed strikes between people in narrow interior."
+    },
+    {
+      "audit_id": "P022",
+      "judgment": "uncertain",
+      "reason": "Extended/held arms; strike or restraint ambiguous."
+    },
+    {
+      "audit_id": "P023",
+      "judgment": "nonfight",
+      "reason": "Solo clapping and raised-hand gestures."
+    },
+    {
+      "audit_id": "P024",
+      "judgment": "nonfight",
+      "reason": "Playing violin."
+    },
+    {
+      "audit_id": "P025",
+      "judgment": "nonfight",
+      "reason": "Stage performance and dance."
+    },
+    {
+      "audit_id": "P026",
+      "judgment": "fight",
+      "reason": "Directed physical striking in group."
+    },
+    {
+      "audit_id": "P027",
+      "judgment": "nonfight",
+      "reason": "Hugging while others gesture."
+    },
+    {
+      "audit_id": "P028",
+      "judgment": "fight",
+      "reason": "Directed strikes between standing people."
+    },
+    {
+      "audit_id": "P029",
+      "judgment": "nonfight",
+      "reason": "Hugging."
+    },
+    {
+      "audit_id": "P030",
+      "judgment": "nonfight",
+      "reason": "Clapping and noncontact gestures."
+    },
+    {
+      "audit_id": "P031",
+      "judgment": "nonfight",
+      "reason": "Edited conversational film scenes."
+    },
+    {
+      "audit_id": "P032",
+      "judgment": "nonfight",
+      "reason": "Group high-five/celebration."
+    },
+    {
+      "audit_id": "P033",
+      "judgment": "uncertain",
+      "reason": "Sports confrontation and separation; no clear punch/kick/violent takedown."
+    },
+    {
+      "audit_id": "P034",
+      "judgment": "fight",
+      "reason": "Directed kick at another person."
+    },
+    {
+      "audit_id": "P035",
+      "judgment": "fight",
+      "reason": "Grappling and ground strikes outdoors."
+    },
+    {
+      "audit_id": "P036",
+      "judgment": "uncertain",
+      "reason": "Edited standing/prone aftermath without clear active strike."
+    },
+    {
+      "audit_id": "P037",
+      "judgment": "fight",
+      "reason": "Directed kick with recipient falling."
+    },
+    {
+      "audit_id": "P038",
+      "judgment": "fight",
+      "reason": "Ground grappling and directed strikes."
+    },
+    {
+      "audit_id": "P039",
+      "judgment": "uncertain",
+      "reason": "Sports confrontation; arm contacts too ambiguous for confirmed target action."
+    },
+    {
+      "audit_id": "P040",
+      "judgment": "uncertain",
+      "reason": "Low-detail CCTV, active target action unclear."
+    }
+  ]
+}
