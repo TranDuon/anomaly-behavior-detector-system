@@ -17,7 +17,7 @@ class ClipConfig:
     trim_black_borders: bool = False
 
     def __post_init__(self):
-        if self.region_mode not in {"interaction", "full", "tubes"}:
+        if self.region_mode not in {"interaction", "full", "tubes", "pairs"}:
             raise ValueError("Unsupported region mode")
 
     def to_dict(self):
@@ -38,7 +38,67 @@ class DetectorConfig:
 def clip_regions(boxes, width, height, config):
     if config.region_mode == "full":
         return [(0, 0, width, height)]
+    if config.region_mode == "pairs":
+        return pair_regions(boxes, width, height, config.max_regions)
     return regions_for(boxes, width, height, config.max_regions)
+
+
+def pair_regions(boxes, width, height, limit=3):
+    full = (0, 0, width, height)
+    if limit <= 1:
+        return [full]
+    boxes = np.asarray(boxes, dtype=np.float32).reshape(-1, 4)
+    boxes = boxes[np.isfinite(boxes).all(axis=1)]
+    boxes[:, :2] = np.maximum(boxes[:, :2], 0)
+    boxes[:, 2:] = np.minimum(boxes[:, 2:], [width, height])
+    boxes = boxes[(boxes[:, 2] > boxes[:, 0]) & (boxes[:, 3] > boxes[:, 1])]
+    boxes = sorted(
+        boxes,
+        key=lambda box: float((box[2] - box[0]) * (box[3] - box[1])),
+        reverse=True,
+    )[:64]
+    candidates = []
+    for first_index, first in enumerate(boxes):
+        for second in boxes[first_index + 1 :]:
+            scale = max(first[3] - first[1], second[3] - second[1])
+            gap_x = max(0, first[0] - second[2], second[0] - first[2])
+            gap_y = max(0, first[1] - second[3], second[1] - first[3])
+            if gap_x > scale * 0.6 or gap_y > scale * 0.3:
+                continue
+            lower = np.minimum(first[:2], second[:2])
+            upper = np.maximum(first[2:], second[2:])
+            margin = max(upper - lower) * 0.2
+            region = (
+                max(0, int(lower[0] - margin)),
+                max(0, int(lower[1] - margin)),
+                min(width, int(upper[0] + margin)),
+                min(height, int(upper[1] + margin)),
+            )
+            distance = np.linalg.norm(
+                (first[:2] + first[2:] - second[:2] - second[2:]) / 2
+            )
+            priority = (gap_x + gap_y + 0.25 * distance) / scale - 0.15 * scale / height
+            candidates.append((float(priority), region))
+    selected = []
+    for priority, region in sorted(candidates):
+        duplicate = False
+        for previous in selected:
+            intersection = max(
+                0, min(region[2], previous[2]) - max(region[0], previous[0])
+            ) * max(0, min(region[3], previous[3]) - max(region[1], previous[1]))
+            union = (
+                (region[2] - region[0]) * (region[3] - region[1])
+                + (previous[2] - previous[0]) * (previous[3] - previous[1])
+                - intersection
+            )
+            if intersection / max(1, union) > 0.6:
+                duplicate = True
+                break
+        if not duplicate and region != full:
+            selected.append(region)
+        if len(selected) == limit - 1:
+            break
+    return selected + [full]
 
 
 def content_bounds(frames):
@@ -127,7 +187,7 @@ def build_clip_inputs(frames, detector, config):
     counts = [len(boxes) for boxes in sampled_boxes]
     boxes = (
         person_tubes(sampled_boxes)
-        if config.region_mode == "tubes"
+        if config.region_mode in {"tubes", "pairs"}
         else [box for boxes in sampled_boxes for box in boxes]
     )
     regions = clip_regions(boxes, right - left, bottom - top, config)
