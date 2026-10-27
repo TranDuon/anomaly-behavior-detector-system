@@ -15,12 +15,16 @@ from torch import nn
 
 from detection.detector import PersonDetector
 from fight.interaction_data import pku_sources
-from fight.interaction_eval import balanced_calibration, event_metrics, macro_ap
+from fight.interaction_eval import (
+    annotated_window_metrics,
+    balanced_calibration,
+    event_metrics,
+    macro_ap,
+)
 from fight.model import VideoClassifier
 from fight.runtime import EventGate, FightRuntime
 from fight.vision import ClipConfig, DetectorConfig, augment_handheld, clip_tensor
 from scripts.fight_ablation import cached_rows, export_runtime
-from scripts.fight_large_train import measured
 from scripts.fight_pilot import score_rows, write_json
 
 
@@ -63,6 +67,7 @@ def balanced_epoch(rows, generator, per_group=24):
 
 
 def train_candidate(model, training, development, cache, output, deadline):
+    torch.manual_seed(119)
     history, best, state = [], -1.0, None
     generator = random.Random(119)
     for frozen, epochs in ((True, 2), (False, 6)):
@@ -220,6 +225,8 @@ def continuous_diagnostic(model, sources, config, detector, threshold, deadline)
 
 
 def run(args):
+    torch.backends.cuda.matmul.allow_tf32 = False
+    torch.backends.cudnn.allow_tf32 = False
     output = args.output
     output.mkdir(parents=True, exist_ok=True)
     if (output / "comparison.json").exists():
@@ -250,6 +257,8 @@ def run(args):
         "scope": "Tiny PKU source-held feasibility; 0005 train, 0176/0360 diagnostic, actors not independently verified. Already inspected diagnostic sources; not new final test.",
         "pku_calibration_available": False,
         "budget_minutes": args.budget_minutes,
+        "torch_training_seed": 119,
+        "tf32_enabled": False,
     }
     write_json(output / "comparison.json", summary)
     args.cache.mkdir(parents=True, exist_ok=True)
@@ -276,7 +285,7 @@ def run(args):
             backbone_id=weight_id,
         )
         scores = score_rows(model, baseline_ready, args.cache, "cuda", False)
-        summary["baseline_pku_windows"] = measured(
+        summary["baseline_pku_windows"] = annotated_window_metrics(
             baseline_ready, scores, baseline_report["threshold"]
         )
         summary["baseline_continuous"] = continuous_diagnostic(
@@ -368,7 +377,7 @@ def run(args):
             )
             report = {
                 **calibration,
-                "pku_diagnostic": measured(
+                "pku_diagnostic": annotated_window_metrics(
                     partitions["diagnostic"],
                     diagnostic_scores,
                     calibration["threshold"],

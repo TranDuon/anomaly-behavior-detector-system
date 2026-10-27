@@ -6,6 +6,13 @@ from sklearn.metrics import average_precision_score
 from scripts.fight_large_train import measured
 
 
+def annotated_window_metrics(rows, scores, threshold):
+    return {
+        **measured(rows, scores, threshold),
+        "metric_scope": "One trailing window per annotated action interval; tiny previously inspected source diagnostic, not public central-clip or camera accuracy",
+    }
+
+
 def macro_ap(rows, scores):
     values = []
     for dataset in sorted({row["dataset"] for row in rows}):
@@ -28,7 +35,8 @@ def balanced_calibration(rows, scores, target=0.8):
         or np.any((scores < 0) | (scores > 1))
     ):
         raise ValueError("Finite matching probability scores required")
-    candidates = np.unique(np.clip(np.r_[scores, 0.5], 1e-6, 1 - 1e-6))
+    boundaries = np.unique(np.r_[0.0, scores, 1.0])
+    candidates = (boundaries[:-1] + boundaries[1:]) / 2
     cohort_values = []
     names = sorted({row["dataset"] for row in rows})
     for dataset in names:
@@ -54,6 +62,8 @@ def balanced_calibration(rows, scores, target=0.8):
     return {
         "threshold": threshold,
         "target": target,
+        "minimum_calibration_score_margin": float(np.min(np.abs(scores - threshold))),
+        "threshold_candidates": "Midpoints between observed calibration score groups; avoids placing threshold exactly on a GPU score",
         "all_calibration_cohorts_meet_target": bool(worst[selected] >= target),
         "selection": "Maximize worst dataset precision/recall with one global threshold, calibration only",
         "cohorts": {

@@ -117,6 +117,22 @@ def test_calibration_exposes_small_cohort_failure_hidden_by_pooled_scores():
         balanced_calibration(rows, scores[:-1])
 
 
+def test_calibration_uses_margin_not_exact_backend_score():
+    from fight.interaction_eval import annotated_window_metrics
+
+    rows = [
+        {"dataset": "airtlab", "label": 0, "video": "normal"},
+        {"dataset": "airtlab", "label": 1, "video": "fight"},
+    ]
+    calibration = balanced_calibration(rows, [0.1, 0.9])
+    assert calibration["threshold"] == 0.5
+    assert calibration["minimum_calibration_score_margin"] == 0.4
+    assert (
+        "trailing window"
+        in annotated_window_metrics(rows, [0.1, 0.9], 0.5)["metric_scope"]
+    )
+
+
 def test_balanced_sampling_is_exposure_not_independent_examples():
     rows = [
         {"dataset": source, "label": label, "video": str(index)}
@@ -278,3 +294,41 @@ def test_saved_report_aggregates_counts_not_per_video_percentages(tmp_path):
     )
     paths = render_timelines(comparison, tmp_path)
     assert len(paths) == 1 and paths[0].stat().st_size > 100
+
+
+def test_cpu_smoke_reports_original_gpu_difference_without_relaxing_tolerance(tmp_path):
+    import io
+    import json
+    from torch import nn
+    from scripts.fight_interaction_cpu_smoke import check_bundle
+
+    class MeanModel(nn.Module):
+        def forward(self, values):
+            return values.mean(dim=(1, 2, 3, 4))
+
+    model_bytes = io.BytesIO()
+    torch.jit.save(
+        torch.jit.trace(MeanModel(), torch.zeros(1, 3, 4, 8, 8)), model_bytes
+    )
+    runtime_bytes = io.BytesIO()
+    with zipfile.ZipFile(runtime_bytes, "w") as runtime:
+        runtime.writestr("models/fight_model.ts", model_bytes.getvalue())
+        runtime.writestr(
+            "models/fight_runtime.json",
+            json.dumps({"clip": {"frames": 4, "size": 8}, "threshold": 0.5}),
+        )
+    clips_bytes = io.BytesIO()
+    np.savez(clips_bytes, clips=np.zeros((1, 4, 8, 8, 3), np.uint8))
+    path = tmp_path / "smoke.zip"
+    row = {"variant": "sample", "cache": "a", "score": 0.3}
+    with zipfile.ZipFile(path, "w") as archive:
+        archive.writestr("expected.json", json.dumps([row]))
+        archive.writestr("sample/runtime.zip", runtime_bytes.getvalue())
+        archive.writestr("sample/a.npz", clips_bytes.getvalue())
+    assert not check_bundle(path)["passed"]
+    reference = float(torch.sigmoid(torch.tensor(-2.0)))
+    report = check_bundle(path, [{**row, "colab_cpu_reference": reference}])
+    assert report["passed"]
+    assert report["examples"][0]["original_gpu_absolute_error"] > 0.1
+    with pytest.raises(ValueError, match="Missing CPU reference"):
+        check_bundle(path, [])

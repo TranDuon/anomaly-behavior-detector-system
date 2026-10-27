@@ -14,6 +14,8 @@ Mở http://localhost:8000. Chưa có checkpoint đánh nhau mới vẫn xem đ�
 
 Đối chứng tương tác theo thời gian: [notebook PKU + AIRTLab/RLVS](https://colab.research.google.com/github/TranDuon/anomaly-behavior-detector-system/blob/main/colab/fight_interaction_drive.ipynb), [quy trình và giới hạn](docs/FIGHT_INTERACTION_PILOT.md). Hai cấu hình 8fps/12fps, cân bằng nguồn và hiệu chỉnh ngưỡng theo từng tập calibration; chỉ có 3 bản ghi PKU RGB, không tự thay checkpoint đang dùng.
 
+[Kết quả pilot đã chạy](docs/FIGHT_INTERACTION_RESULTS.md): 9 phút 35 giây, bản 12fps bắt đúng 1/4 sự kiện PKU liên tục so với baseline 0/4; chưa đạt demo. Accuracy 85,71% trên 14 cửa sổ đã căn annotation không phải accuracy camera. Không tự cài candidate.
+
 Lượt mở rộng sau audit nhãn UBI: [notebook RLVS + AIRTLab](https://colab.research.google.com/github/TranDuon/anomaly-behavior-detector-system/blob/main/colab/fight_large_drive.ipynb), [quy trình và giới hạn](docs/FIGHT_LARGE_TRAINING.md), [kết quả đã chạy](docs/FIGHT_LARGE_RESULTS.md). Train thực tế 1.550 clip, test riêng 202: accuracy 94,55%, precision 91,51%, recall 97,98%; riêng AIRTLab precision còn 66,67%, chưa duyệt demo/iPhone. Giao diện có **Phát lại theo thời gian thực** để kiểm thử luồng camera bằng video khi chưa nối điện thoại.
 
 [Open in Colab — FightWatch pilot](https://colab.research.google.com/github/TranDuon/anomaly-behavior-detector-system/blob/main/colab/fight_pilot_drive.ipynb)

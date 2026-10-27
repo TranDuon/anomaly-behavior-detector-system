@@ -35,3 +35,5 @@ Cùng `FightRuntime`, preprocess, timestamp và `EventGate`; GPU chỉ dùng đ�
 Không tự thay model local hoặc chọn variant bằng kết quả trên các nguồn đã xem. Muốn quyết định triển khai cần thêm nguồn/người diễn mới, kiểm thử CPU upload/replay, rồi camera iPhone thật. `approved_for_demo=false` luôn được giữ trong pilot này.
 
 Cell cuối chỉ đọc báo cáo đã lưu để tạo `summary.json` và biểu đồ timeline; không train/chọn model. Tổng event precision/recall được tính lại từ tổng TP/FP/FN, false alerts/phút từ tổng thời gian bình thường, không trung bình tỷ lệ của hai video có độ dài khác nhau.
+
+[Kết quả đã chạy và provenance](FIGHT_INTERACTION_RESULTS.md). Code mới sau lượt đó tắt TF32 và đặt torch seed; threshold là midpoint giữa nhóm điểm calibration thay vì đúng điểm GPU. Không tự sửa ngưỡng/checkpoint hay tính lại kết quả của lượt đã hoàn thành. Cell cuối sao lưu cache `.npz` nén sẵn thành `window_cache.zip` trên Drive, tách khỏi budget training.
