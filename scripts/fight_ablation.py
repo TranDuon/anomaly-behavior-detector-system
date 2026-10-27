@@ -21,9 +21,9 @@ from fight.model import VideoClassifier, prepare_export
 from fight.vision import (
     ClipConfig,
     DetectorConfig,
-    clip_regions,
+    augment_handheld,
+    build_clip_inputs,
     clip_tensor,
-    prepare_clip,
 )
 from scripts.fight_pilot import metrics, read_frames, score_rows, write_json
 
@@ -83,27 +83,40 @@ def fixed_manifest(source, dataset_root):
 
 
 def threshold_report(rows, scores):
+    scores = np.asarray(scores, dtype=float)
+    labels = np.asarray([row["label"] for row in rows], dtype=int)
+    if len(scores) != len(labels) or not len(labels) or not np.isfinite(scores).all():
+        raise ValueError("Finite scores and matching non-empty rows required")
     candidates = np.unique(np.r_[0.0, scores, 1.0])
-    values = [
-        (metrics(rows, scores, float(value)), float(value)) for value in candidates
-    ]
-    feasible = [entry for entry in values if entry[0]["recall"] >= 0.7]
-    result, threshold = max(
-        feasible or values,
-        key=lambda entry: (entry[0]["f1"], entry[0]["precision"], entry[1]),
+    order = np.argsort(scores, kind="stable")
+    prefix = np.r_[0, np.cumsum(labels[order])]
+    below = np.searchsorted(scores[order], candidates, side="left")
+    positive = int(labels.sum())
+    true_positive = positive - prefix[below]
+    predicted = len(labels) - below
+    precision = np.divide(
+        true_positive, predicted, out=np.zeros(len(candidates)), where=predicted > 0
     )
-    precise = [entry for entry in values if entry[0]["precision"] >= 0.75]
-    sensitive = [entry for entry in values if entry[0]["recall"] >= 0.6]
+    recall = true_positive / max(1, positive)
+    f1 = np.divide(
+        2 * precision * recall,
+        precision + recall,
+        out=np.zeros(len(candidates)),
+        where=precision + recall > 0,
+    )
+    feasible = np.flatnonzero(recall >= 0.7)
+    selected = max(
+        feasible if len(feasible) else range(len(candidates)),
+        key=lambda index: (f1[index], precision[index], candidates[index]),
+    )
+    threshold = float(candidates[selected])
+    result = metrics(rows, scores, threshold)
     return {
         "validation": result,
         "threshold": threshold,
         "at_half": metrics(rows, scores, 0.5),
-        "best_recall_at_precision75": max(
-            (entry[0]["recall"] for entry in precise), default=0
-        ),
-        "best_precision_at_recall60": max(
-            (entry[0]["precision"] for entry in sensitive), default=0
-        ),
+        "best_recall_at_precision75": float(recall[precision >= 0.75].max(initial=0)),
+        "best_precision_at_recall60": float(precision[recall >= 0.6].max(initial=0)),
         "threshold_note": "Development validation only; thresholds are not independent test results.",
     }
 
@@ -167,15 +180,8 @@ def cached_rows(
         row = {**original, "cache": key}
         if not destination.exists():
             frames = read_frames(row, config)
-            boxes, people = [], 0
-            for frame_index in (0, len(frames) // 2, len(frames) - 1):
-                detections = detector.detect(frames[frame_index])
-                boxes.extend(detection.bbox_xyxy for detection in detections)
-                people = max(people, len(detections))
-            height, width = frames[0].shape[:2]
-            regions = clip_regions(boxes, width, height, config)
-            clips = np.stack(
-                [prepare_clip(frames, region, config.size) for region in regions]
+            clips, regions, people, bounds, counts = build_clip_inputs(
+                frames, detector, config
             )
             with torch.inference_mode():
                 features = (
@@ -191,6 +197,8 @@ def cached_rows(
                 features=features,
                 regions=np.array(regions),
                 people=people,
+                content_bounds=np.array(bounds),
+                people_counts=np.array(counts),
             )
             temporary.replace(destination)
         ready.append(row)
@@ -200,7 +208,15 @@ def cached_rows(
 
 
 def stable_train(
-    model, train, validation, cache, device, deadline, output, epochs=(10, 6)
+    model,
+    train,
+    validation,
+    cache,
+    device,
+    deadline,
+    output,
+    epochs=(10, 6),
+    camera_augmentation=False,
 ):
     history, best, best_state = [], -1.0, None
     counts = np.bincount([row["label"] for row in train], minlength=2)
@@ -248,6 +264,11 @@ def stable_train(
                             clips = data["clips"]
                             if random.random() < 0.5:
                                 clips = clips[:, :, :, ::-1].copy()
+                            if camera_augmentation and random.random() < 0.5:
+                                clips = augment_handheld(
+                                    clips,
+                                    np.random.default_rng(random.randrange(2**32)),
+                                )
                             logits = model(clip_tensor(clips, device))
                     target = torch.tensor(float(row["label"]), device=device)
                     loss = nn.functional.binary_cross_entropy_with_logits(

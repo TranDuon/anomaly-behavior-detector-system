@@ -9,9 +9,8 @@ import torch
 from fight.vision import (
     ClipConfig,
     DetectorConfig,
-    clip_regions,
+    build_clip_inputs,
     clip_tensor,
-    prepare_clip,
 )
 
 
@@ -191,16 +190,8 @@ class FightRuntime:
             self.detector = PersonDetector(
                 **self.detector_config.to_dict(), device="cpu"
             )
-        boxes = []
-        people = 0
-        for index in (0, len(frames) // 2, len(frames) - 1):
-            detections = self.detector.detect(frames[index])
-            people = max(people, len(detections))
-            boxes.extend(detection.bbox_xyxy for detection in detections)
-        height, width = frame.shape[:2]
-        regions = clip_regions(boxes, width, height, self.config)
-        clips = np.stack(
-            [prepare_clip(frames, region, self.config.size) for region in regions]
+        clips, regions, people, content_bounds, people_counts = build_clip_inputs(
+            frames, self.detector, self.config
         )
         with torch.inference_mode():
             probabilities = (
