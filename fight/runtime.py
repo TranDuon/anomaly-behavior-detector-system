@@ -115,6 +115,8 @@ class FightRuntime:
         predictor=None,
         config=None,
         detector=None,
+        pose_detector=None,
+        input_kind="rgb",
     ):
         self.config = config or ClipConfig()
         self.predictor = predictor
@@ -122,6 +124,10 @@ class FightRuntime:
         self.model_ready = predictor is not None
         self.message = "Chưa có checkpoint đánh nhau được kiểm thử."
         self.metadata = {}
+        self.models_dir = Path(models_dir)
+        self.input_kind = input_kind
+        self.pose_detector = pose_detector
+        self.pose_config = None
         self.detector_config = DetectorConfig()
         self.gate = EventGate()
         model_path = Path(models_dir) / "fight_model.ts"
@@ -134,6 +140,15 @@ class FightRuntime:
                 if self.metadata.get("schema_version") != 1:
                     raise ValueError("Unsupported runtime schema")
                 self.config = ClipConfig(**self.metadata["clip"])
+                self.input_kind = self.metadata.get("input_kind", "rgb")
+                if self.input_kind not in {"rgb", "rgb_pose"}:
+                    raise ValueError("Unsupported model inputs")
+                if self.input_kind == "rgb_pose":
+                    from fight.pose import PoseConfig
+
+                    self.pose_config = PoseConfig(**self.metadata["pose"])
+                    if not (self.models_dir / self.pose_config.model_name).is_file():
+                        raise ValueError("Pose weights missing from runtime bundle")
                 self.detector_config = DetectorConfig(
                     **self.metadata.get("person_detector", {})
                 )
@@ -165,6 +180,8 @@ class FightRuntime:
         self.reset()
 
     def reset(self):
+        if self.pose_detector is not None and hasattr(self.pose_detector, "cache"):
+            self.pose_detector.cache.clear()
         self.detection_cache = None
         self.samples = deque(maxlen=self.config.frames)
         self.sample_times = deque(maxlen=self.config.frames)
@@ -209,6 +226,8 @@ class FightRuntime:
         self.sample_times.append(timestamp)
         if self.detection_cache is not None:
             self.detection_cache.retain(self.samples)
+        if self.pose_detector is not None:
+            self.pose_detector.retain(self.samples)
         if not predict:
             return dict(self.result)
         if len(self.samples) < self.config.frames:
@@ -233,6 +252,8 @@ class FightRuntime:
         self.last_prediction = timestamp
         inference_started = time.monotonic()
         frames = list(self.samples)
+        if self.input_kind == "rgb_pose":
+            self._ensure_pose()
         if self.detector is None:
             from detection.detector import PersonDetector
 
@@ -245,12 +266,16 @@ class FightRuntime:
             frames, self.detection_cache, self.config
         )
         with torch.inference_mode():
-            probabilities = (
-                torch.sigmoid(self.predictor(clip_tensor(clips)))
-                .cpu()
-                .numpy()
-                .reshape(-1)
-            )
+            if self.input_kind == "rgb_pose":
+                from fight.pose import pose_inputs
+
+                poses = torch.from_numpy(
+                    pose_inputs(frames, regions, self.pose_detector)
+                )
+                logits = self.predictor(clip_tensor(clips), poses)
+            else:
+                logits = self.predictor(clip_tensor(clips))
+            probabilities = torch.sigmoid(logits).cpu().numpy().reshape(-1)
         if not np.isfinite(probabilities).all():
             raise ValueError("Model returned a non-finite prediction")
         selected = int(np.argmax(probabilities))
@@ -278,6 +303,8 @@ class FightRuntime:
         if not self.model_ready:
             return
         torch.set_num_threads(min(torch.get_num_threads(), 4))
+        if self.input_kind == "rgb_pose":
+            self._ensure_pose()
         if self.detector is None:
             from detection.detector import PersonDetector
 
@@ -291,4 +318,18 @@ class FightRuntime:
         )
         with torch.inference_mode():
             for iteration in range(2):
-                self.predictor(example)
+                if self.input_kind == "rgb_pose":
+                    self.predictor(example, torch.zeros(1, 8, 2, 17, 3))
+                else:
+                    self.predictor(example)
+
+    def _ensure_pose(self):
+        if self.pose_detector is None:
+            from fight.pose import PoseConfig, PoseDetector
+
+            self.pose_config = self.pose_config or PoseConfig()
+            self.pose_detector = PoseDetector(
+                self.pose_config,
+                model_path=self.models_dir / self.pose_config.model_name,
+            )
+        self.detector = self.pose_detector

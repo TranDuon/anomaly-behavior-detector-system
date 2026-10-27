@@ -12,6 +12,8 @@ Mở http://localhost:8000. Chưa có checkpoint đánh nhau mới vẫn xem đ�
 
 ## Thử phương pháp trước khi train lớn
 
+[Đối chứng RGB + pose + nhãn hành động phụ](https://colab.research.google.com/github/TranDuon/anomaly-behavior-detector-system/blob/main/colab/fight_fusion_drive.ipynb): [protocol](docs/FIGHT_FUSION.md), train dài có điều kiện tiến triển trên development, dùng chung runtime CPU upload/camera. PKU không bắt buộc và chỉ dùng chẩn đoán; không tự duyệt demo.
+
 Đối chứng tương tác theo thời gian: [notebook PKU + AIRTLab/RLVS](https://colab.research.google.com/github/TranDuon/anomaly-behavior-detector-system/blob/main/colab/fight_interaction_drive.ipynb), [quy trình và giới hạn](docs/FIGHT_INTERACTION_PILOT.md). Hai cấu hình 8fps/12fps, cân bằng nguồn và hiệu chỉnh ngưỡng theo từng tập calibration; chỉ có 3 bản ghi PKU RGB, không tự thay checkpoint đang dùng.
 
 [Kết quả pilot đã chạy](docs/FIGHT_INTERACTION_RESULTS.md): 9 phút 35 giây, bản 12fps bắt đúng 1/4 sự kiện PKU liên tục so với baseline 0/4; chưa đạt demo. Accuracy 85,71% trên 14 cửa sổ đã căn annotation không phải accuracy camera. Không tự cài candidate.

@@ -164,6 +164,10 @@ function Install-RuntimeArtifacts {
                 if ($null -eq $Entry) { throw "Fight runtime bundle is missing models/$Name" }
                 [System.IO.Compression.ZipFileExtensions]::ExtractToFile($Entry, (Join-Path $ModelsDir $Name), $true)
             }
+            $PoseEntry = $Archive.GetEntry("models/yolov8n-pose.pt")
+            if ($null -ne $PoseEntry) {
+                [System.IO.Compression.ZipFileExtensions]::ExtractToFile($PoseEntry, (Join-Path $ModelsDir "yolov8n-pose.pt"), $true)
+            }
         } finally { $Archive.Dispose() }
     } elseif (-not (Test-RuntimeArtifacts)) {
         Write-Step "No fight checkpoint yet. Dashboard and camera preview remain available."
