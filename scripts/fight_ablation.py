@@ -159,7 +159,15 @@ def extra_negative_candidates(rows, dataset_root, config, maximum=96):
 
 
 def cached_rows(
-    rows, model, detector, config, detector_config, cache, device, deadline
+    rows,
+    model,
+    detector,
+    config,
+    detector_config,
+    cache,
+    device,
+    deadline,
+    backbone_id="x3d_s_kinetics400",
 ):
     ready = []
     for index, original in enumerate(rows):
@@ -170,7 +178,7 @@ def cached_rows(
             "fps": original["fps"],
             "clip": config.to_dict(),
             "detector": detector_config.to_dict(),
-            "backbone": "x3d_s_kinetics400",
+            "backbone": backbone_id,
             "cache_version": 2,
         }
         if original.get("sha256"):
