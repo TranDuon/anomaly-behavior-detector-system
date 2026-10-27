@@ -389,6 +389,8 @@ class FightProcessor:
                         "input_kind": self.runtime.input_kind,
                         "use_pose": self.runtime.metadata.get("use_pose"),
                         "pose": self.runtime.metadata.get("pose"),
+                        "use_motion": self.runtime.metadata.get("use_motion"),
+                        "motion": self.runtime.metadata.get("motion"),
                         "threshold": self.runtime.gate.threshold,
                         "event_gate": {
                             "confirm_seconds": self.runtime.gate.confirm_seconds,

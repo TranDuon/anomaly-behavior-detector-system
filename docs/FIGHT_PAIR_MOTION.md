@@ -1,6 +1,7 @@
 # Pair/motion pilot
 
 This is an experiment, not an accepted replacement or a promise of camera accuracy.
+The completed v1 experiment did not pass; see [results](FIGHT_PAIR_MOTION_RESULTS.md).
 The two local iPhone recordings are diagnostic evidence only and must not be uploaded
 or used for training/calibration. Do not stage real impacts to improve a detector.
 
@@ -40,6 +41,12 @@ GPU/CPU score agreement, public whole-video hard-negative checks, CPU upload/rep
 diagnostics, and local-only review of missed interactions. An improvement in the two
 known phone clips is not evidence of general camera accuracy. Do not tune on those clips
 or silently replace a model that increases false alarms. Keep thresholds and failed runs.
+
+For local-only causal replay of a saved session, use
+`python -m scripts.fight_saved_recording_diagnostic --models models --video <saved.mp4> --metadata <saved.json> --output <new-report.json>`.
+The optional recording JSON supplies original source timestamps, including repeated
+frames. Without it, video FPS defines the timebase. This does not open a camera,
+upload data, infer ground truth, or reproduce original live tensors bit-for-bit.
 
 ## Method references
 
