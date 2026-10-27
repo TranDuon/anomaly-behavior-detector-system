@@ -142,7 +142,7 @@ class FightProcessor:
                 break
 
     def record(self, frame, result):
-        self.before.append(frame.copy())
+        self.before.append((self.timestamp, frame.copy()))
         if result.get("event") == "started" and self.active_event is None:
             identifier = uuid.uuid4().hex
             self.active_event = {
@@ -160,14 +160,14 @@ class FightProcessor:
                 str(self.evidence_dir / f"{identifier}.jpg"), annotate(frame, result)
             )
         elif self.active_event is not None:
-            self.event_frames.append(frame.copy())
+            self.event_frames.append((self.timestamp, frame.copy()))
         if self.active_event is not None:
             self.active_event["score"] = max(
                 self.active_event["score"], result.get("score") or 0
             )
             if (
                 result.get("event") == "ended"
-                or len(self.event_frames) >= self.runtime.config.fps * 30
+                or self.timestamp - self.event_frames[0][0] >= 30
             ):
                 self.finish_event()
 
@@ -176,7 +176,17 @@ class FightProcessor:
             return
         event = self.active_event
         event["ended_at"] = self.timestamp
-        height, width = self.event_frames[0].shape[:2]
+        height, width = self.event_frames[0][1].shape[:2]
+        event["clip_started_at"] = self.event_frames[0][0]
+        event["clip_ended_at"] = self.event_frames[-1][0]
+        event["source_samples"] = len(self.event_frames)
+        event["max_sample_gap_seconds"] = max(
+            (
+                current[0] - previous[0]
+                for previous, current in zip(self.event_frames, self.event_frames[1:])
+            ),
+            default=0.0,
+        )
         path = self.evidence_dir / f"{event['id']}.mp4"
         writer = cv2.VideoWriter(
             str(path),
@@ -185,8 +195,26 @@ class FightProcessor:
             (width, height),
         )
         if writer.isOpened():
-            for frame in self.event_frames:
-                writer.write(cv2.resize(frame, (width, height)))
+            sample_index = 0
+            total = (
+                round(
+                    (self.event_frames[-1][0] - self.event_frames[0][0])
+                    * self.runtime.config.fps
+                )
+                + 1
+            )
+            for frame_index in range(min(total, round(self.runtime.config.fps * 35))):
+                target_time = (
+                    self.event_frames[0][0] + frame_index / self.runtime.config.fps
+                )
+                while (
+                    sample_index + 1 < len(self.event_frames)
+                    and self.event_frames[sample_index + 1][0] <= target_time + 1e-6
+                ):
+                    sample_index += 1
+                writer.write(
+                    cv2.resize(self.event_frames[sample_index][1], (width, height))
+                )
             event["clip"] = f"/api/evidence/{path.name}"
         writer.release()
         (self.evidence_dir / f"{event['id']}.json").write_text(

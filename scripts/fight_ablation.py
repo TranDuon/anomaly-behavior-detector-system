@@ -173,6 +173,8 @@ def cached_rows(
             "backbone": "x3d_s_kinetics400",
             "cache_version": 2,
         }
+        if original.get("sha256"):
+            identity["source_sha256"] = original["sha256"]
         key = hashlib.sha256(json.dumps(identity, sort_keys=True).encode()).hexdigest()[
             :24
         ]

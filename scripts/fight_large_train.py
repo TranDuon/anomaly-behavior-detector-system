@@ -110,6 +110,25 @@ def validate_manifest(manifest):
             raise ValueError(f"Both classes required: {split}")
 
 
+def people_focused_training(rows, cache):
+    foreground, background = [], []
+    for row in rows:
+        with np.load(cache / f"{row['cache']}.npz") as cached:
+            people = int(cached["people"])
+        (background if row["label"] == 0 and people == 0 else foreground).append(row)
+    limit = round(len(foreground) * 0.02 / 0.98)
+    background.sort(key=lambda row: row["sha256"])
+    kept = foreground + background[:limit]
+    return kept, {
+        "original_train_clips": len(rows),
+        "actual_train_clips": len(kept),
+        "positive_clips": sum(row["label"] for row in kept),
+        "negative_without_people_kept": min(limit, len(background)),
+        "negative_without_people_excluded": max(0, len(background) - limit),
+        "note": "Only training background negatives capped at ~2%; positives retained even with missing detections. Development/calibration/test never filtered by detection.",
+    }
+
+
 def run(args):
     manifest_bytes = args.manifest.read_bytes()
     manifest = json.loads(manifest_bytes)
@@ -156,6 +175,11 @@ def run(args):
             split: [row for row in ready if row["split"] == split]
             for split in SPLITS[:-1]
         }
+        partitions["train"], train_selection = people_focused_training(
+            partitions["train"], args.cache
+        )
+        write_json(output / "train_selection.json", train_selection)
+        print("TRAIN_SELECTION " + json.dumps(train_selection), flush=True)
         write_json(output / "cached_manifest.json", {**manifest, "rows": ready})
         try:
             stable_train(
@@ -182,6 +206,7 @@ def run(args):
             model, partitions["calibration"], args.cache, "cuda", False
         )
         calibration = operating_point(partitions["calibration"], calibration_scores)
+        print("CALIBRATION_FROZEN " + json.dumps(calibration), flush=True)
         write_json(output / "calibration_frozen.json", calibration)
         test_rows = cached_rows(
             [row for row in manifest["rows"] if row["split"] == "test"],
@@ -207,6 +232,7 @@ def run(args):
                 for dataset in sorted({row["dataset"] for row in test_rows})
             },
             "counts": manifest["counts"],
+            "train_selection": train_selection,
             "label_provenance": manifest["label_provenance"],
             "grouping_note": manifest["grouping_note"],
             "manifest_sha256": run_state["manifest_sha256"],

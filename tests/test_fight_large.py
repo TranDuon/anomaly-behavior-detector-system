@@ -9,7 +9,11 @@ import torch
 
 from fight.runtime import EventGate, FightRuntime
 from fight.vision import ClipConfig
-from scripts.fight_large_train import operating_point, validate_manifest
+from scripts.fight_large_train import (
+    operating_point,
+    people_focused_training,
+    validate_manifest,
+)
 from scripts.fight_public_data import airtlab_items, assign_groups, validate_zip
 
 
@@ -118,6 +122,18 @@ def test_gate_does_not_join_distant_high_predictions():
     assert gate.fresh().max_observation_gap == 1.5
 
 
+def test_people_selection_only_filters_training_background_negatives(tmp_path):
+    rows = []
+    for index in range(20):
+        row = {"cache": str(index), "sha256": str(index), "label": int(index < 10)}
+        np.savez(tmp_path / f"{index}.npz", people=0)
+        rows.append(row)
+    kept, report = people_focused_training(rows, tmp_path)
+    assert sum(row["label"] for row in kept) == 10
+    assert report["negative_without_people_excluded"] == 10
+    assert len(rows) == 20
+
+
 class BrightModel(torch.nn.Module):
     def forward(self, values):
         return values.mean(dim=(1, 2, 3, 4)) * 0 + 5
@@ -126,6 +142,53 @@ class BrightModel(torch.nn.Module):
 class People:
     def detect(self, frame):
         return [SimpleNamespace(bbox_xyxy=[1, 1, 22, 30])]
+
+
+def test_evidence_resamples_missing_frames_in_source_time(tmp_path):
+    from api.fight_server import FightProcessor
+
+    processor = FightProcessor()
+    processor.runtime = FightRuntime(
+        predictor=BrightModel(),
+        config=ClipConfig(frames=4, fps=4, size=16),
+        detector=People(),
+    )
+    processor.evidence_dir = tmp_path
+    frame = np.zeros((32, 40, 3), np.uint8)
+    for timestamp, event in (
+        (0.0, None),
+        (0.25, "started"),
+        (1.5, None),
+        (2.0, "ended"),
+    ):
+        processor.timestamp = timestamp
+        processor.record(
+            frame, {"event": event, "score": 0.95, "state": "fighting", "regions": []}
+        )
+    report = processor.events[0]
+    assert report["source_samples"] == 4
+    assert report["max_sample_gap_seconds"] == 1.25
+    capture = cv2.VideoCapture(str(tmp_path / report["clip"].split("/")[-1]))
+    assert capture.get(cv2.CAP_PROP_FRAME_COUNT) == 9
+    assert capture.get(cv2.CAP_PROP_FPS) == 4
+    capture.release()
+
+
+def test_low_fps_reset_preserves_custom_gate_settings():
+    runtime = FightRuntime(
+        predictor=BrightModel(),
+        config=ClipConfig(frames=4, fps=8, size=16),
+        detector=People(),
+    )
+    runtime.gate = EventGate(
+        confirm_seconds=2, release_seconds=3, max_observation_gap=4
+    )
+    for index in range(10):
+        runtime.push(np.zeros((32, 40, 3), np.uint8), index / 2)
+    assert runtime.result["state"] == "insufficient"
+    assert runtime.gate.confirm_seconds == 2
+    assert runtime.gate.release_seconds == 3
+    assert runtime.gate.max_observation_gap == 4
 
 
 def test_processor_uploaded_file_and_paced_camera_replay(tmp_path):
