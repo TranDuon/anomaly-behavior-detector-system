@@ -32,8 +32,11 @@ def check_bundle(path, references=None):
                 ).eval()
             config = metadata["clip"]
             dummy = torch.zeros(1, 3, config["frames"], config["size"], config["size"])
-            fusion = metadata.get("input_kind") == "rgb_pose"
+            motion_model = metadata.get("input_kind") == "rgb_pose_motion"
+            fusion = metadata.get("input_kind") in {"rgb_pose", "rgb_pose_motion"}
             warmup = (dummy, torch.zeros(1, 8, 2, 17, 3)) if fusion else (dummy,)
+            if motion_model:
+                warmup += (torch.zeros(1, 2, 15, 32, 32),)
             with torch.inference_mode():
                 model(*warmup)
                 model(*warmup)
@@ -50,6 +53,17 @@ def check_bundle(path, references=None):
                             if fusion
                             else (rgb,)
                         )
+                        if motion_model:
+                            from fight.pair_motion import MotionConfig, motion_inputs
+
+                            inputs += (
+                                torch.from_numpy(
+                                    motion_inputs(
+                                        cached["clips"],
+                                        MotionConfig(**metadata["motion"]),
+                                    )
+                                ),
+                            )
                     started = time.perf_counter()
                     score = float(torch.sigmoid(model(*inputs).max()))
                     seconds = time.perf_counter() - started

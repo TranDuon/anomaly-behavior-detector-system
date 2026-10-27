@@ -129,6 +129,7 @@ class FightRuntime:
         self.input_kind = input_kind
         self.pose_detector = pose_detector
         self.pose_config = None
+        self.motion_config = None
         self.detector_config = DetectorConfig()
         self.gate = EventGate()
         model_path = Path(models_dir) / "fight_model.ts"
@@ -142,14 +143,20 @@ class FightRuntime:
                     raise ValueError("Unsupported runtime schema")
                 self.config = ClipConfig(**self.metadata["clip"])
                 self.input_kind = self.metadata.get("input_kind", "rgb")
-                if self.input_kind not in {"rgb", "rgb_pose"}:
+                if self.input_kind not in {"rgb", "rgb_pose", "rgb_pose_motion"}:
                     raise ValueError("Unsupported model inputs")
-                if self.input_kind == "rgb_pose":
+                if self.input_kind in {"rgb_pose", "rgb_pose_motion"}:
                     from fight.pose import PoseConfig
 
                     self.pose_config = PoseConfig(**self.metadata["pose"])
                     if not (self.models_dir / self.pose_config.model_name).is_file():
                         raise ValueError("Pose weights missing from runtime bundle")
+                if self.input_kind == "rgb_pose_motion":
+                    from fight.pair_motion import MotionConfig
+
+                    self.motion_config = MotionConfig(**self.metadata["motion"])
+                    if self.config.frames != 16 or self.config.fps != 12:
+                        raise ValueError("Motion runtime requires 16 frames at 12fps")
                 self.detector_config = DetectorConfig(
                     **self.metadata.get("person_detector", {})
                 )
@@ -262,7 +269,7 @@ class FightRuntime:
         self.last_prediction = timestamp
         inference_started = time.monotonic()
         frames = list(self.samples)
-        if self.input_kind == "rgb_pose":
+        if self.input_kind in {"rgb_pose", "rgb_pose_motion"}:
             self._ensure_pose()
         if self.detector is None:
             from detection.detector import PersonDetector
@@ -278,7 +285,7 @@ class FightRuntime:
             )
         )
         with torch.inference_mode():
-            if self.input_kind == "rgb_pose":
+            if self.input_kind in {"rgb_pose", "rgb_pose_motion"}:
                 from fight.pose import pose_inputs
 
                 poses = (
@@ -288,7 +295,17 @@ class FightRuntime:
                         pose_inputs(frames, regions, self.pose_detector)
                     )
                 )
-                logits = self.predictor(clip_tensor(clips), poses)
+                if self.input_kind == "rgb_pose_motion":
+                    from fight.pair_motion import motion_inputs
+
+                    motion = (
+                        torch.zeros(len(clips), 2, 15, 32, 32)
+                        if self.metadata.get("use_motion") is False
+                        else torch.from_numpy(motion_inputs(clips, self.motion_config))
+                    )
+                    logits = self.predictor(clip_tensor(clips), poses, motion)
+                else:
+                    logits = self.predictor(clip_tensor(clips), poses)
             else:
                 logits = self.predictor(clip_tensor(clips))
             probabilities = torch.sigmoid(logits).cpu().numpy().reshape(-1)
@@ -321,7 +338,7 @@ class FightRuntime:
         if not self.model_ready:
             return
         torch.set_num_threads(min(torch.get_num_threads(), 4))
-        if self.input_kind == "rgb_pose":
+        if self.input_kind in {"rgb_pose", "rgb_pose_motion"}:
             self._ensure_pose()
         if self.detector is None:
             from detection.detector import PersonDetector
@@ -337,7 +354,13 @@ class FightRuntime:
         )
         with torch.inference_mode():
             for iteration in range(2):
-                if self.input_kind == "rgb_pose":
+                if self.input_kind == "rgb_pose_motion":
+                    self.predictor(
+                        example,
+                        torch.zeros(1, 8, 2, 17, 3),
+                        torch.zeros(1, 2, 15, 32, 32),
+                    )
+                elif self.input_kind == "rgb_pose":
                     self.predictor(example, torch.zeros(1, 8, 2, 17, 3))
                 else:
                     self.predictor(example)
