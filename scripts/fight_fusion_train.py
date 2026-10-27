@@ -28,7 +28,7 @@ from fight.pose import PoseConfig, PoseDetector, flip_pose
 from fight.runtime import EventGate, FightRuntime
 from fight.vision import ClipConfig, clip_tensor, augment_handheld
 from scripts.fight_fusion_data import cache_rows, prepare_rows
-from scripts.fight_large_train import measured
+from scripts.fight_large_train import measured, people_focused_training
 from scripts.fight_pilot import write_json
 
 
@@ -327,6 +327,10 @@ def select_gate(traces, rows, threshold):
             )
             for name in {row["dataset"] for row in rows}
         }
+        for cohort in cohorts.values():
+            cohort["metric_scope"] = (
+                "Development whole-clip any-alarm diagnostic; publisher clip labels, not temporal event ground truth"
+            )
         worst = min(min(item["precision"], item["recall"]) for item in cohorts.values())
         choices.append(
             {
@@ -452,6 +456,10 @@ def run(args):
             split: [row for row in public if row["split"] == split]
             for split in ("train", "development", "calibration")
         }
+        partitions["train"], training_focus = people_focused_training(
+            partitions["train"], args.cache
+        )
+        summary["training_focus"] = training_focus
         summary["counts"] = {name: len(values) for name, values in partitions.items()}
         summary["baseline_reprocessed_development"] = development_result(
             partitions["development"],

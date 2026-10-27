@@ -22,6 +22,12 @@ def install_candidate(bundle, output):
             if path.exists() and path.read_bytes() != data:
                 raise ValueError("Different candidate already exists in output")
             path.write_bytes(data)
+        if "models/yolov8n-pose.pt" in archive.namelist():
+            data = archive.read("models/yolov8n-pose.pt")
+            path = models / "yolov8n-pose.pt"
+            if path.exists() and path.read_bytes() != data:
+                raise ValueError("Different pose weights already exist in output")
+            path.write_bytes(data)
     return models
 
 

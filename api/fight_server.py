@@ -148,6 +148,7 @@ class FightProcessor:
             "model_loaded": self.runtime.model_ready,
             "model": {
                 "architecture": self.runtime.metadata.get("architecture"),
+                "input_kind": self.runtime.input_kind,
                 "approved_for_demo": self.runtime.metadata.get(
                     "approved_for_demo", False
                 ),

@@ -32,9 +32,11 @@ def check_bundle(path, references=None):
                 ).eval()
             config = metadata["clip"]
             dummy = torch.zeros(1, 3, config["frames"], config["size"], config["size"])
+            fusion = metadata.get("input_kind") == "rgb_pose"
+            warmup = (dummy, torch.zeros(1, 8, 2, 17, 3)) if fusion else (dummy,)
             with torch.inference_mode():
-                model(dummy)
-                model(dummy)
+                model(*warmup)
+                model(*warmup)
                 for row in examples:
                     if row["variant"] != variant:
                         continue
@@ -42,9 +44,14 @@ def check_bundle(path, references=None):
                         io.BytesIO(archive.read(variant + "/" + row["cache"] + ".npz")),
                         allow_pickle=False,
                     ) as cached:
-                        inputs = clip_tensor(cached["clips"], "cpu")
+                        rgb = clip_tensor(cached["clips"], "cpu")
+                        inputs = (
+                            (rgb, torch.from_numpy(cached["poses"]))
+                            if fusion
+                            else (rgb,)
+                        )
                     started = time.perf_counter()
-                    score = float(torch.sigmoid(model(inputs).max()))
+                    score = float(torch.sigmoid(model(*inputs).max()))
                     seconds = time.perf_counter() - started
                     reference = reference_map.get((variant, row["cache"]))
                     if references is not None and reference is None:
@@ -74,7 +81,7 @@ def check_bundle(path, references=None):
     if not results:
         raise ValueError("No smoke examples supplied")
     return {
-        "scope": "Same preprocessed RGB tensors, GPU versus exported CPU classifier; excludes detector, upload/replay queues and physical iPhone",
+        "scope": "Same preprocessed RGB/optional pose tensors, GPU versus exported CPU classifier; excludes detector, upload/replay queues and physical iPhone",
         "passed": all(row["passed"] for row in results),
         "examples": results,
         "approved_for_demo": False,

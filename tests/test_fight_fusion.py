@@ -58,6 +58,56 @@ def test_pose_tracks_do_not_swap_when_detection_order_changes():
         PoseConfig(model_name="arbitrary.pt")
 
 
+def test_sparse_pose_reuses_four_observations_after_half_second_window_shift():
+    from fight.pose import PoseDetector, pose_inputs
+    from fight.vision import build_clip_inputs
+
+    calls = []
+
+    class Model:
+        def predict(self, frame, **options):
+            calls.append(1)
+            return [
+                SimpleNamespace(
+                    boxes=SimpleNamespace(
+                        xyxy=torch.tensor([[10, 10, 40, 100]], dtype=torch.float32)
+                    ),
+                    keypoints=SimpleNamespace(
+                        data=torch.from_numpy(np.array([pose_record()["points"]]))
+                    ),
+                )
+            ]
+
+    detector = PoseDetector.__new__(PoseDetector)
+    detector.config, detector.device, detector.model, detector.cache = (
+        PoseConfig(),
+        "cpu",
+        Model(),
+        {},
+    )
+    frames = [np.zeros((120, 160, 3), np.uint8) for index in range(22)]
+    for offset in (0, 6):
+        window = frames[offset : offset + 16]
+        detector.retain(window)
+        clips, regions, people, bounds, counts = build_clip_inputs(
+            window, detector, ClipConfig(fps=12, size=16, region_mode="pairs")
+        )
+        assert pose_inputs(window, regions, detector).shape[1:] == (8, 2, 17, 3)
+    assert len(calls) == 12
+
+
+def test_cpu_acceptance_installs_pose_weights_into_isolated_candidate(tmp_path):
+    import zipfile
+    from scripts.fight_cpu_acceptance import install_candidate
+
+    bundle = tmp_path / "runtime.zip"
+    with zipfile.ZipFile(bundle, "w") as archive:
+        for name in ("fight_model.ts", "fight_runtime.json", "yolov8n-pose.pt"):
+            archive.writestr("models/" + name, name.encode())
+    models = install_candidate(bundle, tmp_path / "qa")
+    assert (models / "yolov8n-pose.pt").read_bytes() == b"yolov8n-pose.pt"
+
+
 def test_residual_fusion_starts_at_rgb_baseline_and_has_finite_missing_pose():
     torch.set_num_threads(2)
     model = InteractionFusion().eval()
