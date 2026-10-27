@@ -193,6 +193,8 @@ class FightRuntime:
             "state": "warming_up" if self.model_ready else "unavailable",
             "score": None,
             "regions": [],
+            "person_boxes": [],
+            "visible_people": None,
             "people": 0,
             "event": None,
             "message": self.message,
@@ -240,6 +242,8 @@ class FightRuntime:
                 **self.result,
                 "state": "insufficient",
                 "score": None,
+                "person_boxes": [],
+                "visible_people": None,
                 "event": "ended" if was_active else None,
                 "message": "FPS nguồn hình quá thấp hoặc mất nhiều frame; chưa đủ dữ liệu theo thời gian.",
             }
@@ -262,8 +266,10 @@ class FightRuntime:
             )
         if self.detection_cache is None:
             self.detection_cache = DetectionCache(self.detector)
-        clips, regions, people, content_bounds, people_counts = build_clip_inputs(
-            frames, self.detection_cache, self.config
+        clips, regions, people, content_bounds, people_counts, person_boxes = (
+            build_clip_inputs(
+                frames, self.detection_cache, self.config, include_person_boxes=True
+            )
         )
         with torch.inference_mode():
             if self.input_kind == "rgb_pose":
@@ -296,6 +302,8 @@ class FightRuntime:
             "score": score,
             "regions": [list(regions[selected])],
             "people": people,
+            "person_boxes": person_boxes,
+            "visible_people": len(person_boxes),
             "event": event,
             "message": self.message,
             "prediction_timestamp": timestamp,

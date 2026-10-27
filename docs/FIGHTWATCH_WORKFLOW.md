@@ -11,6 +11,8 @@ Chạy `run_local.cmd`, mở http://localhost:8000. Chưa có checkpoint mới v
 - IP stream: dùng URL RTSP/HTTP trực tiếp từ ứng dụng camera, không phải URL trang web xem camera.
 - Nút Cho phép checkpoint pilot phải bật chủ động. Điểm model là điểm phân loại, chưa được hiệu chỉnh thành xác suất thực tế.
 
+Khi bấm **Bật nhận diện**, khung xanh `PERSON` là người detector tìm thấy; `PERSONS` đếm người ở frame cuối của lượt chấm. Khung vàng là vùng đang xác minh, đỏ là vùng cảnh báo đánh nhau; không có nghĩa mọi người trong vùng đều tham gia. Khung cập nhật theo lượt phân tích, không phải tracking từng frame. Tái dùng detection có sẵn, không thêm lượt chạy YOLO. **Xem thử** chỉ truyền hình, không chạy model/vẽ khung người. Trạng thái **Chưa xác nhận đánh nhau** không chứng minh hành vi an toàn: model vẫn có thể bỏ sót. Lỗi khung hiển thị và lỗi phân loại hành vi phải kiểm tra riêng.
+
 Kết quả gồm mốc sự kiện, ảnh, clip bằng chứng (tối đa 30 giây mỗi phần) và video đã đánh dấu. File lưu trong `uploads/evidence/`. Nút xuất JSON lưu báo cáo phiên. Nhiều frame của một sự kiện không tạo nhiều cảnh báo bắt đầu.
 
 ## Notebook Colab

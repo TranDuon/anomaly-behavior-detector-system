@@ -13,7 +13,7 @@ from core.config import BASE_DIR, settings
 from fight.runtime import FightRuntime
 
 LABELS = {
-    "normal": "NORMAL",
+    "normal": "NO FIGHT CONFIRMED",
     "fighting": "FIGHT DETECTED",
     "verifying": "VERIFYING",
     "warming_up": "COLLECTING CLIP",
@@ -60,13 +60,31 @@ def annotate(frame, result):
             else (175, 195, 90)
         )
     )
-    for region in result.get("regions", []):
-        left, top, right, bottom = map(int, region)
-        cv2.rectangle(image, (left, top), (right, bottom), color, 2)
+    if not result.get("score_stale", False):
+        for box in result.get("person_boxes", []):
+            left, top, right, bottom = map(int, box)
+            cv2.rectangle(image, (left, top), (right, bottom), (40, 200, 60), 2)
+            cv2.putText(
+                image,
+                "PERSON",
+                (left, max(48, top - 6)),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.45,
+                (40, 200, 60),
+                1,
+            )
+        if result["state"] in {"fighting", "verifying"}:
+            for region in result.get("regions", []):
+                left, top, right, bottom = map(int, region)
+                cv2.rectangle(image, (left, top), (right, bottom), color, 3)
     cv2.rectangle(image, (0, 0), (image.shape[1], 36), (25, 30, 28), -1)
+    label = LABELS.get(result["state"], result["state"])
+    visible = result.get("visible_people")
+    if visible is not None and not result.get("score_stale", False):
+        label += f" | PERSONS: {visible}"
     cv2.putText(
         image,
-        LABELS.get(result["state"], result["state"]),
+        label,
         (12, 24),
         cv2.FONT_HERSHEY_SIMPLEX,
         0.6,
@@ -152,6 +170,8 @@ class FightProcessor:
         if stale:
             prediction.update(
                 state="insufficient",
+                person_boxes=[],
+                visible_people=None,
                 event=None,
                 message="Kết quả suy luận đã cũ; CPU hoặc nguồn hình đang chậm, chưa xác nhận hành vi hiện tại.",
             )

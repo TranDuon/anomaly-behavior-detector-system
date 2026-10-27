@@ -209,7 +209,7 @@ def person_tubes(sampled_boxes):
     return [track["bounds"].tolist() for track in tracks]
 
 
-def build_clip_inputs(frames, detector, config):
+def build_clip_inputs(frames, detector, config, *, include_person_boxes=False):
     height, width = frames[0].shape[:2]
     bounds = (
         content_bounds(frames) if config.trim_black_borders else (0, 0, width, height)
@@ -232,7 +232,22 @@ def build_clip_inputs(frames, detector, config):
         [region[0] + left, region[1] + top, region[2] + left, region[3] + top]
         for region in regions
     ]
-    return clips, absolute, max(counts, default=0), bounds, counts
+    result = (clips, absolute, max(counts, default=0), bounds, counts)
+    if not include_person_boxes:
+        return result
+    latest_boxes = []
+    for raw in sampled_boxes[-1]:
+        box = np.asarray(raw, dtype=np.float32)
+        if box.shape != (4,) or not np.isfinite(box).all():
+            continue
+        translated = np.clip(
+            box + np.array([left, top, left, top]),
+            [0, 0, 0, 0],
+            [width - 1, height - 1, width - 1, height - 1],
+        ).astype(int)
+        if translated[2] > translated[0] and translated[3] > translated[1]:
+            latest_boxes.append(translated.tolist())
+    return (*result, latest_boxes)
 
 
 def regions_for(boxes, width, height, limit=3):

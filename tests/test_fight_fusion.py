@@ -468,3 +468,69 @@ def test_status_exposes_deployed_checkpoint_without_promoting_pilot(monkeypatch)
     assert model["deployment"] == deployment
     assert not model["approved_for_demo"]
     assert not model["real_phone_tested"]
+
+
+def test_person_overlays_reuse_detections_and_preserve_model_inputs():
+    from fight.vision import DetectionCache, build_clip_inputs
+
+    frame = np.zeros((100, 160, 3), np.uint8)
+    frame[20:80, 30:130] = 150
+    frames = [frame.copy() for index in range(16)]
+
+    class Detector:
+        calls = 0
+
+        def detect(self, image):
+            self.calls += 1
+            boxes = [[10, 5, 40, 55]]
+            if self.calls == 1:
+                boxes.append([50, 5, 80, 55])
+            return [SimpleNamespace(bbox_xyxy=box) for box in boxes]
+
+    detector = Detector()
+    cached = DetectionCache(detector)
+    config = ClipConfig(region_mode="pairs", trim_black_borders=True, size=32)
+    original = build_clip_inputs(frames, cached, config)
+    annotated = build_clip_inputs(frames, cached, config, include_person_boxes=True)
+    np.testing.assert_array_equal(original[0], annotated[0])
+    assert original[1:] == annotated[1:5]
+    assert annotated[2] == 2
+    assert annotated[5] == [[40, 25, 70, 75]]
+    assert detector.calls == 3
+
+
+def test_runtime_exposes_people_boxes_and_clears_them_on_reset():
+    runtime = FightRuntime(
+        predictor=FusionPredictor(),
+        config=ClipConfig(frames=4, fps=4, size=16),
+        pose_detector=MockPose(),
+        input_kind="rgb_pose",
+    )
+    runtime.metadata["use_pose"] = False
+    for index in range(4):
+        result = runtime.push(np.zeros((120, 160, 3), np.uint8), index / 4)
+    assert result["visible_people"] == 2
+    assert result["person_boxes"] == [[10, 10, 40, 100], [60, 10, 90, 100]]
+    runtime.reset()
+    assert runtime.result["person_boxes"] == []
+    assert runtime.result["visible_people"] is None
+
+
+def test_annotation_distinguishes_green_people_from_red_fight_regions():
+    from api.fight_server import annotate
+
+    frame = np.zeros((100, 160, 3), np.uint8)
+    result = {
+        "state": "normal",
+        "person_boxes": [[20, 45, 50, 90]],
+        "visible_people": 1,
+        "regions": [[5, 40, 140, 95]],
+    }
+    normal = annotate(frame, result)
+    assert normal[70, 20].tolist() == [40, 200, 60]
+    assert normal[70, 5].tolist() == [0, 0, 0]
+    alarm = annotate(frame, {**result, "state": "fighting"})
+    assert alarm[70, 5].tolist() == [50, 65, 235]
+    stale = annotate(frame, {**result, "score_stale": True})
+    assert stale[70, 20].tolist() == [0, 0, 0]
+    assert not frame.any()
