@@ -78,6 +78,32 @@ def test_temporal_controls_remove_or_shuffle_time_without_changing_regions():
     np.testing.assert_array_equal(clips, original)
 
 
+def test_flagged_original_labels_block_new_training_but_preserve_completed_report(
+    tmp_path,
+):
+    import json
+    from scripts.fight_expand import expanded_config, train
+
+    source = tmp_path / "artifacts/source"
+    source.mkdir(parents=True)
+    (source.parent / "ubi_label_review_gate.json").write_text(
+        json.dumps({"status": "requires_review"})
+    )
+    output = tmp_path / "output"
+    output.mkdir()
+    (output / "manifest.json").write_text(
+        json.dumps({"clip": expanded_config().to_dict(), "rows": []})
+    )
+    args = SimpleNamespace(source_run=str(source))
+    with pytest.raises(ValueError, match="flagged"):
+        train(args, output)
+    (output / "report.json").write_text(json.dumps({"decision": "old_report"}))
+    train(args, output)
+    assert json.loads((output / "report.json").read_text()) == {
+        "decision": "old_report"
+    }
+
+
 def test_fast_threshold_search_matches_brute_force():
     rows = [{"video": str(index // 4), "label": index % 2} for index in range(32)]
     scores = np.random.default_rng(42).choice(

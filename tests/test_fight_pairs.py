@@ -86,3 +86,11 @@ def test_real_x3d_supports_native_temporal_input():
     with torch.inference_mode():
         result = model(torch.zeros(1, 3, 13, 182, 182))
     assert result.shape == (1,) and torch.isfinite(result).all()
+
+
+def test_unreviewed_label_ablation_is_blocked_without_explicit_acknowledgment():
+    import pytest
+    from scripts.fight_regions_ablation import run
+
+    with pytest.raises(ValueError, match="flagged"):
+        run(SimpleNamespace())

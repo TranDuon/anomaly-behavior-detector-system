@@ -1,0 +1,233 @@
+{
+  "training_code_revision": "0d88c6dfd8a7eab78ab00e3f451e16e26cc8d0db",
+  "curated_judgments_sha256": "d76255728afe353f6db2c1b351de0d1892284de97ed8d44cee0581a0fb3a48fd",
+  "report": {
+    "status": "completed",
+    "variants": {
+      "tubes": {
+        "validation": {
+          "metric_scope": "selected pilot clips, not full-video frame-level evaluation",
+          "auc": 0.8166666666666667,
+          "ap": 0.7540933402346447,
+          "precision": 0.7777777777777778,
+          "recall": 0.875,
+          "f1": 0.8235294117647058,
+          "false_positive_rate": 0.13333333333333333,
+          "in_video_auc": 0.875,
+          "mixed_label_videos": 4,
+          "clips": 23
+        },
+        "threshold": 0.4545905292034149,
+        "at_half": {
+          "metric_scope": "selected pilot clips, not full-video frame-level evaluation",
+          "auc": 0.8166666666666667,
+          "ap": 0.7540933402346447,
+          "precision": 0.75,
+          "recall": 0.75,
+          "f1": 0.75,
+          "false_positive_rate": 0.13333333333333333,
+          "in_video_auc": 0.875,
+          "mixed_label_videos": 4,
+          "clips": 23
+        },
+        "best_recall_at_precision75": 0.875,
+        "best_precision_at_recall60": 0.8571428571428571,
+        "threshold_note": "Development validation only; thresholds are not independent test results.",
+        "scope": "Tiny deliberately selected AI-curated development cohort; not independent human gold, not population accuracy, not real-phone acceptance",
+        "rater_type": "AI_assisted_not_independent_human_gold",
+        "human_verified": false,
+        "official_test_used": false,
+        "approved_for_demo": false,
+        "decision": "tiny_curated_feasibility_only",
+        "completed_epochs": {
+          "probe": 6,
+          "finetune": 8
+        },
+        "training_fit_not_generalization": {
+          "metric_scope": "selected pilot clips, not full-video frame-level evaluation",
+          "auc": 0.9947916666666666,
+          "ap": 0.9963235294117647,
+          "precision": 1,
+          "recall": 0.9375,
+          "f1": 0.967741935483871,
+          "false_positive_rate": 0,
+          "in_video_auc": 1,
+          "mixed_label_videos": 3,
+          "clips": 28
+        }
+      },
+      "pairs": {
+        "validation": {
+          "metric_scope": "selected pilot clips, not full-video frame-level evaluation",
+          "auc": 0.875,
+          "ap": 0.8123397435897436,
+          "precision": 0.6153846153846154,
+          "recall": 1,
+          "f1": 0.7619047619047619,
+          "false_positive_rate": 0.3333333333333333,
+          "in_video_auc": 0.9,
+          "mixed_label_videos": 4,
+          "clips": 23
+        },
+        "threshold": 0.4454406499862671,
+        "at_half": {
+          "metric_scope": "selected pilot clips, not full-video frame-level evaluation",
+          "auc": 0.875,
+          "ap": 0.8123397435897436,
+          "precision": 0.6,
+          "recall": 0.75,
+          "f1": 0.6666666666666666,
+          "false_positive_rate": 0.26666666666666666,
+          "in_video_auc": 0.9,
+          "mixed_label_videos": 4,
+          "clips": 23
+        },
+        "best_recall_at_precision75": 0.625,
+        "best_precision_at_recall60": 0.8333333333333334,
+        "threshold_note": "Development validation only; thresholds are not independent test results.",
+        "scope": "Tiny deliberately selected AI-curated development cohort; not independent human gold, not population accuracy, not real-phone acceptance",
+        "rater_type": "AI_assisted_not_independent_human_gold",
+        "human_verified": false,
+        "official_test_used": false,
+        "approved_for_demo": false,
+        "decision": "tiny_curated_feasibility_only",
+        "completed_epochs": {
+          "probe": 8,
+          "finetune": 7
+        },
+        "training_fit_not_generalization": {
+          "metric_scope": "selected pilot clips, not full-video frame-level evaluation",
+          "auc": 0.9947916666666666,
+          "ap": 0.9963235294117647,
+          "precision": 0.9411764705882353,
+          "recall": 1,
+          "f1": 0.9696969696969697,
+          "false_positive_rate": 0.08333333333333333,
+          "in_video_auc": 1,
+          "mixed_label_videos": 3,
+          "clips": 28
+        }
+      }
+    },
+    "scope": "Tiny deliberately selected AI-curated development cohort; not independent human gold, not population accuracy, not real-phone acceptance",
+    "rater_type": "AI_assisted_not_independent_human_gold",
+    "counts": {
+      "train": {
+        "clips": 28,
+        "positive": 16,
+        "videos": 4,
+        "changed_labels_in_new_manifest": 17
+      },
+      "validation": {
+        "clips": 23,
+        "positive": 8,
+        "videos": 4,
+        "changed_labels_in_new_manifest": 12
+      }
+    },
+    "approved_for_demo": false,
+    "decision": "tiny_curated_feasibility_only",
+    "expanded_reference_on_curated_validation": {
+      "validation": {
+        "metric_scope": "selected pilot clips, not full-video frame-level evaluation",
+        "auc": 0.875,
+        "ap": 0.8191287878787878,
+        "precision": 0.75,
+        "recall": 0.75,
+        "f1": 0.75,
+        "false_positive_rate": 0.13333333333333333,
+        "in_video_auc": 1,
+        "mixed_label_videos": 4,
+        "clips": 23
+      },
+      "threshold": 0.6931635141372681,
+      "at_half": {
+        "metric_scope": "selected pilot clips, not full-video frame-level evaluation",
+        "auc": 0.875,
+        "ap": 0.8191287878787878,
+        "precision": 0.5384615384615384,
+        "recall": 0.875,
+        "f1": 0.6666666666666666,
+        "false_positive_rate": 0.4,
+        "in_video_auc": 1,
+        "mixed_label_videos": 4,
+        "clips": 23
+      },
+      "best_recall_at_precision75": 0.75,
+      "best_precision_at_recall60": 0.8333333333333334,
+      "threshold_note": "Development validation only; thresholds are not independent test results."
+    },
+    "reference_note": "Old model trained on many original-label clips; reference is not matched training budget. Scores existed before curated judgments; tiny selected cohort remains optimistic.",
+    "seconds": 91.18817132599906
+  },
+  "reference_at_original_threshold": {
+    "threshold": 0.27479562163352966,
+    "metrics": {
+      "metric_scope": "selected pilot clips, not full-video frame-level evaluation",
+      "auc": 0.875,
+      "ap": 0.8191287878787878,
+      "precision": 0.42105263157894735,
+      "recall": 1,
+      "f1": 0.5925925925925926,
+      "false_positive_rate": 0.7333333333333333,
+      "in_video_auc": 1,
+      "mixed_label_videos": 4,
+      "clips": 23
+    },
+    "scope": "Same 23 tiny AI-curated development clips, original model threshold untouched; not an independent acceptance test",
+    "model_or_threshold_modified": false
+  },
+  "source_health": [
+    {
+      "video": "F_21_0_0_0_0",
+      "second": 18,
+      "archive_video_crc_matches": true,
+      "archive_annotation_matches": true,
+      "seek_equals_sequential": true,
+      "mean_pixel_difference": 0,
+      "seek_timestamp_seconds": 18
+    },
+    {
+      "video": "F_175_0_1_0_0",
+      "second": 53,
+      "archive_video_crc_matches": true,
+      "archive_annotation_matches": true,
+      "seek_equals_sequential": true,
+      "mean_pixel_difference": 0,
+      "seek_timestamp_seconds": 53
+    },
+    {
+      "video": "F_117_0_0_0_0",
+      "second": 53,
+      "archive_video_crc_matches": true,
+      "archive_annotation_matches": true,
+      "seek_equals_sequential": true,
+      "mean_pixel_difference": 0,
+      "seek_timestamp_seconds": 53
+    },
+    {
+      "video": "F_54_1_1_0_0",
+      "second": 11,
+      "archive_video_crc_matches": true,
+      "archive_annotation_matches": true,
+      "seek_equals_sequential": true,
+      "mean_pixel_difference": 0,
+      "seek_timestamp_seconds": 11
+    },
+    {
+      "video": "F_162_1_0_1_0",
+      "second": 9,
+      "archive_video_crc_matches": true,
+      "archive_annotation_matches": true,
+      "seek_equals_sequential": true,
+      "mean_pixel_difference": 0,
+      "seek_timestamp_seconds": 9
+    }
+  ],
+  "original_label_ablation": {
+    "status": "stopped_before_training",
+    "seconds": 373.76429990999895,
+    "completed_training_epochs": 0,
+    "reason": "Stop before training after visual audit flagged label quality; no accuracy comparison from partial cache."
+  }
+}

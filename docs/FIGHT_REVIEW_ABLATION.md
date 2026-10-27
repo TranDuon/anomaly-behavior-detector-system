@@ -1,5 +1,7 @@
 # Rà nhãn và đối chứng crop/thời gian
 
+Trạng thái lần chạy: đối chứng nhãn gốc đã dừng trong cache, chưa train epoch nào do audit phát hiện nhiều nghi vấn. Script hiện yêu cầu cờ `--acknowledge-unreviewed-labels` nếu cố ý chạy nghiên cứu trên nhãn cũ; mặc định không chạy. Thay thế bằng notebook curated và xem `docs/FIGHT_CURATED_RESULTS.md`. Không có kết quả thắng/thua của phép 2×2 chưa hoàn tất.
+
 Không tiếp tục train lớn hoặc tự thay model local. Không dùng NTU.
 
 ## Audit ẩn nhãn

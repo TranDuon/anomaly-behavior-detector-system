@@ -289,6 +289,14 @@ def train(args, output):
     if (output / "report.json").exists():
         print((output / "report.json").read_text(), flush=True)
         return
+    gate = Path(args.source_run).parent / "ubi_label_review_gate.json"
+    if (
+        gate.exists()
+        and json.loads(gate.read_text()).get("status") == "requires_review"
+    ):
+        raise ValueError(
+            "UBI labels flagged by source audit. Do not start another expanded run before label review; use the separately versioned curated workflow."
+        )
     started = time.monotonic()
     deadline = started + args.budget_minutes * 60
     random.seed(42)

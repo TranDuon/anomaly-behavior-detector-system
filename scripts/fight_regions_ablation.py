@@ -164,6 +164,10 @@ def crop_gallery(rows, cache, config, output):
 
 
 def run(args):
+    if not getattr(args, "acknowledge_unreviewed_labels", False):
+        raise ValueError(
+            "Original labels were flagged by review. Use the curated pilot, or explicitly acknowledge this is only an unreviewed-label diagnostic."
+        )
     started = time.monotonic()
     deadline = started + args.budget_minutes * 60
     output = args.output_dir
@@ -324,6 +328,7 @@ def main():
     parser.add_argument("--cache-dir", type=Path, required=True)
     parser.add_argument("--per-class", type=int, default=192)
     parser.add_argument("--budget-minutes", type=float, default=25)
+    parser.add_argument("--acknowledge-unreviewed-labels", action="store_true")
     args = parser.parse_args()
     if not torch.cuda.is_available() or args.per_class < 40 or args.budget_minutes < 10:
         parser.error("CUDA, >=40 clips/class and >=10 min budget required")
