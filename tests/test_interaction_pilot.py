@@ -207,3 +207,74 @@ def test_event_matching_is_one_to_one_and_rejects_always_on_alarm():
     assert result["ignored_events"] == 1
     always = event_metrics([{"start": 0, "end": 30}], [intervals[0]], 10, 30)
     assert always["true_positive"] == 0 and always["false_positive"] == 1
+
+
+def test_saved_report_aggregates_counts_not_per_video_percentages(tmp_path):
+    import json
+    from scripts.fight_interaction_report import (
+        aggregate_events,
+        render_timelines,
+        summarize,
+    )
+
+    metrics = {
+        "ground_truth_events": 2,
+        "true_positive": 1,
+        "false_positive": 1,
+        "false_negative": 1,
+        "ignored_events": 0,
+        "normal_minutes": 0.5,
+    }
+    records = [
+        {
+            "video": "pku/a",
+            "metrics": metrics,
+            "predictions": [{"timestamp": 1, "score": 0.7}],
+            "events": [{"start": 1, "end": 2}],
+        },
+        {
+            "video": "pku/b",
+            "metrics": {
+                **metrics,
+                "true_positive": 2,
+                "false_negative": 0,
+                "false_positive": 0,
+                "normal_minutes": 1.5,
+            },
+            "predictions": [],
+            "events": [],
+        },
+    ]
+    total = aggregate_events(records)
+    assert total["precision"] == total["recall"] == 0.75
+    assert total["false_alerts_per_normal_minute"] == 0.5
+    condition = {
+        "threshold": 0.5,
+        "cohorts": {},
+        "all_calibration_cohorts_meet_target": False,
+        "pku_diagnostic": {},
+        "continuous": records,
+    }
+    comparison = {
+        "status": "completed",
+        "scope": "small diagnostic",
+        "variants": {"sample": condition},
+    }
+    assert not summarize(comparison)["approved_for_demo"]
+    destination = tmp_path / "sample"
+    destination.mkdir()
+    (destination / "manifest.json").write_text(
+        json.dumps(
+            {
+                "sources": [
+                    {
+                        "video": "pku/a",
+                        "fps": 10,
+                        "intervals": [{"start": 10, "end": 20, "label": 1}],
+                    }
+                ]
+            }
+        )
+    )
+    paths = render_timelines(comparison, tmp_path)
+    assert len(paths) == 1 and paths[0].stat().st_size > 100
