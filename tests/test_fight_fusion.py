@@ -252,3 +252,69 @@ def test_fusion_runtime_same_frames_same_scores_and_missing_bundle_blocked(tmp_p
     )
     runtime = FightRuntime(tmp_path, allow_pilot=True)
     assert not runtime.model_ready and "Pose weights missing" in runtime.message
+
+
+def test_qa_selection_does_not_depend_on_model_scores():
+    from scripts.fight_fusion_qa import select_cases
+
+    rows = [
+        {
+            "video": "hug1/cam1",
+            "performance": "hug1",
+            "label": 0,
+            "dataset": "airtlab",
+            "actions": ["hug", "highfive"],
+            "sha256": "a",
+            "score": 0.9,
+        },
+        {
+            "video": "hug1/cam2",
+            "performance": "hug1",
+            "label": 0,
+            "dataset": "airtlab",
+            "actions": ["hug", "highfive"],
+            "sha256": "b",
+            "score": 0.1,
+        },
+        {
+            "video": "highfive2",
+            "performance": "highfive2",
+            "label": 0,
+            "dataset": "airtlab",
+            "actions": ["highfive"],
+            "sha256": "c",
+            "score": 0.1,
+        },
+        {
+            "video": "fight",
+            "label": 1,
+            "dataset": "rlvs",
+            "actions": [],
+            "sha256": "d",
+            "score": 0.1,
+        },
+    ]
+    selected = [row["video"] for row in select_cases(rows)]
+    for row in rows:
+        row["score"] = 1 - row["score"]
+    assert (
+        selected
+        == [row["video"] for row in select_cases(rows)]
+        == ["hug1/cam1", "highfive2", "fight"]
+    )
+
+
+def test_qa_unpack_rejects_traversal_and_preserves_existing_data(tmp_path):
+    import zipfile
+    from scripts.fight_fusion_qa import unpack
+
+    archive = tmp_path / "bad.zip"
+    with zipfile.ZipFile(archive, "w") as handle:
+        handle.writestr("../escape.txt", "no")
+    with pytest.raises(ValueError, match="Unsafe"):
+        unpack(archive, tmp_path / "qa")
+    assert not (tmp_path / "escape.txt").exists()
+    (tmp_path / "qa/keep.txt").write_text("keep")
+    with pytest.raises(ValueError, match="overwriting"):
+        unpack(archive, tmp_path / "qa")
+    assert (tmp_path / "qa/keep.txt").read_text() == "keep"
