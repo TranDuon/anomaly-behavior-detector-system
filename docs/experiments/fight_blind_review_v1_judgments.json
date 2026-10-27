@@ -1,0 +1,561 @@
+{
+  "protocol": "AI-assisted visual review of six frames per 1.875s source window, labels and model scores hidden in contact sheets; judgments frozen before reading private mapping.",
+  "rater_type": "AI_assisted_not_independent_human_gold",
+  "labels_changed": false,
+  "used_for_training": false,
+  "limitations": [
+    "Short sampled sequences can miss brief contacts or context; uncertain means unresolved, not normal.",
+    "Some scenes had already been seen in earlier audits; hiding labels does not erase prior scene familiarity.",
+    "48 source-stratified random clips plus 12 error-enriched clips; not a population noise-rate estimate."
+  ],
+  "prior_scene_exposure_ids": [
+    "R007",
+    "R010",
+    "R028",
+    "R039",
+    "R040",
+    "R058"
+  ],
+  "judgments": [
+    {
+      "audit_id": "R001",
+      "judgment": "uncertain",
+      "confidence": "low",
+      "visibility": "occluded",
+      "scene": "outdoor",
+      "people_bucket": "2-4",
+      "note": "People gathered around a seated or crouched person; hands/contact obscured, no clear strike resolved."
+    },
+    {
+      "audit_id": "R002",
+      "judgment": "uncertain",
+      "confidence": "low",
+      "visibility": "blurred",
+      "scene": "indoor",
+      "people_bucket": "5+",
+      "note": "Heavy intentional blur and occlusion hide upper bodies; reaching motion cannot be resolved as strike."
+    },
+    {
+      "audit_id": "R003",
+      "judgment": "nonfight",
+      "confidence": "high",
+      "visibility": "distant",
+      "scene": "outdoor_street",
+      "people_bucket": "2-4",
+      "note": "People walk along the street; no visible aggression in the sampled window."
+    },
+    {
+      "audit_id": "R004",
+      "judgment": "nonfight",
+      "confidence": "high",
+      "visibility": "clear",
+      "scene": "indoor_room",
+      "people_bucket": "2-4",
+      "note": "One seated at desk and others standing/walking through doorway; no striking."
+    },
+    {
+      "audit_id": "R005",
+      "judgment": "uncertain",
+      "confidence": "low",
+      "visibility": "distant",
+      "scene": "outdoor_crowd",
+      "people_bucket": "5+",
+      "note": "Raised arms and abrupt movement among a crowd; contact versus gesture unclear at this scale."
+    },
+    {
+      "audit_id": "R006",
+      "judgment": "nonfight",
+      "confidence": "high",
+      "visibility": "distant",
+      "scene": "outdoor_parking",
+      "people_bucket": "0-1",
+      "note": "Parking area with no resolved person-to-person physical interaction."
+    },
+    {
+      "audit_id": "R007",
+      "judgment": "nonfight",
+      "confidence": "medium",
+      "visibility": "occluded",
+      "scene": "indoor_corridor",
+      "people_bucket": "5+",
+      "note": "Several people stand and gesture in a narrow space; no clear strike during this window."
+    },
+    {
+      "audit_id": "R008",
+      "judgment": "nonfight",
+      "confidence": "high",
+      "visibility": "distant",
+      "scene": "outdoor_traffic",
+      "people_bucket": "0-1",
+      "note": "Road traffic; no visible fighting."
+    },
+    {
+      "audit_id": "R009",
+      "judgment": "fight",
+      "confidence": "medium",
+      "visibility": "clear",
+      "scene": "outdoor",
+      "people_bucket": "2-4",
+      "note": "Repeated rapid arm contacts toward another person's head/upper body with recoil."
+    },
+    {
+      "audit_id": "R010",
+      "judgment": "fight",
+      "confidence": "high",
+      "visibility": "occluded",
+      "scene": "indoor_corridor",
+      "people_bucket": "5+",
+      "note": "Several people make repeated forceful striking motions toward a person low to the ground."
+    },
+    {
+      "audit_id": "R011",
+      "judgment": "nonfight",
+      "confidence": "high",
+      "visibility": "distant",
+      "scene": "outdoor_traffic",
+      "people_bucket": "0-1",
+      "note": "Moving cars and distant pavement; no visible physical aggression."
+    },
+    {
+      "audit_id": "R012",
+      "judgment": "fight",
+      "confidence": "medium",
+      "visibility": "occluded",
+      "scene": "indoor_restaurant",
+      "people_bucket": "5+",
+      "note": "Forceful reaching/striking and grappling across a table; some contact occluded."
+    },
+    {
+      "audit_id": "R013",
+      "judgment": "nonfight",
+      "confidence": "high",
+      "visibility": "clear",
+      "scene": "outdoor_platform",
+      "people_bucket": "2-4",
+      "note": "People standing/walking along a rail platform; no physical aggression."
+    },
+    {
+      "audit_id": "R014",
+      "judgment": "fight",
+      "confidence": "high",
+      "visibility": "occluded",
+      "scene": "outdoor",
+      "people_bucket": "5+",
+      "note": "Repeated forceful blows/grappling directed at a person crouched near steps."
+    },
+    {
+      "audit_id": "R015",
+      "judgment": "nonfight",
+      "confidence": "high",
+      "visibility": "distant",
+      "scene": "outdoor_traffic",
+      "people_bucket": "0-1",
+      "note": "Vehicle yard and moving truck, no person-to-person aggression."
+    },
+    {
+      "audit_id": "R016",
+      "judgment": "uncertain",
+      "confidence": "medium",
+      "visibility": "clear",
+      "scene": "outdoor",
+      "people_bucket": "2-4",
+      "note": "Men hold or touch upper bodies while talking; cannot distinguish restraint/de-escalation from aggression in this window."
+    },
+    {
+      "audit_id": "R017",
+      "judgment": "uncertain",
+      "confidence": "low",
+      "visibility": "blurred",
+      "scene": "indoor_restaurant",
+      "people_bucket": "5+",
+      "note": "Small embedded low-quality surveillance image; individual arm contacts not resolved."
+    },
+    {
+      "audit_id": "R018",
+      "judgment": "nonfight",
+      "confidence": "high",
+      "visibility": "clear",
+      "scene": "indoor_mall",
+      "people_bucket": "5+",
+      "note": "Shoppers walk past storefronts; no fighting visible."
+    },
+    {
+      "audit_id": "R019",
+      "judgment": "uncertain",
+      "confidence": "low",
+      "visibility": "distant",
+      "scene": "indoor_bus",
+      "people_bucket": "2-4",
+      "note": "Two people interact at far end of bus, possible grappling but contact too small to classify confidently."
+    },
+    {
+      "audit_id": "R020",
+      "judgment": "uncertain",
+      "confidence": "low",
+      "visibility": "blurred",
+      "scene": "unknown",
+      "people_bucket": "unknown",
+      "note": "Low-contrast infrared-like footage and overlaid graphics; physical action unresolved."
+    },
+    {
+      "audit_id": "R021",
+      "judgment": "fight",
+      "confidence": "high",
+      "visibility": "clear",
+      "scene": "outdoor_crowd",
+      "people_bucket": "5+",
+      "note": "Two people pull/grapple around head/upper body and jerk one another; others try to separate."
+    },
+    {
+      "audit_id": "R022",
+      "judgment": "nonfight",
+      "confidence": "medium",
+      "visibility": "occluded",
+      "scene": "outdoor_crowd",
+      "people_bucket": "5+",
+      "note": "Officers/bystanders stand around a person on the ground; no active strike visible in this window."
+    },
+    {
+      "audit_id": "R023",
+      "judgment": "fight",
+      "confidence": "high",
+      "visibility": "clear",
+      "scene": "indoor_shop",
+      "people_bucket": "2-4",
+      "note": "Repeated grappling/striking, forceful push and fall between two people."
+    },
+    {
+      "audit_id": "R024",
+      "judgment": "uncertain",
+      "confidence": "low",
+      "visibility": "occluded",
+      "scene": "outdoor_crowd",
+      "people_bucket": "5+",
+      "note": "Dense moving crowd with arm contacts; foreground occlusion prevents distinguishing fight from jostling."
+    },
+    {
+      "audit_id": "R025",
+      "judgment": "uncertain",
+      "confidence": "medium",
+      "visibility": "clear",
+      "scene": "outdoor",
+      "people_bucket": "2-4",
+      "note": "People face one another, gesture and hold/separate arms; aggression versus de-escalation not resolved."
+    },
+    {
+      "audit_id": "R026",
+      "judgment": "nonfight",
+      "confidence": "medium",
+      "visibility": "distant",
+      "scene": "outdoor_night",
+      "people_bucket": "0-1",
+      "note": "Distant person walks past bright headlights; no visible physical contact."
+    },
+    {
+      "audit_id": "R027",
+      "judgment": "nonfight",
+      "confidence": "high",
+      "visibility": "clear",
+      "scene": "indoor_office",
+      "people_bucket": "0-1",
+      "note": "A person enters and crosses an office room; no interaction suggesting fight."
+    },
+    {
+      "audit_id": "R028",
+      "judgment": "fight",
+      "confidence": "high",
+      "visibility": "occluded",
+      "scene": "indoor_corridor",
+      "people_bucket": "5+",
+      "note": "Several people repeatedly strike toward a crouched/ground-level person; scene was also seen in earlier audit."
+    },
+    {
+      "audit_id": "R029",
+      "judgment": "nonfight",
+      "confidence": "medium",
+      "visibility": "distant",
+      "scene": "outdoor_parking",
+      "people_bucket": "2-4",
+      "note": "One person moves/runs around a parked vehicle while another stands apart; no contact."
+    },
+    {
+      "audit_id": "R030",
+      "judgment": "nonfight",
+      "confidence": "medium",
+      "visibility": "distant",
+      "scene": "indoor_office",
+      "people_bucket": "5+",
+      "note": "People stand or sit in an office/waiting room; no visible strike or grapple."
+    },
+    {
+      "audit_id": "R031",
+      "judgment": "fight",
+      "confidence": "medium",
+      "visibility": "occluded",
+      "scene": "indoor_restaurant",
+      "people_bucket": "5+",
+      "note": "Forceful arm/body contacts and grappling among people between tables and chairs."
+    },
+    {
+      "audit_id": "R032",
+      "judgment": "uncertain",
+      "confidence": "low",
+      "visibility": "occluded",
+      "scene": "indoor_crowd",
+      "people_bucket": "5+",
+      "note": "Dense low-quality grayscale crowd, some reaching/bending, actual contact obscured."
+    },
+    {
+      "audit_id": "R033",
+      "judgment": "fight",
+      "confidence": "high",
+      "visibility": "distant",
+      "scene": "outdoor_street",
+      "people_bucket": "2-4",
+      "note": "Two people take striking stances and repeatedly swing/duck toward one another."
+    },
+    {
+      "audit_id": "R034",
+      "judgment": "nonfight",
+      "confidence": "high",
+      "visibility": "clear",
+      "scene": "covered_passage",
+      "people_bucket": "2-4",
+      "note": "People walk separately along a passage; no fighting."
+    },
+    {
+      "audit_id": "R035",
+      "judgment": "fight",
+      "confidence": "high",
+      "visibility": "clear",
+      "scene": "outdoor_crowd",
+      "people_bucket": "5+",
+      "note": "Head/upper-body grappling and pulling forces one person toward the ground."
+    },
+    {
+      "audit_id": "R036",
+      "judgment": "nonfight",
+      "confidence": "medium",
+      "visibility": "distant",
+      "scene": "indoor_office",
+      "people_bucket": "2-4",
+      "note": "People seated at desks or moving around office; no visible aggression."
+    },
+    {
+      "audit_id": "R037",
+      "judgment": "nonfight",
+      "confidence": "high",
+      "visibility": "distant",
+      "scene": "outdoor_traffic",
+      "people_bucket": "0-1",
+      "note": "Road traffic and distant sidewalk; no physical aggression visible."
+    },
+    {
+      "audit_id": "R038",
+      "judgment": "nonfight",
+      "confidence": "high",
+      "visibility": "distant",
+      "scene": "outdoor_street",
+      "people_bucket": "0-1",
+      "note": "Parked cars and empty near sidewalk; no fighting visible."
+    },
+    {
+      "audit_id": "R039",
+      "judgment": "nonfight",
+      "confidence": "medium",
+      "visibility": "clear",
+      "scene": "indoor_shop",
+      "people_bucket": "2-4",
+      "note": "People at doorway move/walk; no strike or grapple in the window. Scene previously seen."
+    },
+    {
+      "audit_id": "R040",
+      "judgment": "nonfight",
+      "confidence": "high",
+      "visibility": "clear",
+      "scene": "indoor_shop",
+      "people_bucket": "2-4",
+      "note": "A person walks toward the store exit; no physical contact. Scene previously seen."
+    },
+    {
+      "audit_id": "R041",
+      "judgment": "uncertain",
+      "confidence": "low",
+      "visibility": "occluded",
+      "scene": "indoor_crowd",
+      "people_bucket": "5+",
+      "note": "Dense crowd viewed from above, many arms but specific aggressive contact not resolved."
+    },
+    {
+      "audit_id": "R042",
+      "judgment": "uncertain",
+      "confidence": "low",
+      "visibility": "blurred",
+      "scene": "indoor",
+      "people_bucket": "5+",
+      "note": "Intentional blur hides upper bodies and potential contact; visible feet movement is insufficient."
+    },
+    {
+      "audit_id": "R043",
+      "judgment": "nonfight",
+      "confidence": "medium",
+      "visibility": "distant",
+      "scene": "outdoor_night",
+      "people_bucket": "5+",
+      "note": "People standing/walking and gesturing near a sign, no clear strike during window."
+    },
+    {
+      "audit_id": "R044",
+      "judgment": "fight",
+      "confidence": "high",
+      "visibility": "clear",
+      "scene": "outdoor",
+      "people_bucket": "5+",
+      "note": "Two people repeatedly swing/grapple at head/upper-body height as others approach."
+    },
+    {
+      "audit_id": "R045",
+      "judgment": "uncertain",
+      "confidence": "medium",
+      "visibility": "occluded",
+      "scene": "indoor_small_room",
+      "people_bucket": "5+",
+      "note": "Abrupt arm movement toward a partly hidden person, but direct contact and purpose unresolved."
+    },
+    {
+      "audit_id": "R046",
+      "judgment": "uncertain",
+      "confidence": "low",
+      "visibility": "occluded",
+      "scene": "indoor_shop",
+      "people_bucket": "2-4",
+      "note": "People lean near a counter, hands and bodies obscure possible interaction."
+    },
+    {
+      "audit_id": "R047",
+      "judgment": "nonfight",
+      "confidence": "high",
+      "visibility": "clear",
+      "scene": "outdoor_street",
+      "people_bucket": "0-1",
+      "note": "Person walks by a parked vehicle; no person-to-person physical contact."
+    },
+    {
+      "audit_id": "R048",
+      "judgment": "nonfight",
+      "confidence": "high",
+      "visibility": "clear",
+      "scene": "outdoor_walkway",
+      "people_bucket": "2-4",
+      "note": "People walk separately through a pedestrian area; no aggression."
+    },
+    {
+      "audit_id": "R049",
+      "judgment": "uncertain",
+      "confidence": "medium",
+      "visibility": "distant",
+      "scene": "outdoor_platform",
+      "people_bucket": "2-4",
+      "note": "A person bends/moves over someone low on the platform; possible blows but contact unresolved at this distance."
+    },
+    {
+      "audit_id": "R050",
+      "judgment": "uncertain",
+      "confidence": "low",
+      "visibility": "occluded",
+      "scene": "outdoor_street",
+      "people_bucket": "5+",
+      "note": "People cluster by right edge/fence; upper-body interaction is cut off or hidden."
+    },
+    {
+      "audit_id": "R051",
+      "judgment": "fight",
+      "confidence": "medium",
+      "visibility": "distant",
+      "scene": "outdoor_walkway",
+      "people_bucket": "2-4",
+      "note": "A standing person makes forceful downward leg/body movements toward someone on the ground before moving away."
+    },
+    {
+      "audit_id": "R052",
+      "judgment": "nonfight",
+      "confidence": "high",
+      "visibility": "clear",
+      "scene": "outdoor_street",
+      "people_bucket": "2-4",
+      "note": "Motorcycle rider and passerby move along street; no aggressive contact."
+    },
+    {
+      "audit_id": "R053",
+      "judgment": "nonfight",
+      "confidence": "medium",
+      "visibility": "blurred",
+      "scene": "outdoor_night",
+      "people_bucket": "2-4",
+      "note": "People walk near vehicles while camera pans; no fighting visible in the window."
+    },
+    {
+      "audit_id": "R054",
+      "judgment": "uncertain",
+      "confidence": "low",
+      "visibility": "distant",
+      "scene": "indoor_restaurant",
+      "people_bucket": "5+",
+      "note": "Far group moves near tables; hands/contact too small to determine fight versus normal activity."
+    },
+    {
+      "audit_id": "R055",
+      "judgment": "nonfight",
+      "confidence": "high",
+      "visibility": "distant",
+      "scene": "outdoor_street",
+      "people_bucket": "2-4",
+      "note": "People walk on sidewalk near parked vehicles; no physical aggression."
+    },
+    {
+      "audit_id": "R056",
+      "judgment": "nonfight",
+      "confidence": "high",
+      "visibility": "distant",
+      "scene": "outdoor_traffic",
+      "people_bucket": "0-1",
+      "note": "Traffic intersection, no resolved fighting."
+    },
+    {
+      "audit_id": "R057",
+      "judgment": "nonfight",
+      "confidence": "medium",
+      "visibility": "distant",
+      "scene": "outdoor_crowd",
+      "people_bucket": "5+",
+      "note": "Crowd walks/stands next to a truck; no resolved strike or grapple in sampled window."
+    },
+    {
+      "audit_id": "R058",
+      "judgment": "nonfight",
+      "confidence": "high",
+      "visibility": "clear",
+      "scene": "indoor_shop",
+      "people_bucket": "2-4",
+      "note": "People walk toward or through doorway; no visible striking/grappling. Scene previously seen."
+    },
+    {
+      "audit_id": "R059",
+      "judgment": "uncertain",
+      "confidence": "low",
+      "visibility": "blurred",
+      "scene": "outdoor_closeup",
+      "people_bucket": "unknown",
+      "note": "Very close handheld view with severe camera motion and bodies/arms outside frame; action not reliably resolved."
+    },
+    {
+      "audit_id": "R060",
+      "judgment": "fight",
+      "confidence": "high",
+      "visibility": "clear",
+      "scene": "indoor_corridor",
+      "people_bucket": "2-4",
+      "note": "Forceful upper-body strike/contact is followed by another person falling to the ground."
+    }
+  ]
+}

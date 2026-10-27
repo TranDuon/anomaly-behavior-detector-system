@@ -71,7 +71,43 @@ def select_review_rows(rows, predictions, random_per_stratum=12, errors_per_clas
     ]
 
 
-def build(source, output):
+def select_curated_rows(rows, anchors, per_video=8):
+    selected = []
+    for anchor in anchors:
+        pool = [row for row in rows if row["video"] == anchor["video"]]
+        if not pool or {row["split"] for row in pool} != {anchor["split"]}:
+            raise ValueError("Curated source split differs from original manifest")
+        chosen = [next(row for row in pool if row["start"] == anchor["start"])]
+        for label in (0, 1):
+            while sum(row["label"] == label for row in chosen) < per_video // 2:
+                candidates = [
+                    row
+                    for row in pool
+                    if row["label"] == label
+                    and row_id(row) not in {row_id(item) for item in chosen}
+                ]
+                if not candidates:
+                    break
+                chosen.append(
+                    max(
+                        candidates,
+                        key=lambda row: (
+                            min(abs(row["start"] - item["start"]) for item in chosen),
+                            row["start"],
+                        ),
+                    )
+                )
+        selected.extend(
+            {**row, "audit_sampling": "curated_same_source"}
+            for row in chosen[:per_video]
+        )
+    random.Random(20261028).shuffle(selected)
+    return [
+        {**row, "audit_id": f"C{index + 1:03d}"} for index, row in enumerate(selected)
+    ]
+
+
+def build(source, output, anchor_file=None):
     if (output / "private_mapping.json").exists():
         raise ValueError(
             "Audit already exists; reuse its pages, do not resample after reviewing"
@@ -79,8 +115,14 @@ def build(source, output):
     manifest = json.loads((source / "cached_manifest.json").read_text())
     if manifest.get("official_test_used") is not False:
         raise ValueError("Blind audit is development-only, not official test")
-    rows = select_review_rows(
-        manifest["rows"], json.loads((source / "predictions.json").read_text())
+    rows = (
+        select_curated_rows(
+            manifest["rows"], json.loads(anchor_file.read_text())["anchors"]
+        )
+        if anchor_file
+        else select_review_rows(
+            manifest["rows"], json.loads((source / "predictions.json").read_text())
+        )
     )
     output.mkdir(parents=True, exist_ok=True)
     pages = output / "blind_pages"
@@ -143,8 +185,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source-run", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument("--anchors", type=Path)
     args = parser.parse_args()
-    build(args.source_run, args.output_dir)
+    build(args.source_run, args.output_dir, args.anchors)
 
 
 if __name__ == "__main__":

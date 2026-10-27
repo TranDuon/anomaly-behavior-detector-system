@@ -1,0 +1,223 @@
+{
+  "frozen_judgments_sha256": "ba85abf20ff09abdfdaf5a6d94ccdf938ba9cefbbbe45fc009e0490ffe4d638c8",
+  "rater_type": "AI_assisted_not_independent_human_gold",
+  "labels_changed": false,
+  "used_for_training": false,
+  "scope": "AI-assisted triage; not confirmed annotation errors and not a population noise-rate estimate",
+  "groups": {
+    "stratified_random": {
+      "total": 48,
+      "uncertain": 15,
+      "resolved": 33,
+      "potential_disagreements": [
+        {
+          "audit_id": "R007",
+          "video": "ubi/F_21_0_0_0_0",
+          "start_seconds": 53,
+          "split": "validation",
+          "dataset_label": 1,
+          "ai_judgment": "nonfight",
+          "confidence": "medium",
+          "note": "Several people stand and gesture in a narrow space; no clear strike during this window."
+        },
+        {
+          "audit_id": "R013",
+          "video": "ubi/F_54_1_1_0_0",
+          "start_seconds": 11,
+          "split": "train",
+          "dataset_label": 1,
+          "ai_judgment": "nonfight",
+          "confidence": "high",
+          "note": "People standing/walking along a rail platform; no physical aggression."
+        },
+        {
+          "audit_id": "R022",
+          "video": "ubi/F_84_1_2_0_0",
+          "start_seconds": 36,
+          "split": "validation",
+          "dataset_label": 1,
+          "ai_judgment": "nonfight",
+          "confidence": "medium",
+          "note": "Officers/bystanders stand around a person on the ground; no active strike visible in this window."
+        },
+        {
+          "audit_id": "R023",
+          "video": "ubi/F_117_0_0_0_0",
+          "start_seconds": 53,
+          "split": "train",
+          "dataset_label": 0,
+          "ai_judgment": "fight",
+          "confidence": "high",
+          "note": "Repeated grappling/striking, forceful push and fall between two people."
+        },
+        {
+          "audit_id": "R026",
+          "video": "ubi/F_17_1_0_0_1",
+          "start_seconds": 128,
+          "split": "validation",
+          "dataset_label": 1,
+          "ai_judgment": "nonfight",
+          "confidence": "medium",
+          "note": "Distant person walks past bright headlights; no visible physical contact."
+        },
+        {
+          "audit_id": "R029",
+          "video": "ubi/F_122_1_1_0_0",
+          "start_seconds": 68,
+          "split": "validation",
+          "dataset_label": 1,
+          "ai_judgment": "nonfight",
+          "confidence": "medium",
+          "note": "One person moves/runs around a parked vehicle while another stands apart; no contact."
+        },
+        {
+          "audit_id": "R031",
+          "video": "ubi/F_15_0_0_0_0",
+          "start_seconds": 32,
+          "split": "train",
+          "dataset_label": 0,
+          "ai_judgment": "fight",
+          "confidence": "medium",
+          "note": "Forceful arm/body contacts and grappling among people between tables and chairs."
+        },
+        {
+          "audit_id": "R039",
+          "video": "ubi/F_175_0_1_0_0",
+          "start_seconds": 15,
+          "split": "validation",
+          "dataset_label": 1,
+          "ai_judgment": "nonfight",
+          "confidence": "medium",
+          "note": "People at doorway move/walk; no strike or grapple in the window. Scene previously seen."
+        },
+        {
+          "audit_id": "R043",
+          "video": "ubi/F_191_1_1_1_1",
+          "start_seconds": 96,
+          "split": "train",
+          "dataset_label": 1,
+          "ai_judgment": "nonfight",
+          "confidence": "medium",
+          "note": "People standing/walking and gesturing near a sign, no clear strike during window."
+        },
+        {
+          "audit_id": "R053",
+          "video": "ubi/F_37_1_1_0_0",
+          "start_seconds": 14,
+          "split": "validation",
+          "dataset_label": 1,
+          "ai_judgment": "nonfight",
+          "confidence": "medium",
+          "note": "People walk near vehicles while camera pans; no fighting visible in the window."
+        },
+        {
+          "audit_id": "R057",
+          "video": "ubi/F_209_1_0_0_0",
+          "start_seconds": 86,
+          "split": "train",
+          "dataset_label": 1,
+          "ai_judgment": "nonfight",
+          "confidence": "medium",
+          "note": "Crowd walks/stands next to a truck; no resolved strike or grapple in sampled window."
+        }
+      ]
+    },
+    "error_enriched": {
+      "total": 12,
+      "uncertain": 3,
+      "resolved": 9,
+      "potential_disagreements": [
+        {
+          "audit_id": "R008",
+          "video": "ubi/F_162_1_0_1_0",
+          "start_seconds": 12,
+          "split": "validation",
+          "dataset_label": 1,
+          "ai_judgment": "nonfight",
+          "confidence": "high",
+          "note": "Road traffic; no visible fighting."
+        },
+        {
+          "audit_id": "R009",
+          "video": "ubi/F_104_1_2_0_1",
+          "start_seconds": 49,
+          "split": "validation",
+          "dataset_label": 0,
+          "ai_judgment": "fight",
+          "confidence": "medium",
+          "note": "Repeated rapid arm contacts toward another person's head/upper body with recoil."
+        },
+        {
+          "audit_id": "R010",
+          "video": "ubi/F_21_0_0_0_0",
+          "start_seconds": 24,
+          "split": "validation",
+          "dataset_label": 0,
+          "ai_judgment": "fight",
+          "confidence": "high",
+          "note": "Several people make repeated forceful striking motions toward a person low to the ground."
+        },
+        {
+          "audit_id": "R021",
+          "video": "ubi/F_84_1_2_0_0",
+          "start_seconds": 0,
+          "split": "validation",
+          "dataset_label": 0,
+          "ai_judgment": "fight",
+          "confidence": "high",
+          "note": "Two people pull/grapple around head/upper body and jerk one another; others try to separate."
+        },
+        {
+          "audit_id": "R028",
+          "video": "ubi/F_21_0_0_0_0",
+          "start_seconds": 18,
+          "split": "validation",
+          "dataset_label": 0,
+          "ai_judgment": "fight",
+          "confidence": "high",
+          "note": "Several people repeatedly strike toward a crouched/ground-level person; scene was also seen in earlier audit."
+        },
+        {
+          "audit_id": "R035",
+          "video": "ubi/F_84_1_2_0_0",
+          "start_seconds": 3,
+          "split": "validation",
+          "dataset_label": 0,
+          "ai_judgment": "fight",
+          "confidence": "high",
+          "note": "Head/upper-body grappling and pulling forces one person toward the ground."
+        },
+        {
+          "audit_id": "R037",
+          "video": "ubi/F_162_1_0_1_0",
+          "start_seconds": 9,
+          "split": "validation",
+          "dataset_label": 1,
+          "ai_judgment": "nonfight",
+          "confidence": "high",
+          "note": "Road traffic and distant sidewalk; no physical aggression visible."
+        },
+        {
+          "audit_id": "R040",
+          "video": "ubi/F_175_0_1_0_0",
+          "start_seconds": 17,
+          "split": "validation",
+          "dataset_label": 1,
+          "ai_judgment": "nonfight",
+          "confidence": "high",
+          "note": "A person walks toward the store exit; no physical contact. Scene previously seen."
+        },
+        {
+          "audit_id": "R058",
+          "video": "ubi/F_175_0_1_0_0",
+          "start_seconds": 53,
+          "split": "validation",
+          "dataset_label": 1,
+          "ai_judgment": "nonfight",
+          "confidence": "high",
+          "note": "People walk toward or through doorway; no visible striking/grappling. Scene previously seen."
+        }
+      ]
+    }
+  }
+}

@@ -301,6 +301,10 @@ def run(args):
             >= baseline["best_recall_at_precision75"] + 0.05
         ):
             summary["decision"] = "promising_for_review_only"
+    except KeyboardInterrupt:
+        summary["status"] = "stopped_before_completion"
+        summary["reason"] = "Interrupted; no automatic retry or runtime deletion"
+        raise
     except Exception as error:
         summary["status"] = "incomplete"
         summary["reason"] = str(error)

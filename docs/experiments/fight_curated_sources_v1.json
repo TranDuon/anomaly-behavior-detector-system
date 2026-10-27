@@ -1,0 +1,54 @@
+{
+  "policy": "Active directed punching/kicking/grappling/throwing, including safe staged simulations. Not proximity, argument, separation/restraint alone, or solo arm movement.",
+  "selection_scope": "Deliberate small development feasibility cohort chosen after audit, not a random population or independent final test.",
+  "anchors": [
+    {
+      "video": "ubi/F_117_0_0_0_0",
+      "start": 1590,
+      "split": "train",
+      "source_audit_id": "R023"
+    },
+    {
+      "video": "ubi/F_15_0_0_0_0",
+      "start": 960,
+      "split": "train",
+      "source_audit_id": "R031"
+    },
+    {
+      "video": "ubi/F_67_1_0_0_1",
+      "start": 660,
+      "split": "validation",
+      "source_audit_id": "R014"
+    },
+    {
+      "video": "ubi/F_80_1_2_0_0",
+      "start": 1470,
+      "split": "train",
+      "source_audit_id": "R033"
+    },
+    {
+      "video": "ubi/F_82_1_2_0_0",
+      "start": 3270,
+      "split": "train",
+      "source_audit_id": "R044"
+    },
+    {
+      "video": "ubi/F_146_0_0_1_1",
+      "start": 210,
+      "split": "validation",
+      "source_audit_id": "R060"
+    },
+    {
+      "video": "ubi/F_21_0_0_0_0",
+      "start": 540,
+      "split": "validation",
+      "source_audit_id": "R028"
+    },
+    {
+      "video": "ubi/F_84_1_2_0_0",
+      "start": 0,
+      "split": "validation",
+      "source_audit_id": "R021"
+    }
+  ]
+}
