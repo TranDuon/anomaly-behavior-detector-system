@@ -1,5 +1,6 @@
 import json
 import math
+import time
 from collections import deque
 from pathlib import Path
 
@@ -9,6 +10,7 @@ import torch
 from fight.vision import (
     ClipConfig,
     DetectorConfig,
+    DetectionCache,
     build_clip_inputs,
     clip_tensor,
 )
@@ -163,6 +165,7 @@ class FightRuntime:
         self.reset()
 
     def reset(self):
+        self.detection_cache = None
         self.samples = deque(maxlen=self.config.frames)
         self.sample_times = deque(maxlen=self.config.frames)
         self.next_sample = None
@@ -176,6 +179,8 @@ class FightRuntime:
             "people": 0,
             "event": None,
             "message": self.message,
+            "prediction_timestamp": None,
+            "inference_seconds": None,
         }
 
     def push(self, frame, timestamp, predict=True):
@@ -202,6 +207,8 @@ class FightRuntime:
             self.next_sample += 1 / self.config.fps
         self.samples.append(frame.copy())
         self.sample_times.append(timestamp)
+        if self.detection_cache is not None:
+            self.detection_cache.retain(self.samples)
         if not predict:
             return dict(self.result)
         if len(self.samples) < self.config.frames:
@@ -224,6 +231,7 @@ class FightRuntime:
         ):
             return dict(self.result)
         self.last_prediction = timestamp
+        inference_started = time.monotonic()
         frames = list(self.samples)
         if self.detector is None:
             from detection.detector import PersonDetector
@@ -231,8 +239,10 @@ class FightRuntime:
             self.detector = PersonDetector(
                 **self.detector_config.to_dict(), device="cpu"
             )
+        if self.detection_cache is None:
+            self.detection_cache = DetectionCache(self.detector)
         clips, regions, people, content_bounds, people_counts = build_clip_inputs(
-            frames, self.detector, self.config
+            frames, self.detection_cache, self.config
         )
         with torch.inference_mode():
             probabilities = (
@@ -245,10 +255,11 @@ class FightRuntime:
             raise ValueError("Model returned a non-finite prediction")
         selected = int(np.argmax(probabilities))
         score = float(probabilities[selected])
-        if people == 0 and not self.gate.active:
+        if people == 0:
+            was_active = self.gate.active
             state = "insufficient"
-            self.gate.pending_since = None
-            event = None
+            self.gate = self.gate.fresh()
+            event = "ended" if was_active else None
         else:
             state, event = self.gate.update(score, timestamp)
         self.result = {
@@ -258,5 +269,26 @@ class FightRuntime:
             "people": people,
             "event": event,
             "message": self.message,
+            "prediction_timestamp": timestamp,
+            "inference_seconds": time.monotonic() - inference_started,
         }
         return dict(self.result)
+
+    def warmup(self):
+        if not self.model_ready:
+            return
+        torch.set_num_threads(min(torch.get_num_threads(), 4))
+        if self.detector is None:
+            from detection.detector import PersonDetector
+
+            self.detector = PersonDetector(
+                **self.detector_config.to_dict(), device="cpu"
+            )
+        if hasattr(self.detector, "warmup"):
+            self.detector.warmup(self.detector_config.image_size)
+        example = torch.zeros(
+            1, 3, self.config.frames, self.config.size, self.config.size
+        )
+        with torch.inference_mode():
+            for iteration in range(2):
+                self.predictor(example)

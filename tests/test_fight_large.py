@@ -8,7 +8,7 @@ import pytest
 import torch
 
 from fight.runtime import EventGate, FightRuntime
-from fight.vision import ClipConfig
+from fight.vision import ClipConfig, DetectionCache
 from scripts.fight_large_train import (
     operating_point,
     people_focused_training,
@@ -144,6 +144,37 @@ class People:
         return [SimpleNamespace(bbox_xyxy=[1, 1, 22, 30])]
 
 
+def test_detection_cache_reuses_only_identical_frame_crop_and_evicts():
+    calls = []
+    detector = SimpleNamespace(
+        detect=lambda frame: calls.append(frame.shape) or [frame.sum()]
+    )
+    cache = DetectionCache(detector, capacity=2)
+    original = np.zeros((32, 40, 3), np.uint8)
+    assert cache.detect(original[:20, :20]) == cache.detect(original[:20, :20])
+    assert len(calls) == 1
+    cache.detect(original[:20, 1:21])
+    assert len(calls) == 2
+    cache.detect(original.copy())
+    assert len(cache.entries) == 2
+    cache.retain([])
+    assert len(cache.entries) == 0
+
+
+def test_runtime_detection_reuse_preserves_uncached_scores():
+    frame = np.zeros((32, 40, 3), np.uint8)
+    config = ClipConfig(frames=4, fps=4, size=16, stride_seconds=0.25)
+    cached = FightRuntime(predictor=BrightModel(), config=config, detector=People())
+    reference = FightRuntime(predictor=BrightModel(), config=config, detector=People())
+    for index in range(20):
+        first = cached.push(frame, index / 4)
+        reference.detection_cache = None
+        second = reference.push(frame, index / 4)
+        assert {
+            key: value for key, value in first.items() if key != "inference_seconds"
+        } == {key: value for key, value in second.items() if key != "inference_seconds"}
+
+
 def test_evidence_resamples_missing_frames_in_source_time(tmp_path):
     from api.fight_server import FightProcessor
 
@@ -189,6 +220,44 @@ def test_low_fps_reset_preserves_custom_gate_settings():
     assert runtime.gate.confirm_seconds == 2
     assert runtime.gate.release_seconds == 3
     assert runtime.gate.max_observation_gap == 4
+
+
+def test_live_status_hides_stale_red_prediction(monkeypatch):
+    import api.fight_server as server
+
+    processor = server.FightProcessor()
+    processor.runtime.result.update(
+        state="fighting", score=0.95, prediction_timestamp=1.0
+    )
+    processor.session_started = 10.0
+    processor.timestamp = 1.0
+    processor.replay = True
+    processor.thread = SimpleNamespace(is_alive=lambda: True)
+    monkeypatch.setattr(server.time, "monotonic", lambda: 15.0)
+    status = processor.status()
+    assert status["prediction"]["state"] == "insufficient"
+    assert status["prediction"]["score_stale"]
+    assert status["prediction_age_seconds"] == 4
+    assert processor.runtime.result["state"] == "fighting"
+
+
+def test_missing_people_ends_active_alert_without_claiming_normal():
+    detector = People()
+    runtime = FightRuntime(
+        predictor=BrightModel(),
+        config=ClipConfig(frames=4, fps=4, size=16),
+        detector=detector,
+    )
+    frame = np.zeros((32, 40, 3), np.uint8)
+    for index in range(12):
+        runtime.push(frame, index / 4)
+    assert runtime.result["state"] == "fighting"
+    detector.detect = lambda frame: []
+    runtime.detection_cache = None
+    result = runtime.push(frame, 3.25)
+    assert result["state"] == "insufficient"
+    assert result["event"] == "ended"
+    assert not runtime.gate.active
 
 
 def test_processor_uploaded_file_and_paced_camera_replay(tmp_path):

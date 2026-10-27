@@ -63,6 +63,8 @@ class FightProcessor:
         self.error = None
         self.source = None
         self.replay = False
+        self.session_started = None
+        self.dropped_samples = 0
         self.frame_count = self.total_frames = 0
         self.timestamp = self.latency = 0.0
         self.output = None
@@ -88,18 +90,44 @@ class FightProcessor:
             self.runtime = FightRuntime(settings.models_dir, allow_pilot)
             if not self.runtime.model_ready and not preview:
                 raise ValueError(self.runtime.message)
+            if not preview:
+                self.runtime.warmup()
             self.stop_event.clear()
             self.preview = preview
             self.replay = replay
             self.source, self.phase, self.error = source, "opening", None
             self.frame_count = self.total_frames = 0
             self.timestamp = self.latency = 0.0
+            self.session_started = time.monotonic()
+            self.dropped_samples = 0
             self.output = self.jpeg = None
             self.before.clear()
             self.thread = threading.Thread(target=self.run, args=(source,), daemon=True)
             self.thread.start()
 
     def status(self):
+        prediction = dict(self.runtime.result)
+        live_clock = self.replay or not self.total_frames
+        current_time = (
+            time.monotonic() - self.session_started
+            if live_clock and self.session_started is not None and self.is_running()
+            else self.timestamp
+        )
+        observed_at = prediction.get("prediction_timestamp")
+        age = max(0.0, current_time - observed_at) if observed_at is not None else None
+        stale = (
+            age is not None
+            and live_clock
+            and self.is_running()
+            and age > self.runtime.gate.max_observation_gap
+        )
+        if stale:
+            prediction.update(
+                state="insufficient",
+                event=None,
+                message="Kết quả suy luận đã cũ; CPU hoặc nguồn hình đang chậm, chưa xác nhận hành vi hiện tại.",
+            )
+        prediction["score_stale"] = stale
         return {
             "running": self.is_running(),
             "phase": self.phase,
@@ -112,7 +140,11 @@ class FightProcessor:
             "frame_count": self.frame_count,
             "total_frames": self.total_frames,
             "timestamp": self.timestamp,
-            "latency_seconds": round(self.latency, 3),
+            "latency_seconds": round(
+                max(self.latency, current_time - self.timestamp), 3
+            ),
+            "prediction_age_seconds": round(age, 3) if age is not None else None,
+            "dropped_samples": self.dropped_samples,
             "model_loaded": self.runtime.model_ready,
             "model": {
                 "architecture": self.runtime.metadata.get("architecture"),
@@ -120,8 +152,15 @@ class FightProcessor:
                     "approved_for_demo", False
                 ),
                 "message": self.runtime.message,
+                "clip_test": self.runtime.metadata.get("test"),
+                "hard_case_test": self.runtime.metadata.get("test_by_dataset", {}).get(
+                    "airtlab"
+                ),
+                "real_phone_tested": self.runtime.metadata.get(
+                    "real_phone_tested", False
+                ),
             },
-            "prediction": dict(self.runtime.result),
+            "prediction": prediction,
             "error": self.error,
             "event_count": len(self.events),
             "output": self.output,
@@ -230,7 +269,7 @@ class FightProcessor:
         pending = deque(maxlen=self.runtime.config.frames * 2)
         live_lock = threading.Lock()
         latest = {"frame": None, "ended": False, "count": 0}
-        started = time.monotonic()
+        started = self.session_started or time.monotonic()
         try:
             if not capture.isOpened():
                 raise ValueError("Không mở được nguồn hình. Kiểm tra camera hoặc URL.")
@@ -263,6 +302,8 @@ class FightProcessor:
                         with live_lock:
                             latest.update(frame=frame, count=latest["count"] + 1)
                             if timestamp + 1e-6 >= next_sample:
+                                if len(pending) == pending.maxlen:
+                                    self.dropped_samples += 1
                                 pending.append((frame, timestamp))
                                 while next_sample <= timestamp + 1e-6:
                                     next_sample += 1 / self.runtime.config.fps

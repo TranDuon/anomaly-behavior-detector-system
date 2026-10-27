@@ -74,7 +74,11 @@ def test_replay_same_samples_produces_same_predictions():
     second = FightRuntime(predictor=ConstantModel(), config=config, detector=Detector())
     offline = [first.push(frame, index / 4) for index, frame in enumerate(frames)]
     live = [second.push(frame, index / 4) for index, frame in enumerate(frames)]
-    assert offline == live
+    comparable = lambda rows: [
+        {key: value for key, value in row.items() if key != "inference_seconds"}
+        for row in rows
+    ]
+    assert comparable(offline) == comparable(live)
     assert sum(row["event"] == "started" for row in live) == 1
     assert live[-1]["state"] == "fighting"
 

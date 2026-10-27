@@ -21,7 +21,7 @@
 
 ### Audit trước lượt chạy 27/10/2026
 
-Manifest: train 1.577, development 216, calibration 228, test 202 cửa sổ từ các video khác nhóm; 3 clip nguồn quá ngắn bị loại trước training. Train thực tế còn được giới hạn âm không thấy người ở khoảng 2%, không lọc development/calibration/test để làm đẹp điểm. Audit 40 mẫu train/development, ẩn nhãn/score: 31 có nhận xét, 9 chưa rõ; 6 nhận xét khác nhãn clip nhà phát hành. Nhận xét được chốt trước mapping; SHA256 `9963dbb505efd24fe5b37b85bf0a7a548b8572029f72e03d505edda5759793a2`, lưu `FIGHT_LARGE_AUDIT.json`.
+Manifest: train 1.577, development 216, calibration 228, test 202 cửa sổ từ các video khác nhóm; 1 clip quá ngắn và 2 clip trùng SHA256 nhưng nhãn xung đột được cách ly trước training. Train thực tế còn được giới hạn âm không thấy người ở khoảng 2%, không lọc development/calibration/test để làm đẹp điểm. Audit 40 mẫu train/development, ẩn nhãn/score: 31 có nhận xét, 9 chưa rõ; 6 nhận xét khác nhãn clip nhà phát hành. Nhận xét được chốt trước mapping; SHA256 `9963dbb505efd24fe5b37b85bf0a7a548b8572029f72e03d505edda5759793a2`, lưu `FIGHT_LARGE_AUDIT.json`.
 
 Đây là nhận xét AI qua sáu frame, không đủ xác nhận nhãn sai: AIRTLab cố tình diễn động tác âm giống đánh nhau, còn cửa sổ trung tâm có thể bỏ lỡ hành động dương trong video. Không tự đổi nhãn/loại clip theo các nhận xét này; giữ nhãn publisher để chạy benchmark clip-level có kiểm soát, ghi rõ không phải tập active-action gold. Các điểm nghi vấn cần xem video đủ ngữ cảnh hoặc người kiểm duyệt trước nghiệm thu thực tế. Không suy 6/31 thành tỷ lệ nhiễu toàn tập.
 

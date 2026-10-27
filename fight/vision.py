@@ -1,8 +1,44 @@
 from dataclasses import asdict, dataclass
+from collections import OrderedDict
 
 import cv2
 import numpy as np
 import torch
+
+
+class DetectionCache:
+    def __init__(self, detector, capacity=48):
+        self.detector = detector
+        self.capacity = capacity
+        self.entries = OrderedDict()
+
+    @staticmethod
+    def owner(frame):
+        owner = frame
+        while isinstance(owner.base, np.ndarray):
+            owner = owner.base
+        return owner
+
+    def retain(self, frames):
+        active = {id(self.owner(frame)) for frame in frames}
+        for key in list(self.entries):
+            if key[0] not in active:
+                del self.entries[key]
+
+    def detect(self, frame):
+        owner = self.owner(frame)
+        key = (
+            id(owner),
+            frame.__array_interface__["data"][0],
+            frame.shape,
+            frame.strides,
+        )
+        if key not in self.entries:
+            self.entries[key] = (owner, self.detector.detect(frame))
+            if len(self.entries) > self.capacity:
+                self.entries.popitem(last=False)
+        self.entries.move_to_end(key)
+        return self.entries[key][1]
 
 
 @dataclass(frozen=True)
