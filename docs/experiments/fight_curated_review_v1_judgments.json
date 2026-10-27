@@ -1,0 +1,382 @@
+{
+  "protocol": "AI-assisted review of 62 source-separated development windows. Original labels and model scores hidden in pages; judgments frozen before opening private mapping. Some scenes previously seen. Not independent human gold.",
+  "policy": "Active directed punching/kicking/grappling/throwing, including safe staged simulations. Not proximity, argument, separation/restraint alone, solo movement or passive aftermath.",
+  "policy_confirmed_by_user": true,
+  "rater_type": "AI_assisted_not_independent_human_gold",
+  "labels_changed_in_original_dataset": false,
+  "independent_final_test": false,
+  "judgments": [
+    {
+      "audit_id": "C001",
+      "judgment": "nonfight",
+      "confidence": "high",
+      "note": "People stand/talk with officers; no directed strikes or grappling in window."
+    },
+    {
+      "audit_id": "C002",
+      "judgment": "nonfight",
+      "confidence": "high",
+      "note": "People stand/gesture in narrow room; no active physical aggression."
+    },
+    {
+      "audit_id": "C003",
+      "judgment": "uncertain",
+      "confidence": "medium",
+      "note": "Abrupt confrontation in corridor; intervening bodies obscure whether an actual directed strike occurs."
+    },
+    {
+      "audit_id": "C004",
+      "judgment": "fight",
+      "confidence": "high",
+      "note": "Two people make repeated directed swinging/ducking motions toward one another."
+    },
+    {
+      "audit_id": "C005",
+      "judgment": "nonfight",
+      "confidence": "high",
+      "note": "Empty room."
+    },
+    {
+      "audit_id": "C006",
+      "judgment": "fight",
+      "confidence": "medium",
+      "note": "Forceful upper-body contacts/grappling between people among restaurant tables."
+    },
+    {
+      "audit_id": "C007",
+      "judgment": "nonfight",
+      "confidence": "high",
+      "note": "People walk down/out from steps without directed aggression."
+    },
+    {
+      "audit_id": "C008",
+      "judgment": "fight",
+      "confidence": "medium",
+      "note": "Forceful grabbing/swinging and grappling between standing people near tables."
+    },
+    {
+      "audit_id": "C009",
+      "judgment": "uncertain",
+      "confidence": "medium",
+      "note": "People hold/reach toward one another near counter; restraint versus active attack unresolved."
+    },
+    {
+      "audit_id": "C010",
+      "judgment": "fight",
+      "confidence": "high",
+      "note": "Forceful directed upper-body grappling, pushing and leg motion toward another person."
+    },
+    {
+      "audit_id": "C011",
+      "judgment": "uncertain",
+      "confidence": "medium",
+      "note": "Person bends/reaches toward someone low to ground; attack versus assistance unresolved."
+    },
+    {
+      "audit_id": "C012",
+      "judgment": "nonfight",
+      "confidence": "high",
+      "note": "People stand apart or gesture; no visible physical attack."
+    },
+    {
+      "audit_id": "C013",
+      "judgment": "nonfight",
+      "confidence": "high",
+      "note": "Officers/bystanders stand near a person on ground; no active striking during window."
+    },
+    {
+      "audit_id": "C014",
+      "judgment": "fight",
+      "confidence": "medium",
+      "note": "Repeated forceful downward arm movement directed at a person low to ground."
+    },
+    {
+      "audit_id": "C015",
+      "judgment": "nonfight",
+      "confidence": "high",
+      "note": "People seated/standing at restaurant tables with no active aggression."
+    },
+    {
+      "audit_id": "C016",
+      "judgment": "nonfight",
+      "confidence": "high",
+      "note": "People stand or walk near someone on ground; no visible active attack."
+    },
+    {
+      "audit_id": "C017",
+      "judgment": "fight",
+      "confidence": "medium",
+      "note": "Directed punches and high kick toward another person partially visible at left edge; not isolated solo motion."
+    },
+    {
+      "audit_id": "C018",
+      "judgment": "uncertain",
+      "confidence": "medium",
+      "note": "People hold or reach near counter; active aggression versus restraint unresolved."
+    },
+    {
+      "audit_id": "C019",
+      "judgment": "fight",
+      "confidence": "medium",
+      "note": "Forceful lunging/upper-body contact between people among tables."
+    },
+    {
+      "audit_id": "C020",
+      "judgment": "uncertain",
+      "confidence": "medium",
+      "note": "Confrontation near steps; grasping/gesturing may be restraint, direct attack unclear."
+    },
+    {
+      "audit_id": "C021",
+      "judgment": "fight",
+      "confidence": "high",
+      "note": "Two people actively exchange directed strikes/defensive movements."
+    },
+    {
+      "audit_id": "C022",
+      "judgment": "nonfight",
+      "confidence": "high",
+      "note": "People move chairs or reach over tables, no directed attack visible."
+    },
+    {
+      "audit_id": "C023",
+      "judgment": "fight",
+      "confidence": "high",
+      "note": "Repeated aimed punches and defensive blocking between two people."
+    },
+    {
+      "audit_id": "C024",
+      "judgment": "nonfight",
+      "confidence": "high",
+      "note": "Person remains/rolls on ground while others stand away; no active attack in window."
+    },
+    {
+      "audit_id": "C025",
+      "judgment": "fight",
+      "confidence": "high",
+      "note": "Repeated forceful swinging/grappling at another person's head/upper body."
+    },
+    {
+      "audit_id": "C026",
+      "judgment": "fight",
+      "confidence": "medium",
+      "note": "Forceful upper-body grappling and directed leg/body movement between people."
+    },
+    {
+      "audit_id": "C027",
+      "judgment": "fight",
+      "confidence": "high",
+      "note": "Repeated forceful grappling/striking toward another person as bystanders approach."
+    },
+    {
+      "audit_id": "C028",
+      "judgment": "fight",
+      "confidence": "medium",
+      "note": "Aimed arm thrust/strike and forceful confrontation near counter."
+    },
+    {
+      "audit_id": "C029",
+      "judgment": "nonfight",
+      "confidence": "high",
+      "note": "People stand apart/walk; no active aggression."
+    },
+    {
+      "audit_id": "C030",
+      "judgment": "fight",
+      "confidence": "high",
+      "note": "Directed lunging punches and defensive reactions between two people."
+    },
+    {
+      "audit_id": "C031",
+      "judgment": "fight",
+      "confidence": "medium",
+      "note": "Forceful upper-body contacts and grappling among people near steps."
+    },
+    {
+      "audit_id": "C032",
+      "judgment": "nonfight",
+      "confidence": "high",
+      "note": "People move apart and walk around counter with no active strikes."
+    },
+    {
+      "audit_id": "C033",
+      "judgment": "fight",
+      "confidence": "high",
+      "note": "Directed forceful upper-body contact followed immediately by another person falling."
+    },
+    {
+      "audit_id": "C034",
+      "judgment": "nonfight",
+      "confidence": "high",
+      "note": "People stand/gesture apart, no visible directed attack."
+    },
+    {
+      "audit_id": "C035",
+      "judgment": "nonfight",
+      "confidence": "high",
+      "note": "People stand with officers, no active physical aggression."
+    },
+    {
+      "audit_id": "C036",
+      "judgment": "fight",
+      "confidence": "high",
+      "note": "Forceful swinging/grappling and raised directed leg contact between people near steps."
+    },
+    {
+      "audit_id": "C037",
+      "judgment": "fight",
+      "confidence": "high",
+      "note": "Directed punches with evasive/defensive reactions between two people."
+    },
+    {
+      "audit_id": "C038",
+      "judgment": "nonfight",
+      "confidence": "medium",
+      "note": "People stand/walk with officers, foreground briefly blocks view but no active attack resolved."
+    },
+    {
+      "audit_id": "C039",
+      "judgment": "fight",
+      "confidence": "high",
+      "note": "Repeated head/upper-body grappling and forceful pulling between two people."
+    },
+    {
+      "audit_id": "C040",
+      "judgment": "uncertain",
+      "confidence": "low",
+      "note": "Smoke/blur and occlusion hide hands and contacts near floor."
+    },
+    {
+      "audit_id": "C041",
+      "judgment": "nonfight",
+      "confidence": "high",
+      "note": "Person lies on ground without an active attacker near them during window."
+    },
+    {
+      "audit_id": "C042",
+      "judgment": "uncertain",
+      "confidence": "low",
+      "note": "Bending/reaching near a partly hidden person on floor; strike versus assistance unresolved."
+    },
+    {
+      "audit_id": "C043",
+      "judgment": "nonfight",
+      "confidence": "high",
+      "note": "Officers/bystanders standing and walking, no directed aggression."
+    },
+    {
+      "audit_id": "C044",
+      "judgment": "nonfight",
+      "confidence": "high",
+      "note": "Person sits/moves legs on floor while others stand away, no active attack."
+    },
+    {
+      "audit_id": "C045",
+      "judgment": "nonfight",
+      "confidence": "high",
+      "note": "People stand/walk/gesture without directed physical attack."
+    },
+    {
+      "audit_id": "C046",
+      "judgment": "nonfight",
+      "confidence": "high",
+      "note": "People walk around restaurant, no active aggression."
+    },
+    {
+      "audit_id": "C047",
+      "judgment": "fight",
+      "confidence": "high",
+      "note": "Forceful mutual upper-body grappling and directed arm actions between two people."
+    },
+    {
+      "audit_id": "C048",
+      "judgment": "fight",
+      "confidence": "high",
+      "note": "Repeated forceful grappling/striking followed by a fall near counter."
+    },
+    {
+      "audit_id": "C049",
+      "judgment": "uncertain",
+      "confidence": "medium",
+      "note": "People bend/hold near a person low to ground; attack versus restraint/assistance unresolved."
+    },
+    {
+      "audit_id": "C050",
+      "judgment": "nonfight",
+      "confidence": "high",
+      "note": "People walking among restaurant tables, no active attack."
+    },
+    {
+      "audit_id": "C051",
+      "judgment": "nonfight",
+      "confidence": "medium",
+      "note": "People disperse/walk apart; no resolved active attack during window."
+    },
+    {
+      "audit_id": "C052",
+      "judgment": "fight",
+      "confidence": "high",
+      "note": "Two people make directed punching/blocking movements toward one another."
+    },
+    {
+      "audit_id": "C053",
+      "judgment": "uncertain",
+      "confidence": "medium",
+      "note": "Officers restrain/separate people; cannot resolve whether active attack continues."
+    },
+    {
+      "audit_id": "C054",
+      "judgment": "nonfight",
+      "confidence": "high",
+      "note": "People move/gesture near restaurant chairs without active directed attack."
+    },
+    {
+      "audit_id": "C055",
+      "judgment": "nonfight",
+      "confidence": "high",
+      "note": "People walk or stand separately in corridor, no active attack."
+    },
+    {
+      "audit_id": "C056",
+      "judgment": "fight",
+      "confidence": "high",
+      "note": "Two people actively grapple/pull at head and upper body on ground."
+    },
+    {
+      "audit_id": "C057",
+      "judgment": "nonfight",
+      "confidence": "high",
+      "note": "People point/gesture near counter but no directed physical attack."
+    },
+    {
+      "audit_id": "C058",
+      "judgment": "uncertain",
+      "confidence": "medium",
+      "note": "Crowd holds/separates people; occlusion prevents resolving an active strike."
+    },
+    {
+      "audit_id": "C059",
+      "judgment": "fight",
+      "confidence": "high",
+      "note": "Several people repeatedly strike toward a partly obscured person near floor."
+    },
+    {
+      "audit_id": "C060",
+      "judgment": "nonfight",
+      "confidence": "high",
+      "note": "Person remains on ground, others stand away, no active attacker."
+    },
+    {
+      "audit_id": "C061",
+      "judgment": "uncertain",
+      "confidence": "low",
+      "note": "Dense cluster holding/separating someone; direct aggressive contact not resolved."
+    },
+    {
+      "audit_id": "C062",
+      "judgment": "nonfight",
+      "confidence": "high",
+      "note": "People stand apart or gesture, no active physical attack."
+    }
+  ]
+}
