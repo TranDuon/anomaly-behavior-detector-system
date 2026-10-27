@@ -28,7 +28,14 @@ const phases={idle:'SẴN SÀNG',opening:'ĐANG MỞ NGUỒN',processing:'ĐANG 
 function toast(message){$('feedback').textContent=message;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('feedback').textContent='',6500)}
 async function request(url,options={}){const response=await fetch(url,options);let data;try{data=await response.json()}catch{throw new Error('Máy chủ chưa phản hồi đúng định dạng.')}if(!response.ok)throw new Error(typeof data.detail==='string'?data.detail:'Không thực hiện được yêu cầu.');return data}
 function pilot(){return $('pilot-mode').checked?'true':'false'}
-function renderModelEvaluation(model){const report=model.clip_test,element=$('model-evaluation');element.hidden=!report;if(!report)return;const percentage=value=>(100*value).toFixed(1)+'%';element.textContent='Clip-test '+report.clips+' mẫu: accuracy '+percentage(report.accuracy)+', precision '+percentage(report.precision)+', recall '+percentage(report.recall)+'. '+(model.hard_case_test?'Nhóm dễ nhầm AIRTLab: precision '+percentage(model.hard_case_test.precision)+'. ':'')+(model.real_phone_tested?'':'Chưa nghiệm thu iPhone thật.');}
+function renderModelEvaluation(model){
+  const deployment=model.deployment||{};
+  if(deployment.display_name)$('model-name').textContent=deployment.display_name;
+  if(deployment.trained_on)$('model-note').textContent=model.message+' · Train '+deployment.trained_on+' · '+(deployment.training_revision||'').slice(0,7);
+  const report=model.clip_test,element=$('model-evaluation');element.hidden=!report;if(!report)return;
+  const percentage=value=>(100*value).toFixed(1)+'%';
+  element.textContent='Clip-test '+report.clips+' mẫu: accuracy '+percentage(report.accuracy)+', precision '+percentage(report.precision)+', recall '+percentage(report.recall)+'. '+(model.hard_case_test?'Nhóm dễ nhầm AIRTLab: precision '+percentage(model.hard_case_test.precision)+'. ':'')+'Chỉ số cửa sổ clip, không phải độ chính xác camera. '+(model.real_phone_tested?'':'Chưa nghiệm thu iPhone thật.');
+}
 function attach(){attached=true;$('stream').src='/api/stream?session='+Date.now();$('stream').hidden=false;$('empty').hidden=true}
 async function action(callback){if(busy)return;busy=true;try{await callback()}catch(error){toast(error.message)}finally{busy=false}}
 document.querySelectorAll('[data-panel]').forEach(button=>button.addEventListener('click',()=>{document.querySelectorAll('[data-panel]').forEach(tab=>{tab.classList.toggle('active',tab===button);tab.setAttribute('aria-selected',String(tab===button))});document.querySelectorAll('.panel').forEach(panel=>panel.hidden=panel.id!==button.dataset.panel)}));

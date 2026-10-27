@@ -447,3 +447,24 @@ def test_cpu_summary_does_not_confuse_export_or_event_count_parity_with_accuracy
     assert not summary["approved_for_demo"]
     assert not summary["physical_phone_tested"]
     assert not diagnostic_summary([], [])["integration_smoke_passed"]
+
+
+def test_status_exposes_deployed_checkpoint_without_promoting_pilot(monkeypatch):
+    import api.fight_server as server
+
+    runtime = FightRuntime(
+        predictor=FusionPredictor(),
+        config=ClipConfig(frames=4, fps=4, size=16),
+        detector=MockPose(),
+    )
+    deployment = {
+        "display_name": "Fusion RGB-aux",
+        "trained_on": "27/10/2026",
+        "training_revision": "37c06874e03a707fef51ceb7bf6ef61612ae2e5d",
+    }
+    runtime.metadata["deployment"] = deployment
+    monkeypatch.setattr(server.processor, "runtime", runtime)
+    model = server.processor.status()["model"]
+    assert model["deployment"] == deployment
+    assert not model["approved_for_demo"]
+    assert not model["real_phone_tested"]

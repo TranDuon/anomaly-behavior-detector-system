@@ -4,6 +4,8 @@
 
 Đã training thật trên NVIDIA L4 và xuất hai checkpoint. **Chưa duyệt demo, chưa tự thay checkpoint local và chưa thử iPhone thật.** Không được dùng accuracy của một cửa sổ/clip để gọi là accuracy của camera liên tục.
 
+Cập nhật cài thử local sau báo cáo: theo yêu cầu rõ ràng của người dùng, đã cài `rgb_aux` được chọn bằng development vào `models/` và mở server CPU ở `127.0.0.1:8001`. Đây là kích hoạt pilot để thử iPhone, không phải nâng trạng thái nghiệm thu. Giao diện/API hiển thị tên, ngày training và training revision; checksum gói `4666646a40895008f3fca78355e3f53a8d783c85430fccc3be90c8bc875f6702`. Warmup, forward hai region và 138 kiểm thử code qua; chưa tự bật camera hoặc xác minh điện thoại thật.
+
 - Code training: `37c06874e03a707fef51ceb7bf6ef61612ae2e5d`; code đóng gói/báo cáo: `15bcc58e39affac1d957ff98eab3fd201acfb873`.
 - Tổng cache/train/evaluate/export: 2.374,40 giây, khoảng 39 phút 34 giây; cài đặt và stage dữ liệu tính riêng.
 - Hai cấu hình đều hoàn thành 3 epoch probe + 6 epoch fine-tune. Checkpoint tốt nhất ở fine-tune epoch 2; dừng sau 4 epoch không cải thiện tiêu chí development ưu tiên. Không tiếp tục nhiều giờ chỉ vì training loss giảm.
