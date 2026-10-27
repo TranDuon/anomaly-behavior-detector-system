@@ -16,6 +16,7 @@ from scripts.fight_ablation import threshold_report
 from scripts.fight_expand import archive_selection, grouped_partition, sample_windows
 from anomaly.fight_data import VideoItem
 from scripts.fight_pilot import metrics
+from scripts.fight_controls import temporal_variants
 
 
 def test_black_border_crop_preserves_content_and_black_frames():
@@ -61,6 +62,20 @@ def test_handheld_augmentation_keeps_same_camera_transform_across_regions():
     transformed = augment_handheld(clips, np.random.default_rng(42))
     assert transformed.dtype == np.uint8 and transformed.shape == clips.shape
     np.testing.assert_array_equal(transformed[0], transformed[1])
+
+
+def test_temporal_controls_remove_or_shuffle_time_without_changing_regions():
+    clips = np.broadcast_to(
+        np.arange(16, dtype=np.uint8)[None, :, None, None, None], (2, 16, 4, 4, 3)
+    ).copy()
+    original = clips.copy()
+    variants = temporal_variants(clips, np.random.default_rng(42))
+    assert np.all(variants["static_middle"] == 8)
+    assert variants["shuffled"].shape == clips.shape
+    assert not np.array_equal(variants["shuffled"], clips)
+    np.testing.assert_array_equal(np.sort(variants["shuffled"], axis=1), clips)
+    np.testing.assert_array_equal(variants["shuffled"][0], variants["shuffled"][1])
+    np.testing.assert_array_equal(clips, original)
 
 
 def test_fast_threshold_search_matches_brute_force():
