@@ -125,11 +125,61 @@ class DevicePredictor(nn.Module):
         )
 
 
-def trace_sources(model, rows, metadata, detector, device, deadline):
+def trace_fingerprint(model, row, metadata, cache_context):
+    digest = hashlib.sha256()
+    for name, value in sorted(model.state_dict().items()):
+        value = value.detach().cpu().contiguous()
+        digest.update(name.encode())
+        digest.update(str((value.dtype, tuple(value.shape))).encode())
+        digest.update(value.numpy().tobytes())
+    identity = {
+        "schema": 1,
+        "weights": digest.hexdigest(),
+        "interaction": model.use_interaction,
+        "source": {
+            key: row[key]
+            for key in ("video", "sha256", "fps", "frames", "split", "dataset")
+        },
+        "clip": metadata["clip"],
+        "pose": metadata["pose"],
+        "context": cache_context,
+    }
+    return hashlib.sha256(json.dumps(identity, sort_keys=True).encode()).hexdigest()
+
+
+def trace_sources(
+    model,
+    rows,
+    metadata,
+    detector,
+    device,
+    deadline,
+    trace_cache=None,
+    cache_context=None,
+):
+    if trace_cache is not None and not cache_context:
+        raise ValueError(
+            "Persistent traces require explicit detector/runtime provenance"
+        )
     model.eval()
     traces = []
     sources = {row["video"]: row for row in rows}
     for row in sources.values():
+        saved = None
+        if trace_cache is not None:
+            key = trace_fingerprint(model, row, metadata, cache_context)
+            saved = Path(trace_cache) / (key + ".json")
+            if saved.exists():
+                record = json.loads(saved.read_text(encoding="utf-8"))
+                if record.get("identity") != key:
+                    raise ValueError("Continuous trace cache identity mismatch")
+                payload = json.dumps(record["trace"], sort_keys=True, allow_nan=False)
+                if hashlib.sha256(payload.encode()).hexdigest() != record.get(
+                    "checksum"
+                ):
+                    raise ValueError("Continuous trace cache checksum mismatch")
+                traces.append(record["trace"])
+                continue
         runtime = FightRuntime(
             predictor=DevicePredictor(model, device),
             config=ClipConfig(**metadata["clip"]),
@@ -182,6 +232,16 @@ def trace_sources(model, rows, metadata, detector, device, deadline):
                 "predictions": predictions,
             }
         )
+        if saved is not None:
+            payload = json.dumps(traces[-1], sort_keys=True, allow_nan=False)
+            write_json(
+                saved,
+                {
+                    "identity": key,
+                    "trace": traces[-1],
+                    "checksum": hashlib.sha256(payload.encode()).hexdigest(),
+                },
+            )
     return traces
 
 

@@ -7,6 +7,7 @@ from pathlib import Path
 import numpy as np
 import torch
 
+from fight.view_quality import assess_view, explain_view
 from fight.vision import (
     ClipConfig,
     DetectorConfig,
@@ -213,6 +214,7 @@ class FightRuntime:
             "message": self.message,
             "prediction_timestamp": None,
             "inference_seconds": None,
+            "view_quality": None,
         }
 
     def push(self, frame, timestamp, predict=True, *, sampled=False):
@@ -324,6 +326,11 @@ class FightRuntime:
             event = "ended" if was_active else None
         else:
             state, event = self.gate.update(score, timestamp)
+        quality = assess_view(person_boxes, frame.shape)
+        message = self.message
+        if state in {"normal", "insufficient"} and quality["limited"]:
+            state = "insufficient"
+            message = explain_view(quality)
         self.result = {
             "state": state,
             "score": score,
@@ -332,7 +339,8 @@ class FightRuntime:
             "person_boxes": person_boxes,
             "visible_people": len(person_boxes),
             "event": event,
-            "message": self.message,
+            "message": message,
+            "view_quality": quality,
             "prediction_timestamp": timestamp,
             "inference_seconds": time.monotonic() - inference_started,
         }

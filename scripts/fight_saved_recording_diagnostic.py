@@ -59,6 +59,8 @@ def diagnose(models, video, metadata, output):
                             "inference_seconds",
                             "regions",
                             "person_boxes",
+                            "view_quality",
+                            "message",
                         )
                     }
                 )
