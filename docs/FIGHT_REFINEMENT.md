@@ -35,7 +35,7 @@ Cửa sổ video và sự kiện không phải cùng chỉ số. Precision/recal
 
 ## Trạng thái lần sửa này
 
-Đã tạo danh sách **91 nguồn public chờ duyệt** từ manifest đang có, không chọn bằng điểm model. Chưa có nhãn thời gian được duyệt: preflight hiện chặn training thay vì tự bịa nhãn. Chưa chạy lượt GPU mới và chưa có checkpoint cải thiện mới.
+Ban đầu đã tạo danh sách **91 nguồn public chờ duyệt** từ manifest đang có, không chọn bằng điểm model. Khi chưa có nhãn thời gian, preflight chặn training thay vì tự bịa nhãn. Diễn biến sau đó và kết quả phục hồi được ghi bên dưới và trong [báo cáo refinement](FIGHT_REFINEMENT_RESULTS.md).
 
 Ngày 28/10/2026 đã chạy notebook CPU với revision `6f5f6a33ca57554e1e8dd9be6613ba14fc4f6c4d`, tạo đủ 91 preview H.264 và [gói review trên Drive](https://drive.google.com/file/d/1vCBijxxj76Cy7mHB7lAfAebbGRuhQTL-/view?usp=drivesdk), 43.632.169 bytes. [Thư mục log/artifact](https://drive.google.com/drive/folders/17LAvACt2MTOdsjieP4xCAPpQB5T8yPwX). Runtime đã tự unassign; không dùng GPU. Gói đã tải về `logs/refinement-review-drive-v1`, đối chiếu checksum đủ 91 preview và kiểm source identity; manifest public gốc cũng đã chép vào thư mục local để import nhãn thuận tiện. Không có source nào tự được duyệt và checkpoint ứng dụng không đổi.
 
