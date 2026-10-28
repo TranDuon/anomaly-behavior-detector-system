@@ -5,10 +5,13 @@ from collections import Counter
 import copy
 import hashlib
 import json
+import os
 from pathlib import Path
 import random
 import time
 import zipfile
+
+os.environ["MPLBACKEND"] = "Agg"
 
 import cv2
 import numpy as np

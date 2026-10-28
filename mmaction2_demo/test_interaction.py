@@ -1,4 +1,8 @@
 import copy
+import os
+from pathlib import Path
+import subprocess
+import sys
 
 import numpy as np
 import pytest
@@ -6,6 +10,23 @@ import torch
 
 from action_engine import InteractionHead, interaction_bag, rgb_inputs
 from train_interaction import annotation_at, validate
+
+
+def test_training_overrides_inherited_colab_matplotlib_backend():
+    environment = os.environ.copy()
+    environment["MPLBACKEND"] = "module://matplotlib_inline.backend_inline"
+    subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            "import train_interaction; import matplotlib.pyplot; "
+            "import matplotlib; assert matplotlib.get_backend().lower() == 'agg'",
+        ],
+        cwd=Path(__file__).resolve().parent,
+        env=environment,
+        check=True,
+        timeout=60,
+    )
 
 
 def test_rgb_matches_training_decoder_not_bgr_demo():
