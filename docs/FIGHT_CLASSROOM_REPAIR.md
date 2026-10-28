@@ -24,8 +24,26 @@ Các pha `prepare`, `train`, `evaluate` có ngân sách riêng. Pha train chỉ 
 
 `resume.pt` lưu model hiện tại/best, optimizer, RNG, lịch sử và trạng thái epoch đã train nhưng chưa chấm xong. Nếu chết giữa epoch, quay về epoch hoàn chỉnh gần nhất; nếu chết lúc chấm, không train lại epoch đó. Mỗi video chấm xong lưu trace ngay, kèm fingerprint trọng số/nguồn/FPS/clip/pose/code và checksum. `--resume` từ chối khác identity; không lấy trace cũ cho trọng số mới. Timeout ghi `budget_stopped`, không ghi completed giả.
 
-Notebook `colab/fight_classroom_drive.ipynb` giữ cấu trúc Drive cũ, pull main rồi đưa code sang `/content`, không quét file untracked. Artifact mới ở `SENTINEL/artifacts/fight_classroom_refinement_v1`; parent v2 giữ nguyên. Watchdog 45 phút gồm setup/staging/evaluation, không reset khi chạy lại cell; kết thúc tự giải phóng runtime. Cache public được đóng gói để tiếp tục, không đọc thư mục recordings local.
+Notebook `colab/fight_classroom_drive.ipynb` giữ cấu trúc Drive cũ, fetch main rồi archive đúng `FETCH_HEAD` sang `/content`, không quét hoặc ghi đè working tree trên Drive. Artifact mới ở `SENTINEL/artifacts/fight_classroom_refinement_v1`; parent v2 giữ nguyên. Watchdog 45 phút gồm setup/staging/evaluation, không reset khi chạy lại cell; kết thúc tự giải phóng runtime. Cache public được đóng gói để tiếp tục, không đọc thư mục recordings local. Lỗi bootstrap được lưu cùng stage/traceback trước khi unassign, tránh mất bằng chứng khi Colab xóa output. Lượt phục hồi phải dùng thời gian còn lại của ngân sách đã duyệt, không tự nhận thêm 45 phút.
 
 ## Điều kiện trước khi dùng demo
 
 Chưa có số accuracy mới chỉ vì code đã qua unit test. Khi train xong, đọc riêng report sự kiện/hành vi âm, so sánh parent trên cùng dữ liệu, kiểm tensor GPU/CPU, upload và paced replay CPU; sau đó mới replay hai recording local. Gói export vẫn `approved_for_demo=false`, `real_phone_tested=false`. Không hứa nhận được tương tác hoàn toàn khuất ngoài khung hình; cần camera thấy vùng tương tác và kiểm thử độc lập trước nghiệm thu lớp học.
+
+## Kết quả chạy thật trong lượt này
+
+Code revision `b967c61f1423744f2f7619ccf5355b40d97bf896`, Tesla T4, seed 941. [Artifact public trên Drive](https://drive.google.com/drive/folders/1U4toYxbrTj7pWK7zGfQeeQqGhQMrpK-N). Đồng bộ/prepare hoàn tất; cache gồm 325 cửa sổ train và 15 development. Không chấm test trong lượt này.
+
+Training hoàn tất **3 epoch, 1.536 lượt lấy mẫu có lặp**, không phải 1.536 video độc lập. Loss lần lượt **0.108367, 0.039346, 0.032239**. Không epoch nào thắng tiêu chí development đã khai báo: AIRTLab vẫn nhận 3/3 sự kiện, không báo nhầm; RLVS vẫn 3/3 nhưng có một báo nhầm, precision 75%. Đây chỉ là sáu sự kiện public đã duyệt, không phải accuracy camera. Thời gian bình thường bị cảnh báo trên RLVS tăng từ khoảng 1.60 lên 2.16 giây ở các epoch mới. Vì thế không chọn checkpoint mới dù loss giảm; không kéo dài training chỉ để lấy loss đẹp.
+
+`train_status.json`: `completed`, `training.improved=false`. `selection_frozen.json` giữ parent; `resume.pt` giữ cả optimizer/RNG và trọng số epoch cuối để kiểm tra, không phải gói deploy. Cache public 790.001.065 bytes đã lưu Drive. **Không sinh runtime ZIP/test report mới, không thay model local**. Notebook đã hiển thị Reconnect và tự ngắt GPU trước hạn cuối của tổng ngân sách được duyệt; không chạy lại để gia hạn.
+
+Đã kiểm thử toàn bộ 217 test CPU; sáu test phục hồi/cache được chạy lại sau bổ sung mã đóng gói QA. Một optimizer step trên cache public thật có loss hữu hạn và thay trọng số trong RAM; không ghi đè model đang cài.
+
+## Vấn đề realtime được đo riêng, không đổ hết cho dataset
+
+Đã chạy parent RGB control trong API cách ly qua **upload và paced camera replay** của cùng năm video public, không mở camera thật. Upload có 2 TP/2 TN/1 FP; replay 2 TP/1 TN/2 FP theo nhãn cả clip. Một clip bình thường không báo ở upload nhưng báo ở replay. Trên các timestamp trùng, sai số điểm bằng 0; đây không phải bằng chứng mọi timestamp/cảnh báo giống nhau.
+
+Kiểm tra integration **không đạt**: độ trễ/tuổi prediction lớn nhất quan sát được khoảng **3.577 giây**, có 51 lượt poll stale trong một clip; p95 inference khoảng **0.970 giây** ở clip đó, dài hơn stride 0.5 giây. Worker live hiện chỉ gọi predict trên mẫu cuối mỗi batch; khi CPU bận, các endpoint thực sự được chấm khác upload. Code và kết quả đo phù hợp với cơ chế này; không thể sửa bằng cách cài checkpoint hoặc hạ ngưỡng đơn thuần. Log cách ly local: `logs/classroom-parent-cpu-v1/cpu_acceptance.json`.
+
+Hai việc còn phải đạt trước demo: (1) scheduling/cấu hình inference đủ nhẹ cho CPU, kiểm lại cả timestamp, khoảng cảnh báo và freshness của hai chế độ, không chỉ số sự kiện; (2) tăng khả năng phân biệt tương tác cận cảnh trên dữ liệu dương và hard-negative theo thời gian. Tăng epoch hoặc thêm nhiều cửa sổ âm không tự giải quyết hai lỗi này. Lượt này chưa chứng minh đã xử lý hết ôm/bắt tay hoặc đã đạt 80%; không đổi cadence/threshold sau khi xem kết quả để biến một lượt không tiến triển thành thành công.
