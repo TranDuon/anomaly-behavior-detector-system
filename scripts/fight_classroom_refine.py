@@ -5,6 +5,7 @@ import hashlib
 import json
 import random
 import time
+import zipfile
 from pathlib import Path
 
 import cv2
@@ -528,6 +529,35 @@ def run(args):
                 cohort["metric_scope"] = report["test"]["metric_scope"]
             write_json(args.output / "report.json", report)
             export(model, metadata, report, args.output, pose_path)
+            examples = []
+            with zipfile.ZipFile(
+                args.output / "cpu_validation.zip", "w", zipfile.ZIP_STORED
+            ) as archive:
+                archive.write(
+                    args.output / "sentinel_fight_only_runtime.zip",
+                    "classroom/runtime.zip",
+                )
+                for dataset, label in (("airtlab", 0), ("airtlab", 1), ("rlvs", 1)):
+                    index = next(
+                        index
+                        for index, row in enumerate(partitions["test"])
+                        if (row["dataset"], row["label"]) == (dataset, label)
+                    )
+                    row = partitions["test"][index]
+                    archive.write(
+                        args.cache / (row["cache"] + ".npz"),
+                        "classroom/" + row["cache"] + ".npz",
+                    )
+                    examples.append(
+                        {
+                            "variant": "classroom",
+                            "cache": row["cache"],
+                            "score": float(scores[index]),
+                            "label": row["label"],
+                            "video": row["video"],
+                        }
+                    )
+                archive.writestr("expected.json", json.dumps(examples, indent=2))
             summary["report"] = report
         summary["status"] = "completed"
     except TimeoutError as error:
