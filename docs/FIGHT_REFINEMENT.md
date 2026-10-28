@@ -43,6 +43,8 @@ Sau đó đã duyệt bằng hình ảnh 64 nguồn public ở 4 fps, ghi rõ `a
 
 Đã sửa lỗi làm tròn frame cuối vượt khỏi khoảng duyệt bằng lấy endpoint floor; tránh loại nhầm cửa sổ âm hoặc lấn sang đoạn uncertain. Báo cáo training nay tách riêng số báo nhầm, thời gian báo động trên hug/greeting/high-five/gesture/solo motion, không chỉ accuracy gộp. Nhóm hành động không có mẫu được ghi thiếu dữ liệu, không ghi là đã đạt.
 
+Lần bootstrap GPU đầu dừng trước training vì `git status` quét cả file không theo dõi trên Drive quá 60 giây; notebook đã tự giải phóng runtime. Bước đồng bộ nay chỉ kiểm thay đổi file tracked, vẫn chặn sửa code tracked và chỉ đưa `git archive HEAD` sang `/content`, không quét/copy dataset hoặc file untracked. Không reset thành thêm 45 phút: lượt khắc phục giới hạn 35 phút toàn phiên, runner 30 phút, mỗi cấu hình tối đa 12 phút.
+
 Đối chiếu đầu ra khởi tạo trên mẫu public với đúng checkpoint local đã qua. Đo CPU tại máy này: 4 threads nhanh hơn 1/2 trong microbenchmark; vì vậy giữ mặc định 4, không tuyên bố đã khắc phục độ trễ realtime. Cần tiếp tục đo cả pipeline, hoặc đánh giá model nhẹ hơn nếu CPU vẫn không đáp ứng.
 
 Tham khảo: [fine-tuning MMAction2](https://mmaction2.readthedocs.io/en/latest/user_guides/finetune.html), [định dạng nhãn người/thời điểm của AVA](https://sites.research.google/gr/ava/download/). Dự án hiện dùng pipeline riêng, không tuyên bố đã chuyển sang MMAction2 hoặc đạt kết quả AVA.
