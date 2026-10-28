@@ -23,9 +23,11 @@ from fight.refinement import load_deployed_base
 from fight.reviewed_events import reviewed_event_metrics, summarize_events
 from fight.runtime import FightRuntime
 from fight.temporal_labels import (
+    ACTIONS,
     readiness,
     reviewed_windows,
     source_digest,
+    source_group,
     validate_annotations,
 )
 from fight.vision import ClipConfig, build_clip_inputs, clip_tensor
@@ -39,6 +41,63 @@ from scripts.fight_large_train import measured
 from scripts.fight_pilot import read_frames, write_json
 
 WINDOW_SCOPE = "Reviewed action-window diagnostic; correlated windows and repeated public splits, not camera accuracy"
+
+
+def action_window_report(rows, scores, threshold):
+    records = {}
+    for action in ACTIONS:
+        if action == "uncertain":
+            continue
+        selected = [
+            (row, float(score))
+            for row, score in zip(rows, scores)
+            if action in row["actions"]
+        ]
+        negatives = sum(not row["label"] for row, score in selected)
+        positives = len(selected) - negatives
+        false_positive = sum(
+            not row["label"] and score >= threshold for row, score in selected
+        )
+        true_positive = sum(
+            bool(row["label"]) and score >= threshold for row, score in selected
+        )
+        records[action] = {
+            "windows": len(selected),
+            "independent_source_groups": len(
+                {source_group(row) for row, score in selected}
+            ),
+            "false_positive": false_positive,
+            "false_negative": positives - true_positive,
+            "false_alarm_fraction": false_positive / negatives if negatives else None,
+            "recall": true_positive / positives if positives else None,
+            "maximum_score": max((score for row, score in selected), default=None),
+            "scope": WINDOW_SCOPE,
+        }
+    return records
+
+
+def action_event_report(traces, approved, threshold, confirm):
+    records = {}
+    for action in ACTIONS:
+        if action in {"fight", "uncertain"}:
+            continue
+        results = []
+        for trace in traces:
+            intervals = [
+                item for item in approved[trace["video"]] if item["action"] == action
+            ]
+            if intervals:
+                results.append(
+                    reviewed_event_metrics(
+                        events_from_trace(trace, threshold, confirm), intervals
+                    )
+                )
+        records[action] = {
+            **summarize_events(results),
+            "sources": len(results),
+            "scope": "Per-action reviewed normal time; an alarm may touch more than one action category. Not physical camera accuracy.",
+        }
+    return records
 
 
 def window_development(rows, scores):
@@ -166,6 +225,7 @@ def select_event_gate(traces, approved, threshold):
                 row["false_alerts_per_normal_minute"]
                 for row in item["cohorts"].values()
             ),
+            -max(row["normal_alert_fraction"] for row in item["cohorts"].values()),
             -max(
                 (
                     row["p95_start_delay_seconds"]
@@ -217,6 +277,17 @@ def preflight(manifest_path, annotation_path):
             if item["review_status"] == "approved"
         }
     )
+    report["training_action_source_groups"] = {
+        action: len(
+            {
+                source_group(row)
+                for row in windows
+                if row["split"] == "train" and action in row["actions"]
+            }
+        )
+        for action in ACTIONS
+        if action != "uncertain"
+    }
     return manifest, windows, report
 
 
@@ -743,6 +814,17 @@ def run(args):
             summary["baseline_frozen"]["calibration"]["threshold"],
             summary["baseline_frozen"]["event_gate"]["confirm_seconds"],
         )
+        summary["baseline_test_by_action"] = action_window_report(
+            testing,
+            baseline_test_scores,
+            summary["baseline_frozen"]["calibration"]["threshold"],
+        )
+        summary["baseline_normal_events_by_action"] = action_event_report(
+            baseline_test_traces,
+            approved,
+            summary["baseline_frozen"]["calibration"]["threshold"],
+            summary["baseline_frozen"]["event_gate"]["confirm_seconds"],
+        )
         write_json(args.output / "baseline_test_traces.json", baseline_test_traces)
         expected = []
         with zipfile.ZipFile(
@@ -759,6 +841,9 @@ def run(args):
                 )
                 report["test"] = measured(testing, predictions, report["threshold"])
                 report["test"]["metric_scope"] = WINDOW_SCOPE
+                report["test_by_action"] = action_window_report(
+                    testing, predictions, report["threshold"]
+                )
                 report["test_by_dataset"] = {
                     dataset: measured(
                         [row for row in testing if row["dataset"] == dataset],
@@ -777,6 +862,12 @@ def run(args):
                     model, testing, metadata, detector, args.device, deadline - 20
                 )
                 report["test_events_by_dataset"] = event_cohorts(
+                    test_traces,
+                    approved,
+                    report["threshold"],
+                    report["event_gate"]["confirm_seconds"],
+                )
+                report["normal_events_by_action"] = action_event_report(
                     test_traces,
                     approved,
                     report["threshold"],

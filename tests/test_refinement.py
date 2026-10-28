@@ -25,6 +25,53 @@ def test_cache_key_includes_the_actual_detector_configuration():
     assert normal != changed
 
 
+def test_fractional_review_endpoint_never_rounds_past_approved_time():
+    rows = [source(split="calibration")]
+    document = approved(
+        rows, [{"start_seconds": 0, "end_seconds": 2.46, "action": "hug"}]
+    )
+    windows = reviewed_windows(document, rows)
+    assert len(windows) == 1
+    assert windows[0]["start"] / rows[0]["fps"] < 2.46
+    span = round(15 * rows[0]["fps"] / 12) + 1
+    assert (windows[0]["start"] + span) / rows[0]["fps"] <= 2.46
+
+
+def test_hard_negative_action_report_does_not_hide_missing_categories():
+    from scripts.fight_refinement_train import action_window_report
+
+    rows = [
+        {**source(), "actions": ["hug"], "label": 0},
+        {**source(video="two"), "actions": ["fight"], "label": 1},
+    ]
+    report = action_window_report(rows, [0.9, 0.4], 0.5)
+    assert report["hug"]["false_positive"] == 1
+    assert report["hug"]["false_alarm_fraction"] == 1
+    assert report["fight"]["recall"] == 0
+    assert report["handshake_greet"]["windows"] == 0
+    assert report["handshake_greet"]["false_alarm_fraction"] is None
+
+
+def test_action_event_report_counts_alarm_time_during_hug_separately():
+    from scripts.fight_refinement_train import action_event_report
+
+    traces = [
+        {
+            "video": "one",
+            "duration": 4,
+            "predictions": [
+                {"timestamp": stamp, "score": 0.9, "people": 2}
+                for stamp in (0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5)
+            ],
+        }
+    ]
+    approved = {"one": [{"start_seconds": 0, "end_seconds": 4, "action": "hug"}]}
+    report = action_event_report(traces, approved, 0.5, 0)
+    assert report["hug"]["false_alerts_during_normal"] == 1
+    assert report["hug"]["normal_alert_seconds"] > 0
+    assert report["handshake_greet"]["normal_alert_fraction"] is None
+
+
 def source(video="one", split="train", **values):
     return {
         "video": video,

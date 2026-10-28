@@ -163,7 +163,8 @@ def reviewed_windows(document, rows, config=None):
             for fraction in fractions:
                 endpoint = start_seconds + (end_seconds - start_seconds) * fraction
                 start = min(
-                    row["frames"] - span, max(0, round(endpoint * row["fps"]) - span)
+                    row["frames"] - span,
+                    max(0, math.floor(endpoint * row["fps"] + 1e-9) - span),
                 )
                 window_start, window_end = (
                     start / row["fps"],
