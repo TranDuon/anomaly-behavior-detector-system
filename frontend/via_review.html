@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="vi">
+<meta charset="utf-8">
+<title>FightWatch · VIA3 review</title>
+<style>
+body{margin:0;font:15px system-ui;background:#f4f5f7;color:#172b23}header{padding:12px 20px;display:flex;gap:16px;align-items:center;flex-wrap:wrap}button{padding:9px 14px;cursor:pointer}iframe{width:100%;height:calc(100vh - 105px);border:0;background:white}p{margin:0}small{display:block;padding:0 20px 12px}
+</style>
+<header><strong>FightWatch · Oxford VIA3</strong><button id="load" disabled>Mở project chờ duyệt</button><span id="status" role="status">Đang tải VIA3…</span></header>
+<small>Chưa có nhãn nào tự được duyệt. Dùng nút Save trong VIA để lưu tiến độ; không mở lại project chờ duyệt khi chưa lưu công việc.</small>
+<iframe id="editor" src="via_video_annotator.html" title="Oxford VIA3 temporal annotator"></iframe>
+<script>
+const editor=document.getElementById('editor');
+const load=document.getElementById('load');
+const status=document.getElementById('status');
+editor.addEventListener('load',()=>{
+  load.disabled=!editor.contentWindow.via?.d?.project_load_json;
+  status.textContent=load.disabled?'Không tải được VIA3 chính thức. Chạy prepare --with-app.':'Sẵn sàng · không tự tải hay ghi đè tiến độ.';
+});
+load.addEventListener('click',async()=>{
+  load.disabled=true;
+  try{
+    const response=await fetch('via_project.json',{cache:'no-store'});
+    if(!response.ok)throw new Error('Không đọc được via_project.json');
+    await editor.contentWindow.via.d.project_load_json(await response.json());
+    status.textContent='Đã mở project public · chưa duyệt nhãn · lưu bằng Save trong VIA.';
+    load.textContent='Project đã mở';
+  }catch(error){status.textContent=error.message;load.disabled=false;}
+});
+</script>
+</html>

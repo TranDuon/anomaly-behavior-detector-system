@@ -117,7 +117,11 @@ class FightRuntime:
         detector=None,
         pose_detector=None,
         input_kind="rgb",
+        cpu_threads=4,
     ):
+        if type(cpu_threads) is not int or cpu_threads not in range(1, 9):
+            raise ValueError("CPU threads must be between 1 and 8")
+        self.cpu_threads = cpu_threads
         self.config = config or ClipConfig()
         self.predictor = predictor
         self.detector = detector
@@ -337,7 +341,7 @@ class FightRuntime:
     def warmup(self):
         if not self.model_ready:
             return
-        torch.set_num_threads(min(torch.get_num_threads(), 4))
+        torch.set_num_threads(self.cpu_threads)
         if self.input_kind in {"rgb_pose", "rgb_pose_motion"}:
             self._ensure_pose()
         if self.detector is None:
@@ -348,7 +352,7 @@ class FightRuntime:
             )
         if hasattr(self.detector, "warmup"):
             self.detector.warmup(self.detector_config.image_size)
-        torch.set_num_threads(min(torch.get_num_threads(), 4))
+        torch.set_num_threads(self.cpu_threads)
         example = torch.zeros(
             1, 3, self.config.frames, self.config.size, self.config.size
         )

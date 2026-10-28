@@ -68,7 +68,7 @@ def test_rejected_start_from_another_tab_does_not_stop_or_replace_active_model(
     import api.fight_server as server
 
     original = SimpleNamespace(model_ready=True, message="loaded")
-    monkeypatch.setattr(server, "FightRuntime", lambda *args: original)
+    monkeypatch.setattr(server, "FightRuntime", lambda *args, **kwargs: original)
     processor = server.FightProcessor()
     processor.phase, processor.source = "processing", 0
     processor.thread = SimpleNamespace(is_alive=lambda: True)
@@ -80,7 +80,9 @@ def test_rejected_start_from_another_tab_does_not_stop_or_replace_active_model(
     monkeypatch.setattr(
         server,
         "FightRuntime",
-        lambda *args: SimpleNamespace(model_ready=False, message="Enable pilot"),
+        lambda *args, **kwargs: SimpleNamespace(
+            model_ready=False, message="Enable pilot"
+        ),
     )
     with pytest.raises(ValueError, match="Enable pilot"):
         processor.start(1, allow_pilot=False)

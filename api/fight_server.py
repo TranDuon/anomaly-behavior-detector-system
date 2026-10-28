@@ -119,7 +119,11 @@ def annotate(frame, result):
 
 class FightProcessor:
     def __init__(self):
-        self.runtime = FightRuntime(settings.models_dir, settings.fight_allow_pilot)
+        self.runtime = FightRuntime(
+            settings.models_dir,
+            settings.fight_allow_pilot,
+            cpu_threads=settings.fight_cpu_threads,
+        )
         self.thread = None
         self.stop_event = threading.Event()
         self.condition = threading.Condition()
@@ -165,7 +169,9 @@ class FightProcessor:
                 raise RuntimeError(
                     "Phiên ghi trước chưa kết thúc; hãy Dừng/chờ hoàn tất rồi thử lại."
                 )
-            candidate = FightRuntime(settings.models_dir, allow_pilot)
+            candidate = FightRuntime(
+                settings.models_dir, allow_pilot, cpu_threads=settings.fight_cpu_threads
+            )
             if not candidate.model_ready and not preview:
                 raise ValueError(candidate.message)
             self.stop()
@@ -238,6 +244,9 @@ class FightProcessor:
             "model": {
                 "architecture": self.runtime.metadata.get("architecture"),
                 "input_kind": self.runtime.input_kind,
+                "cpu_threads": getattr(
+                    self.runtime, "cpu_threads", settings.fight_cpu_threads
+                ),
                 "pilot_required": getattr(self.runtime, "pilot_required", False),
                 "pilot_default_allowed": settings.fight_allow_pilot,
                 "deployment": self.runtime.metadata.get("deployment", {}),

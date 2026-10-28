@@ -12,6 +12,8 @@ Mở http://localhost:8000. Chưa có checkpoint đánh nhau mới vẫn xem đ�
 
 ## Thử phương pháp trước khi train lớn
 
+Lượt sửa sau chẩn đoán iPhone: [duyệt mốc hành động bằng VIA3 trên CPU](https://colab.research.google.com/github/TranDuon/anomaly-behavior-detector-system/blob/main/colab/fight_temporal_review_drive.ipynb), [fine-tune từ đúng classifier đang cài](docs/FIGHT_REFINEMENT.md), [so sánh dự án mã nguồn mở](docs/OPEN_SOURCE_COMPARISON.md). Training bị chặn khi chưa có nhãn đoạn được duyệt; chưa có checkpoint cải thiện mới và không tự thay model local.
+
 [Đối chứng RGB + pose + nhãn hành động phụ](https://colab.research.google.com/github/TranDuon/anomaly-behavior-detector-system/blob/main/colab/fight_fusion_drive.ipynb): [protocol](docs/FIGHT_FUSION.md), train dài có điều kiện tiến triển trên development, dùng chung runtime CPU upload/camera. PKU không bắt buộc và chỉ dùng chẩn đoán; không tự duyệt demo.
 
 [Kết quả fusion đã chạy](docs/FIGHT_FUSION_RESULTS.md): 39 phút 34 giây, AIRTLab 20/20 cửa sổ đúng nhưng PKU liên tục mới bắt 2/4 sự kiện; CPU replay còn giới hạn. Chưa nghiệm thu iPhone hoặc tự thay model local.

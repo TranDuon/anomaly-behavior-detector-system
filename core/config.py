@@ -68,6 +68,7 @@ class Settings(BaseSettings):
     fight_threshold_path: Path = BASE_DIR / "models" / "fight_threshold.json"
     fight_allow_pilot: bool = False
     fight_decode_threads: int = Field(default=1, ge=1, le=4)
+    fight_cpu_threads: int = Field(default=4, ge=1, le=8)
     fight_preview_max_width: int = Field(default=960, ge=320, le=3840)
     fight_output_max_width: int = Field(default=1280, ge=320, le=3840)
     fight_test_record_seconds: float = Field(default=30, gt=0, le=30)
