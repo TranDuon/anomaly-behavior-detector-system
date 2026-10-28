@@ -57,6 +57,13 @@ def bounded_image(image, maximum_width):
 
 
 def open_capture(source):
+    if isinstance(source, int) and os.name == "nt":
+        capture = cv2.VideoCapture(source, cv2.CAP_DSHOW)
+        if capture.isOpened():
+            capture.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+            capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+            return capture
+        capture.release()
     if isinstance(source, str) and hasattr(cv2, "CAP_PROP_N_THREADS"):
         try:
             capture = cv2.VideoCapture(
@@ -96,6 +103,18 @@ def annotate(frame, result):
                 (40, 200, 60),
                 1,
             )
+        for person in result.get("actions", []):
+            left, top, _, _ = map(int, person["box"])
+            for index, action in enumerate(person["labels"][:3]):
+                cv2.putText(
+                    image,
+                    f"{action['name']}: {action['score']:.2f}",
+                    (max(0, left), max(52, top) + index * 17),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.42,
+                    (40, 220, 180),
+                    1,
+                )
         if result["state"] in {"fighting", "verifying"}:
             for region in result.get("regions", []):
                 left, top, right, bottom = map(int, region)
@@ -157,9 +176,17 @@ class FightProcessor:
         self.stop_event.set()
         if self.thread and self.thread is not threading.current_thread():
             self.thread.join(timeout=8)
+        if not self.is_running() and hasattr(self.runtime, "close"):
+            self.runtime.close()
 
     def start(
-        self, source, allow_pilot=False, preview=False, replay=False, record_test=False
+        self,
+        source,
+        allow_pilot=False,
+        preview=False,
+        replay=False,
+        record_test=False,
+        backend="legacy",
     ):
         with self.lifecycle:
             if preview and record_test:
@@ -170,12 +197,21 @@ class FightProcessor:
                 raise RuntimeError(
                     "Phiên ghi trước chưa kết thúc; hãy Dừng/chờ hoàn tất rồi thử lại."
                 )
-            candidate = FightRuntime(
-                settings.models_dir,
-                allow_pilot,
-                cpu_threads=settings.fight_cpu_threads,
-                batch_detection=True,
-            )
+            if backend not in {"legacy", "mmaction_original", "mmaction_tuned"}:
+                raise ValueError("Model không hợp lệ.")
+            if backend == "legacy":
+                candidate = FightRuntime(
+                    settings.models_dir,
+                    allow_pilot,
+                    cpu_threads=settings.fight_cpu_threads,
+                    batch_detection=True,
+                )
+            else:
+                from fight.mmaction_runtime import MMActionRuntime
+
+                candidate = MMActionRuntime(
+                    tuned=backend == "mmaction_tuned", allow_pilot=allow_pilot
+                )
             if not candidate.model_ready and not preview:
                 raise ValueError(candidate.message)
             self.stop()
@@ -247,6 +283,8 @@ class FightProcessor:
             "analysis_incomplete": self.dropped_samples > 0,
             "model_loaded": self.runtime.model_ready,
             "model": {
+                "backend": getattr(self.runtime, "backend_name", "legacy"),
+                "device": getattr(self.runtime, "device", "cpu"),
                 "architecture": self.runtime.metadata.get("architecture"),
                 "input_kind": self.runtime.input_kind,
                 "cpu_threads": getattr(
@@ -580,6 +618,8 @@ class FightProcessor:
                         "source_seconds": self.timestamp,
                     }
                 )
+            if hasattr(self.runtime, "close"):
+                self.runtime.close()
             with self.condition:
                 self.condition.notify_all()
 
@@ -617,9 +657,25 @@ def events():
     return {"events": [dict(event) for event in processor.events[-100:]]}
 
 
-def start_source(source, allow_pilot, preview=False, replay=False, record_test=False):
+def start_source(
+    source,
+    allow_pilot,
+    preview=False,
+    replay=False,
+    record_test=False,
+    backend="legacy",
+):
     try:
-        if record_test:
+        if backend != "legacy":
+            processor.start(
+                source,
+                allow_pilot,
+                preview,
+                replay=replay,
+                record_test=record_test,
+                backend=backend,
+            )
+        elif record_test:
             processor.start(
                 source, allow_pilot, preview, replay=replay, record_test=True
             )
@@ -634,7 +690,10 @@ def start_source(source, allow_pilot, preview=False, replay=False, record_test=F
 
 @app.post("/api/upload")
 async def upload(
-    file: UploadFile = File(...), allow_pilot: bool = False, replay: bool = False
+    file: UploadFile = File(...),
+    allow_pilot: bool = False,
+    replay: bool = False,
+    backend: str = "legacy",
 ):
     suffix = Path(file.filename or "").suffix.lower()
     if suffix not in {".mp4", ".avi", ".mov", ".mkv", ".webm", ".m4v"}:
@@ -643,7 +702,7 @@ async def upload(
     with destination.open("wb") as handle:
         while chunk := await file.read(1024 * 1024):
             handle.write(chunk)
-    return start_source(str(destination), allow_pilot, replay=replay)
+    return start_source(str(destination), allow_pilot, replay=replay, backend=backend)
 
 
 @app.post("/api/stream/camera")
@@ -652,10 +711,13 @@ def camera(
     allow_pilot: bool = False,
     preview: bool = False,
     record_test: bool = False,
+    backend: str = "legacy",
 ):
     if not 0 <= index <= 20:
         raise HTTPException(400, "Camera index không hợp lệ.")
-    return start_source(index, allow_pilot, preview, record_test=record_test)
+    return start_source(
+        index, allow_pilot, preview, record_test=record_test, backend=backend
+    )
 
 
 @app.get("/api/cameras")
@@ -670,10 +732,10 @@ def cameras():
 
 
 @app.post("/api/stream/url")
-def stream_url(url: str, allow_pilot: bool = False):
+def stream_url(url: str, allow_pilot: bool = False, backend: str = "legacy"):
     if not url.lower().startswith(("rtsp://", "http://", "https://")):
         raise HTTPException(400, "Cần URL RTSP hoặc HTTP(S).")
-    return start_source(url, allow_pilot)
+    return start_source(url, allow_pilot, backend=backend)
 
 
 @app.post("/api/stop")

@@ -10,6 +10,7 @@
 <body>
 <header><div class="brand"><span class="mark"><svg width="25" height="25" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 2 21 6v6c0 5-9 10-9 10S3 17 3 12V6l9-4Z" stroke="currentColor" stroke-width="1.5"/><path d="m7 12 3 3 7-7" stroke="currentColor" stroke-width="1.5"/></svg></span><div><strong>FightWatch</strong><small>VIDEO INTELLIGENCE</small></div></div><div style="text-align:right"><span class="pill" id="connection">Đang kết nối hệ thống…</span><small id="server-build" style="display:block;margin-top:7px;color:#70807b">Máy chủ local</small></div></header>
 <div class="layout"><aside class="sidebar">
+<section class="card"><div class="eyebrow">Model xử lý</div><label for="model-backend">Chọn trước khi bắt đầu nguồn</label><select id="model-backend"><option value="legacy">FightWatch cũ · CPU</option><option value="mmaction_original">MMAction2 gốc · GPU · RGB chuẩn</option><option value="mmaction_tuned">MMAction2 + nhánh fine-tuned · GPU</option></select><p class="note">MMAction2 giữ nhãn AVA theo người và dùng thêm nhánh cảnh báo nếu đã cài. Bật pilot để thử; chưa bảo đảm nhận đúng đánh nhau.</p></section>
 <section class="card"><div class="eyebrow">01 · Nguồn hình</div><h2>Bắt đầu quan sát</h2><div class="tabs" role="tablist" aria-label="Nguồn hình"><button class="active" role="tab" aria-selected="true" data-panel="video">Video</button><button role="tab" aria-selected="false" data-panel="camera">Camera</button><button role="tab" aria-selected="false" data-panel="url">IP stream</button></div>
 <div class="panel" id="video"><label class="drop" for="video-file"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 16V3m-5 5 5-5 5 5M4 15v5h16v-5" stroke="#54745c" stroke-width="1.5"/></svg><strong>Chọn video cần kiểm tra</strong><span>MP4, MOV, AVI, MKV, WEBM</span><input id="video-file" type="file" accept="video/*"></label><label><input id="replay" type="checkbox"> Phát lại theo thời gian thực để thử luồng camera</label><button class="primary" id="upload">Phân tích video ↗</button><p class="note">Phân tích thường: xử lý hết file và xuất video đánh dấu. Phát lại: dùng bộ đệm camera, có thể bỏ nhịp suy luận khi CPU chậm; không thay thế kiểm thử iPhone thật.</p></div>
 <div class="panel" id="camera" hidden><label class="eyebrow" for="camera-index">Camera trên máy tính</label><select id="camera-index"><option value="0">Camera 0</option><option value="1">Camera 1</option><option value="2">Camera 2</option></select><div class="row"><button class="secondary" id="scan">Quét camera</button><button class="secondary" id="preview">Xem thử</button></div>
@@ -35,7 +36,7 @@ let pilotInitialized=false;
 const labels={normal:'Chưa xác nhận đánh nhau',fighting:'Đánh nhau',verifying:'Đang xác minh',warming_up:'Thu thập clip',unavailable:'Chưa có model',insufficient:'Thiếu thông tin',pilot_required:'Cần cho phép pilot',preview:'Chỉ xem thử — chưa phân tích',idle:'Chờ bắt đầu'};
 const phases={idle:'SẴN SÀNG',opening:'ĐANG MỞ NGUỒN',processing:'ĐANG XỬ LÝ',completed:'ĐÃ HOÀN TẤT',stopped:'ĐÃ DỪNG',error:'CẦN KIỂM TRA'};
 function toast(message){$('feedback').textContent=message;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('feedback').textContent='',6500)}
-async function request(url,options={}){const response=await fetch(url,{...options,cache:'no-store'});let data;try{data=await response.json()}catch{throw new Error('Máy chủ chưa phản hồi đúng định dạng.')}if(!response.ok)throw new Error(typeof data.detail==='string'?data.detail:'Không thực hiện được yêu cầu.');return data}
+async function request(url,options={}){if(options.method==='POST'&&/^\/api\/(upload|stream\/)/.test(url)){url+=(url.includes('?')?'&':'?')+'backend='+encodeURIComponent($('model-backend').value)}const response=await fetch(url,{...options,cache:'no-store'});let data;try{data=await response.json()}catch{throw new Error('Máy chủ chưa phản hồi đúng định dạng.')}if(!response.ok)throw new Error(typeof data.detail==='string'?data.detail:'Không thực hiện được yêu cầu.');return data}
 function pilot(){return $('pilot-mode').checked?'true':'false'}
 function syncServer(server){
   if(!server)return false;
@@ -93,13 +94,15 @@ async function poll(){
     $('model-name').textContent=status.model.architecture?status.model.architecture.toUpperCase():'Chưa có checkpoint mới';
     $('model-note').textContent=status.model.message;renderModelEvaluation(status.model);renderRecording(status.recording);
     const prediction=status.prediction;
+    document.querySelector('.viewer-bottom > span:last-child').textContent='LOCAL · '+(status.model.device?.startsWith('cuda')?'GPU':'CPU');
+    $('model-backend').disabled=status.running;
     const stateName=status.preview_mode?'preview':prediction.state==='unavailable'&&status.model.pilot_required?'pilot_required':status.phase==='idle'&&status.model_loaded?'idle':prediction.state;
     $('state').textContent=labels[stateName]||'Chờ nguồn';$('state').className='state '+stateName;
     $('score').textContent=prediction.score===null||prediction.score_stale?'—':prediction.score.toFixed(2);
     $('event-count').textContent=status.event_count;$('time').textContent=formatTime(status.timestamp);
     $('session-phase').textContent=phases[status.phase]||status.phase;
     $('source-name').textContent=status.source===null?'CHƯA CHỌN NGUỒN':status.source_kind==='replay'?'PHÁT LẠI GIẢ LẬP CAMERA':status.source_kind==='video'?'VIDEO TẢI LÊN':'CAMERA TRỰC TIẾP';
-    $('viewer-note').textContent=status.error||(status.phase==='stopped'?'Nguồn đã dừng; hình còn lại là khung cuối, không phải nhận diện trực tiếp. ':status.latency_seconds>1.5?'CPU đang xử lý chậm: '+status.latency_seconds+'s trễ; kết quả camera có thể thiếu nhịp. ': '')+(prediction.message||'Chờ nguồn hình');
+    $('viewer-note').textContent=status.error||(status.phase==='stopped'?'Nguồn đã dừng; hình còn lại là khung cuối, không phải nhận diện trực tiếp. ':status.latency_seconds>1.5?'Đang xử lý chậm: '+status.latency_seconds+'s trễ; kết quả camera có thể thiếu nhịp. ': '')+(prediction.message||'Chờ nguồn hình');
     $('live-dot').classList.toggle('ready',status.running);
     $('progress').firstElementChild.style.width=status.total_frames?Math.min(100,status.frame_count/status.total_frames*100)+'%':'0%';
     $('download-video').hidden=!status.output;if(status.output)$('download-video').href=status.output;

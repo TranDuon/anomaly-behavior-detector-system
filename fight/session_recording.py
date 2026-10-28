@@ -89,6 +89,8 @@ class SessionRecording:
                             "visible_people",
                             "person_boxes",
                             "regions",
+                            "actions",
+                            "base_score",
                             "inference_seconds",
                             "message",
                         )

@@ -1,0 +1,1363 @@
+{
+  "schema_version": 1,
+  "scope": "AI-assisted reviewed public previews, repeated small pilot; no private data; preserves original performance splits; not human gold or independent camera acceptance",
+  "sources": [
+    {
+      "video": "rlvs/V_316",
+      "dataset": "rlvs",
+      "split": "development",
+      "group": "801cab5baafc2c2b400854de",
+      "source_sha256": "0743781dbb52820746a9d50c14f9d2248aa5a2e23ac2ed8b24d266c890e0f75a",
+      "media": "media/801cab5baafc2c2b400854de.mp4",
+      "preview_sha256": "d591aeed3d68626d197095438664faac20264518e3efe69232e33e7ede85414a",
+      "duration": 5.2052000000000005,
+      "review_method": "ai_assisted",
+      "intervals": [
+        {
+          "start_seconds": 0,
+          "end_seconds": 5.2,
+          "action": "fight"
+        }
+      ]
+    },
+    {
+      "video": "rlvs/V_376",
+      "dataset": "rlvs",
+      "split": "train",
+      "group": "bb76df0e8e37215812e75d38",
+      "source_sha256": "01718bae9ae189b58110c5f2cbcd69718924b01edd8f584b4526f13fbebe5de3",
+      "media": "media/bb76df0e8e37215812e75d38.mp4",
+      "preview_sha256": "b8d6cb65f06780e3836c46eaba875d8bc3e77801962314fbe4787e1f1d36a121",
+      "duration": 5,
+      "review_method": "ai_assisted",
+      "intervals": [
+        {
+          "start_seconds": 0.2,
+          "end_seconds": 5,
+          "action": "fight"
+        }
+      ]
+    },
+    {
+      "video": "rlvs/V_384",
+      "dataset": "rlvs",
+      "split": "train",
+      "group": "4c3ca4a4cda8c0c3c48a2c9b",
+      "source_sha256": "00e11b21f26c4fb1581eeccba5fb47c26e4dac947c6c646c478968d0ccb1de7f",
+      "media": "media/4c3ca4a4cda8c0c3c48a2c9b.mp4",
+      "preview_sha256": "692aeba6186398e6e69d89c4e4fb1cdd7f846dfdc41296dc898601770d2753ba",
+      "duration": 5.005,
+      "review_method": "ai_assisted",
+      "intervals": [
+        {
+          "start_seconds": 0.7,
+          "end_seconds": 4.25,
+          "action": "fight"
+        }
+      ]
+    },
+    {
+      "video": "rlvs/V_390",
+      "dataset": "rlvs",
+      "split": "test",
+      "group": "c53cee1572cf9774fdde7027",
+      "source_sha256": "0a57bb38141ea27df868cff6a9d72aebf5faf2b0e25714ec650fdc477881b09e",
+      "media": "media/c53cee1572cf9774fdde7027.mp4",
+      "preview_sha256": "38fa7d85280b858bebda1350c7a330235d1ad9307648f3ff1626bb97b8a20c8a",
+      "duration": 5.005,
+      "review_method": "ai_assisted",
+      "intervals": [
+        {
+          "start_seconds": 0.7,
+          "end_seconds": 5,
+          "action": "fight"
+        }
+      ]
+    },
+    {
+      "video": "rlvs/V_453",
+      "dataset": "rlvs",
+      "split": "test",
+      "group": "d4e0075f57b6f5f0b300e86e",
+      "source_sha256": "05ec51659b1e79a5e333423a758119260f57ee92826f20af4d79ee8aabc25b86",
+      "media": "media/d4e0075f57b6f5f0b300e86e.mp4",
+      "preview_sha256": "64c522914f7334921250e8fbd5783daaa806ab215631e4439f5980ce996f9c00",
+      "duration": 4,
+      "review_method": "ai_assisted",
+      "intervals": [
+        {
+          "start_seconds": 0,
+          "end_seconds": 4,
+          "action": "fight"
+        }
+      ]
+    },
+    {
+      "video": "rlvs/V_492",
+      "dataset": "rlvs",
+      "split": "train",
+      "group": "83013c5b63fd8c6669ca3538",
+      "source_sha256": "01730fe582e8f8cca6a9d6661e48c3c8f6cd3478d2bfcca680bd2df044f7cef9",
+      "media": "media/83013c5b63fd8c6669ca3538.mp4",
+      "preview_sha256": "737459f04b94db2dff080606aab825135aaec4866f5d06c52e392102c6be468f",
+      "duration": 5.105105105105105,
+      "review_method": "ai_assisted",
+      "intervals": [
+        {
+          "start_seconds": 0.2,
+          "end_seconds": 5.1,
+          "action": "fight"
+        }
+      ]
+    },
+    {
+      "video": "rlvs/V_497",
+      "dataset": "rlvs",
+      "split": "development",
+      "group": "e2c7000e6a50e671e87e729b",
+      "source_sha256": "004d417a5d14d28e15032e5a66e902a47566641c0582805c51446f98d3b980c2",
+      "media": "media/e2c7000e6a50e671e87e729b.mp4",
+      "preview_sha256": "16537c62b1c1ab8834bb7965bd867bae54346c90d4f3db65bce93c8dc4d7f8e1",
+      "duration": 4.804804804804805,
+      "review_method": "ai_assisted",
+      "intervals": [
+        {
+          "start_seconds": 0,
+          "end_seconds": 4.45,
+          "action": "fight"
+        }
+      ]
+    },
+    {
+      "video": "rlvs/V_5",
+      "dataset": "rlvs",
+      "split": "test",
+      "group": "3a32cf1d941b6035f49cbeac",
+      "source_sha256": "0aed05c12a7c06a3af2b408e49edb7ead118dba224fa03ea0d4762a03fe648b2",
+      "media": "media/3a32cf1d941b6035f49cbeac.mp4",
+      "preview_sha256": "1eaefdf3f742527c9473b93c1fea1ac40cad229f851cededc0a7b62a972b0271",
+      "duration": 5.851683333333333,
+      "review_method": "ai_assisted",
+      "intervals": [
+        {
+          "start_seconds": 0,
+          "end_seconds": 5.85,
+          "action": "fight"
+        }
+      ]
+    },
+    {
+      "video": "rlvs/V_58",
+      "dataset": "rlvs",
+      "split": "train",
+      "group": "ba529e04e053b32a42932d19",
+      "source_sha256": "001538033cfd10bbf239a76c1a8318ed293a0da5bb3acb03bf6f02c5ab4911f8",
+      "media": "media/ba529e04e053b32a42932d19.mp4",
+      "preview_sha256": "8e73d9538dfc4d92f76a6a2c7d40b0416b5bc6756d6d9baa4642e4b028426141",
+      "duration": 3.9,
+      "review_method": "ai_assisted",
+      "intervals": [
+        {
+          "start_seconds": 0.25,
+          "end_seconds": 3.85,
+          "action": "fight"
+        }
+      ]
+    },
+    {
+      "video": "rlvs/V_639",
+      "dataset": "rlvs",
+      "split": "train",
+      "group": "163829cb752ae7959705a115",
+      "source_sha256": "00fa482a72136b2eebf51b4696b7974f6364d48174aa36063185be8f9533386c",
+      "media": "media/163829cb752ae7959705a115.mp4",
+      "preview_sha256": "e8cc6c7c3a92bc0b264524004597cb40d4106cbebe828b6c4ba885bc02a4f135",
+      "duration": 5.005,
+      "review_method": "ai_assisted",
+      "intervals": [
+        {
+          "start_seconds": 0,
+          "end_seconds": 4.25,
+          "action": "fight"
+        },
+        {
+          "start_seconds": 4.25,
+          "end_seconds": 5,
+          "action": "uncertain"
+        }
+      ]
+    },
+    {
+      "video": "rlvs/V_685",
+      "dataset": "rlvs",
+      "split": "train",
+      "group": "ecc468f91669cbed37d5fd93",
+      "source_sha256": "008652ebf4a0db6216e5c64fc8cecd49e10280d4a6335d9f5a6fd76fff91f07e",
+      "media": "media/ecc468f91669cbed37d5fd93.mp4",
+      "preview_sha256": "d546036b11d2e1ab913d358519684f228e56a21956010e9ebb84bd5bdfc87b50",
+      "duration": 5,
+      "review_method": "ai_assisted",
+      "intervals": [
+        {
+          "start_seconds": 0,
+          "end_seconds": 5,
+          "action": "uncertain"
+        }
+      ]
+    },
+    {
+      "video": "rlvs/V_740",
+      "dataset": "rlvs",
+      "split": "development",
+      "group": "20eac2a4985d96bffc6955e5",
+      "source_sha256": "0226e8a316271a039f4947e5e3486bb17c1092979620c8e7a4fb5078b776ca3d",
+      "media": "media/20eac2a4985d96bffc6955e5.mp4",
+      "preview_sha256": "7e3cbcc92f83eee353344297680bec72ad2e0a16bae4796a63f3f92e3025ba57",
+      "duration": 5,
+      "review_method": "ai_assisted",
+      "intervals": [
+        {
+          "start_seconds": 0,
+          "end_seconds": 3,
+          "action": "fight"
+        },
+        {
+          "start_seconds": 3,
+          "end_seconds": 5,
+          "action": "uncertain"
+        }
+      ]
+    },
+    {
+      "video": "rlvs/V_759",
+      "dataset": "rlvs",
+      "split": "calibration",
+      "group": "d9a77ded6c2d166fc7377f3b",
+      "source_sha256": "055eada363e2bb0df863829dcd45716fa15a684a2c2787043a37dcb7043f9349",
+      "media": "media/d9a77ded6c2d166fc7377f3b.mp4",
+      "preview_sha256": "f4db3a14aebbf29ec62ca9b4c927d6463b0ba109cd471b25855a7b5f9a7f614c",
+      "duration": 3.9039,
+      "review_method": "ai_assisted",
+      "intervals": [
+        {
+          "start_seconds": 0,
+          "end_seconds": 3.9,
+          "action": "fight"
+        }
+      ]
+    },
+    {
+      "video": "rlvs/V_96",
+      "dataset": "rlvs",
+      "split": "calibration",
+      "group": "4ddf3226880dd44c647b37b7",
+      "source_sha256": "0446c670d040a2089490a8f5cf158d3027dc70f43c36d9c204c8862be608dbcc",
+      "media": "media/4ddf3226880dd44c647b37b7.mp4",
+      "preview_sha256": "db21d14a5b8251adf6f970b815a332f5a32a27de0074b9fd12a1e2a9e0c2d8a2",
+      "duration": 5.005,
+      "review_method": "ai_assisted",
+      "intervals": [
+        {
+          "start_seconds": 0,
+          "end_seconds": 5,
+          "action": "fight"
+        }
+      ]
+    },
+    {
+      "video": "rlvs/V_974",
+      "dataset": "rlvs",
+      "split": "calibration",
+      "group": "4a0db9f2a59c3b5f996e48ba",
+      "source_sha256": "00865b5dcccc500c64d9aff7579c11fc5b3a6496036faeeeb860ce7d5ee1bef2",
+      "media": "media/4a0db9f2a59c3b5f996e48ba.mp4",
+      "preview_sha256": "5a1b9f2fa1fb2f4429f07c5ff2f624fb8d0fa07dea8413f27dd40a4f28a279db",
+      "duration": 5.1,
+      "review_method": "ai_assisted",
+      "intervals": [
+        {
+          "start_seconds": 0,
+          "end_seconds": 5,
+          "action": "fight"
+        }
+      ]
+    },
+    {
+      "video": "rlvs/NV_139",
+      "dataset": "rlvs",
+      "split": "test",
+      "group": "73f8b53a460a11e6eb6edf60",
+      "source_sha256": "0c80b233e10b55f9fc4b83691ce20888a4fe827ee7485c63164248bc5b656a88",
+      "media": "media/73f8b53a460a11e6eb6edf60.mp4",
+      "preview_sha256": "43de6512eeab2d2edb4bbcfb39c043ee7be73fca5e85c8514f70dba20ba604fa",
+      "duration": 4.52,
+      "review_method": "ai_assisted",
+      "intervals": [
+        {
+          "start_seconds": 0,
+          "end_seconds": 4.52,
+          "action": "normal"
+        }
+      ]
+    },
+    {
+      "video": "rlvs/NV_185",
+      "dataset": "rlvs",
+      "split": "train",
+      "group": "f557adb7ef5e4f7f5d600283",
+      "source_sha256": "0053630f06a0e57dbbe4d6fcccabff8dfeec7fa0b2e7eaa04b361637625bce8a",
+      "media": "media/533a032e4ee51813101d3252.mp4",
+      "preview_sha256": "06cdca8df3d013d5063475cc57a83fba671a90c67e406bbc35ad714f22c77563",
+      "duration": 5,
+      "review_method": "ai_assisted",
+      "intervals": [
+        {
+          "start_seconds": 0,
+          "end_seconds": 5,
+          "action": "gesture"
+        }
+      ]
+    },
+    {
+      "video": "rlvs/NV_316",
+      "dataset": "rlvs",
+      "split": "test",
+      "group": "3d8dfe910f673f5d5c5e37e5",
+      "source_sha256": "0522c6020b4241a0e08d9a72b1d9dd848a9c15a2f8a72ac2d8b9cc1fdde6ab0a",
+      "media": "media/3d8dfe910f673f5d5c5e37e5.mp4",
+      "preview_sha256": "fc299ba3fa2da2be5564ddbc38f17f6ecc3eb471af5fcbf9c89c59b35a3ae7f6",
+      "duration": 4.6,
+      "review_method": "ai_assisted",
+      "intervals": [
+        {
+          "start_seconds": 0,
+          "end_seconds": 2,
+          "action": "solo_motion"
+        }
+      ]
+    },
+    {
+      "video": "rlvs/NV_321",
+      "dataset": "rlvs",
+      "split": "development",
+      "group": "fbf1a00b4769231d559b16ee",
+      "source_sha256": "0cc15bf72444704ed9322d3284ca87dbfb44dac6886dd8cf7e89ab797e7a3a18",
+      "media": "media/fbf1a00b4769231d559b16ee.mp4",
+      "preview_sha256": "93effeb7f8c3cb27d8b1faa719aaf8b987f59a7a33fc70a6bf33ddf200ec3751",
+      "duration": 3.72,
+      "review_method": "ai_assisted",
+      "intervals": [
+        {
+          "start_seconds": 0,
+          "end_seconds": 3.72,
+          "action": "solo_motion"
+        }
+      ]
+    },
+    {
+      "video": "rlvs/NV_452",
+      "dataset": "rlvs",
+      "split": "train",
+      "group": "dd196c4c044a707f8afe73ea",
+      "source_sha256": "0004ad382bbad65c6efb5901c4eb629e3b7e9b3b37417cd99e5175774ab0f9f0",
+      "media": "media/dd196c4c044a707f8afe73ea.mp4",
+      "preview_sha256": "2073e2dd1753df5437cbd1c27035a892fe7a2c61b3e045d758875f23cc4507eb",
+      "duration": 5,
+      "review_method": "ai_assisted",
+      "intervals": [
+        {
+          "start_seconds": 0,
+          "end_seconds": 5,
+          "action": "normal"
+        }
+      ]
+    },
+    {
+      "video": "rlvs/NV_481",
+      "dataset": "rlvs",
+      "split": "development",
+      "group": "1486ed599ce527b8e618fece",
+      "source_sha256": "0868fd120526b7de1cfc213da72ddaf87affdc35a132862547bac3dfb1bd5e70",
+      "media": "media/1486ed599ce527b8e618fece.mp4",
+      "preview_sha256": "b1e9ec95c8ec64889871881b71167393d13c5fb66f296624078de90d595d8e5e",
+      "duration": 5,
+      "review_method": "ai_assisted",
+      "intervals": [
+        {
+          "start_seconds": 0,
+          "end_seconds": 5,
+          "action": "solo_motion"
+        }
+      ]
+    },
+    {
+      "video": "rlvs/NV_539",
+      "dataset": "rlvs",
+      "split": "calibration",
+      "group": "69d6c638c7469cfa579f04ca",
+      "source_sha256": "011fcb251cbe2b7a02431d9e6893ce76742cafeec52f08bb7bb91b37eb0235b9",
+      "media": "media/69d6c638c7469cfa579f04ca.mp4",
+      "preview_sha256": "107be0a24e6f65f36269257f483fa059d12355c84017bd8c16ee9e9a612d2b26",
+      "duration": 5,
+      "review_method": "ai_assisted",
+      "intervals": [
+        {
+          "start_seconds": 0,
+          "end_seconds": 5,
+          "action": "solo_motion"
+        }
+      ]
+    },
+    {
+      "video": "rlvs/NV_569",
+      "dataset": "rlvs",
+      "split": "test",
+      "group": "63310de3a756a5ac833671e3",
+      "source_sha256": "086e0bc6af31015aad9d362c669fd076f449b727f4c5d6e0e828aa816ccf37f6",
+      "media": "media/63310de3a756a5ac833671e3.mp4",
+      "preview_sha256": "ae056e019a3d95e86486bfa44e7774d042f546d7d24eaa738c1ba1bfb5139c03",
+      "duration": 5,
+      "review_method": "ai_assisted",
+      "intervals": [
+        {
+          "start_seconds": 0,
+          "end_seconds": 1.5,
+          "action": "uncertain"
+        },
+        {
+          "start_seconds": 1.5,
+          "end_seconds": 5,
+          "action": "gesture"
+        }
+      ]
+    },
+    {
+      "video": "rlvs/NV_620",
+      "dataset": "rlvs",
+      "split": "train",
+      "group": "4c2f124247807519b7570190",
+      "source_sha256": "025b19300b0268789639dd781660acd5e2f64e3648cb4eb30c3925be981e58d2",
+      "media": "media/4c2f124247807519b7570190.mp4",
+      "preview_sha256": "aa02e6afa040e544d1a2cab47c7139f1dff095651096f09a2f22df742fa65a6f",
+      "duration": 5,
+      "review_method": "ai_assisted",
+      "intervals": [
+        {
+          "start_seconds": 0,
+          "end_seconds": 5,
+          "action": "normal"
+        }
+      ]
+    },
+    {
+      "video": "rlvs/NV_635",
+      "dataset": "rlvs",
+      "split": "test",
+      "group": "304a73bfa1254bdb0b8a1627",
+      "source_sha256": "050d03f69fab408aedae8d84487b1aeba41f2b6607f07f36dc60cf2b5e924820",
+      "media": "media/304a73bfa1254bdb0b8a1627.mp4",
+      "preview_sha256": "89022c6c32f0b5021eaa9f8eb54580826b661726ba02909558f456ec8e979ab8",
+      "duration": 5,
+      "review_method": "ai_assisted",
+      "intervals": [
+        {
+          "start_seconds": 0,
+          "end_seconds": 5,
+          "action": "uncertain"
+        }
+      ]
+    },
+    {
+      "video": "rlvs/NV_701",
+      "dataset": "rlvs",
+      "split": "calibration",
+      "group": "7a55b312d9fa1180b067b732",
+      "source_sha256": "013338a2e541cec0bab4ccd29accba131089e8432c723d55f5cf58f8b80f104d",
+      "media": "media/7a55b312d9fa1180b067b732.mp4",
+      "preview_sha256": "1c6213fa724db6814d23e84f4ee83b5a12318a9bb12c84b896f4e583bd0346dc",
+      "duration": 5,
+      "review_method": "ai_assisted",
+      "intervals": [
+        {
+          "start_seconds": 0,
+          "end_seconds": 5,
+          "action": "normal"
+        }
+      ]
+    },
+    {
+      "video": "rlvs/NV_725",
+      "dataset": "rlvs",
+      "split": "calibration",
+      "group": "83fa1d16d2594ecc1e232e3d",
+      "source_sha256": "0333f74846c1a5b8efa62abdd301a57667697c614a3f67d3c26019fb4b89d714",
+      "media": "media/83fa1d16d2594ecc1e232e3d.mp4",
+      "preview_sha256": "2112b88579660bca6f768f5e1c7cf5e7ef01ab0deaa87682aac7c1f1999c005f",
+      "duration": 4.8,
+      "review_method": "ai_assisted",
+      "intervals": [
+        {
+          "start_seconds": 0,
+          "end_seconds": 4.8,
+          "action": "solo_motion"
+        }
+      ]
+    },
+    {
+      "video": "rlvs/NV_776",
+      "dataset": "rlvs",
+      "split": "train",
+      "group": "19b6152b6a7cca6415e8c84a",
+      "source_sha256": "020fd35562dae243711559231a3cbb862dace610533cd8ed1184c5c132c31e03",
+      "media": "media/19b6152b6a7cca6415e8c84a.mp4",
+      "preview_sha256": "252a1a96de73b435a002d490e3e3fc320614ae48d97dd0acc7b8fb6753d92301",
+      "duration": 5,
+      "review_method": "ai_assisted",
+      "intervals": [
+        {
+          "start_seconds": 0,
+          "end_seconds": 4.25,
+          "action": "normal"
+        }
+      ]
+    },
+    {
+      "video": "rlvs/NV_783",
+      "dataset": "rlvs",
+      "split": "development",
+      "group": "d1b9ef19da0a304c3d6c636c",
+      "source_sha256": "045a9b01cf69aa4b8d474170668df7a628ed199f84bea6e13efc95756a5fa3fd",
+      "media": "media/d1b9ef19da0a304c3d6c636c.mp4",
+      "preview_sha256": "956e7b1692fa3f9b357896018b0caa2c581d734018ea40c97d44a4098347da70",
+      "duration": 5,
+      "review_method": "ai_assisted",
+      "intervals": [
+        {
+          "start_seconds": 0,
+          "end_seconds": 3.75,
+          "action": "gesture"
+        }
+      ]
+    },
+    {
+      "video": "rlvs/NV_806",
+      "dataset": "rlvs",
+      "split": "development",
+      "group": "f7b0dbbe54c619bff7a71b72",
+      "source_sha256": "083366d3cab15bd679dea4b6806bb97ffc9eff939555487fb3e08d28f6bc789e",
+      "media": "media/f7b0dbbe54c619bff7a71b72.mp4",
+      "preview_sha256": "4c23f12f86ba972f4f61fe60edeb3ec1fb9da5af5177423ee8b127fd2eaa1032",
+      "duration": 5,
+      "review_method": "ai_assisted",
+      "intervals": [
+        {
+          "start_seconds": 0,
+          "end_seconds": 2.25,
+          "action": "normal"
+        }
+      ]
+    },
+    {
+      "video": "rlvs/NV_904",
+      "dataset": "rlvs",
+      "split": "train",
+      "group": "9087262bbeab5b5b887f843a",
+      "source_sha256": "01c1038ce8d11f640b72cda003496f3952e155777959567896a6b355057cb4ac",
+      "media": "media/9087262bbeab5b5b887f843a.mp4",
+      "preview_sha256": "90ffbb35da4ef53626edb8edfee909758a8e37a160482c5041b61bda8c1eb5cc",
+      "duration": 5,
+      "review_method": "ai_assisted",
+      "intervals": [
+        {
+          "start_seconds": 0,
+          "end_seconds": 5,
+          "action": "normal"
+        }
+      ]
+    },
+    {
+      "video": "rlvs/NV_942",
+      "dataset": "rlvs",
+      "split": "train",
+      "group": "764a230eb101e9092a52247a",
+      "source_sha256": "00bfb2f81c5a465d96514365d0bc788fd4b1afb71cb7dd8f599413270972434a",
+      "media": "media/764a230eb101e9092a52247a.mp4",
+      "preview_sha256": "968059a14033bb98138480ddf47a23e01ae8ffc26505840bf3d43de722356262",
+      "duration": 5,
+      "review_method": "ai_assisted",
+      "intervals": [
+        {
+          "start_seconds": 0,
+          "end_seconds": 5,
+          "action": "solo_motion"
+        }
+      ]
+    },
+    {
+      "video": "airtlab/non-violent/cam2/16.mp4",
+      "dataset": "airtlab",
+      "split": "calibration",
+      "group": "airtlab/non-violent/16.mp4",
+      "source_sha256": "3d81161832093c208a5f1d74f823483e5ee8b6619d729ee63cd7370598f27e5c",
+      "media": "media/f4d004515d9addbed5258023.mp4",
+      "preview_sha256": "faf9850a1f0c9d0e880f5f721500dd189dacae708587ee4e4ad0b553ee888d3b",
+      "duration": 5.3,
+      "review_method": "ai_assisted",
+      "intervals": [
+        {
+          "start_seconds": 0,
+          "end_seconds": 1.75,
+          "action": "handshake_greet"
+        },
+        {
+          "start_seconds": 1.75,
+          "end_seconds": 5.3,
+          "action": "hug"
+        }
+      ]
+    },
+    {
+      "video": "airtlab/non-violent/cam1/17.mp4",
+      "dataset": "airtlab",
+      "split": "development",
+      "group": "airtlab/non-violent/17.mp4",
+      "source_sha256": "675d1bac717e6307293227850d1afc19c4c49ee999b44a6a76a62e745d5ffde0",
+      "media": "media/d840918ad46d57c240a7f8fb.mp4",
+      "preview_sha256": "95cb47d12eda0a17317885d59542a7845caddd944c1ebce279b0e79de8337082",
+      "duration": 7.7,
+      "review_method": "ai_assisted",
+      "intervals": [
+        {
+          "start_seconds": 0,
+          "end_seconds": 7.7,
+          "action": "gesture"
+        }
+      ]
+    },
+    {
+      "video": "airtlab/non-violent/cam1/19.mp4",
+      "dataset": "airtlab",
+      "split": "calibration",
+      "group": "airtlab/non-violent/19.mp4",
+      "source_sha256": "0a68def5d2f36c0916c6a394a561bcc2789c57d597deafa6e9a752fa613acfad",
+      "media": "media/6b3a8cead66b558f8250ae4f.mp4",
+      "preview_sha256": "98e929a24a10bc5a98e1d0147bf2ae4081ed13e4ddac49712378bf4a8072454d",
+      "duration": 2.466666666666667,
+      "review_method": "ai_assisted",
+      "intervals": [
+        {
+          "start_seconds": 0,
+          "end_seconds": 2.46,
+          "action": "handshake_greet"
+        }
+      ]
+    },
+    {
+      "video": "airtlab/non-violent/cam1/22.mp4",
+      "dataset": "airtlab",
+      "split": "calibration",
+      "group": "airtlab/non-violent/22.mp4",
+      "source_sha256": "2833cf45911dcff08ee2c1fa2bc52bde10c2a6722a5271c3c54de20451476b13",
+      "media": "media/64980e6d96aac01ffcabccc6.mp4",
+      "preview_sha256": "92ebcb14dcd9121349ce599f508c2547e2e5aef6f2e2b0e125885cedb078aa22",
+      "duration": 4.533333333333333,
+      "review_method": "ai_assisted",
+      "intervals": [
+        {
+          "start_seconds": 0,
+          "end_seconds": 0.5,
+          "action": "gesture"
+        },
+        {
+          "start_seconds": 0.75,
+          "end_seconds": 3.5,
+          "action": "fight"
+        },
+        {
+          "start_seconds": 3.5,
+          "end_seconds": 4.53,
+          "action": "uncertain"
+        }
+      ]
+    },
+    {
+      "video": "airtlab/non-violent/cam2/23.mp4",
+      "dataset": "airtlab",
+      "split": "test",
+      "group": "airtlab/non-violent/23.mp4",
+      "source_sha256": "3a12423874ae10565a8d8df654db70da6964a59f293cc579711346a9ec0306dc",
+      "media": "media/593170669317320d045dccf7.mp4",
+      "preview_sha256": "797b758f51b2ec3369e41d70bb4f41aa56ddfed09bccf798f56b676eecaede27",
+      "duration": 5.9,
+      "review_method": "ai_assisted",
+      "intervals": [
+        {
+          "start_seconds": 0,
+          "end_seconds": 0.75,
+          "action": "gesture"
+        },
+        {
+          "start_seconds": 0.75,
+          "end_seconds": 2.25,
+          "action": "highfive_clap"
+        },
+        {
+          "start_seconds": 2.25,
+          "end_seconds": 5.9,
+          "action": "gesture"
+        }
+      ]
+    },
+    {
+      "video": "airtlab/non-violent/cam2/24.mp4",
+      "dataset": "airtlab",
+      "split": "train",
+      "group": "airtlab/non-violent/24.mp4",
+      "source_sha256": "105f69187c0830aada578fa741f1ded3ea14ad4aef4ca621918174cf47d6d002",
+      "media": "media/99a1d6d4c137a7201efc02a5.mp4",
+      "preview_sha256": "6233d6d442e53cb6a7c97e1c8c315d406c95b1df5d82b6be7ae649dffb08bf88",
+      "duration": 5.466666666666667,
+      "review_method": "ai_assisted",
+      "intervals": [
+        {
+          "start_seconds": 0,
+          "end_seconds": 4.25,
+          "action": "handshake_greet"
+        },
+        {
+          "start_seconds": 4.25,
+          "end_seconds": 5.46,
+          "action": "normal"
+        }
+      ]
+    },
+    {
+      "video": "airtlab/non-violent/cam2/26.mp4",
+      "dataset": "airtlab",
+      "split": "train",
+      "group": "airtlab/non-violent/26.mp4",
+      "source_sha256": "0060c7a3a7a02ac38c0015949a5ecdf3fb7f62bf1614da02912828761da25185",
+      "media": "media/05189597f7010dffaf14df54.mp4",
+      "preview_sha256": "6aa65ebb8eece9a988f081bd703e59ee7d87fa94129a2db2bea9052b35c46135",
+      "duration": 7.466666666666667,
+      "review_method": "ai_assisted",
+      "intervals": [
+        {
+          "start_seconds": 0,
+          "end_seconds": 7.4,
+          "action": "gesture"
+        }
+      ]
+    },
+    {
+      "video": "airtlab/non-violent/cam1/28.mp4",
+      "dataset": "airtlab",
+      "split": "calibration",
+      "group": "airtlab/non-violent/28.mp4",
+      "source_sha256": "18d8222a2640af12b7e5fcec5154b72c80db8fa244607c5bdb4ac460ee7151bc",
+      "media": "media/47b5b59cded20cbf2753a960.mp4",
+      "preview_sha256": "0a3f18238b825d343b5d519b5a19fa93b8fd5c485c8875e30ee0649eeeb16533",
+      "duration": 4.7,
+      "review_method": "ai_assisted",
+      "intervals": [
+        {
+          "start_seconds": 0,
+          "end_seconds": 1,
+          "action": "normal"
+        },
+        {
+          "start_seconds": 1,
+          "end_seconds": 3.5,
+          "action": "hug"
+        },
+        {
+          "start_seconds": 3.5,
+          "end_seconds": 4.7,
+          "action": "normal"
+        }
+      ]
+    },
+    {
+      "video": "airtlab/non-violent/cam2/31.mp4",
+      "dataset": "airtlab",
+      "split": "development",
+      "group": "airtlab/non-violent/31.mp4",
+      "source_sha256": "57b7ae5cb1e7bb99c58c04e70be620a5afbeb1308d5fadf3afd565209f28f4a3",
+      "media": "media/0da2ae9f6bb6a75d6dd01965.mp4",
+      "preview_sha256": "fd9580ce22e79deed8643e841d4c3a7af27347bc8037210bc1a7a31a81e99d99",
+      "duration": 7.666666666666667,
+      "review_method": "ai_assisted",
+      "intervals": [
+        {
+          "start_seconds": 0,
+          "end_seconds": 2,
+          "action": "gesture"
+        },
+        {
+          "start_seconds": 2,
+          "end_seconds": 7.66,
+          "action": "hug"
+        }
+      ]
+    },
+    {
+      "video": "airtlab/non-violent/cam2/32.mp4",
+      "dataset": "airtlab",
+      "split": "train",
+      "group": "airtlab/non-violent/32.mp4",
+      "source_sha256": "163e95b20f52b886d09e136b2b8a12154630a17ca0fdb4aa83a3e4d46e18ca16",
+      "media": "media/ca333e03c19a15befdba48ae.mp4",
+      "preview_sha256": "96e851e404c221756790a600427aa24d836fd37b9b138ef3914051f60ab90504",
+      "duration": 6.4,
+      "review_method": "ai_assisted",
+      "intervals": [
+        {
+          "start_seconds": 0,
+          "end_seconds": 1.5,
+          "action": "gesture"
+        },
+        {
+          "start_seconds": 1.5,
+          "end_seconds": 6.36,
+          "action": "hug"
+        }
+      ]
+    },
+    {
+      "video": "airtlab/non-violent/cam1/37.mp4",
+      "dataset": "airtlab",
+      "split": "train",
+      "group": "airtlab/non-violent/37.mp4",
+      "source_sha256": "10133b7a6f342de79e2aa9fa9080aa8c752075d5b49127922b2661161ec559ad",
+      "media": "media/3ec0bc559ef7b0c480400cae.mp4",
+      "preview_sha256": "17925795f81feeec64150d72f2ff686896dfd0ba8921b458dac231236d2202f6",
+      "duration": 4.9,
+      "review_method": "ai_assisted",
+      "intervals": [
+        {
+          "start_seconds": 0,
+          "end_seconds": 1,
+          "action": "gesture"
+        },
+        {
+          "start_seconds": 1,
+          "end_seconds": 4.5,
+          "action": "hug"
+        },
+        {
+          "start_seconds": 4.5,
+          "end_seconds": 4.9,
+          "action": "normal"
+        }
+      ]
+    },
+    {
+      "video": "airtlab/non-violent/cam2/46.mp4",
+      "dataset": "airtlab",
+      "split": "calibration",
+      "group": "airtlab/non-violent/46.mp4",
+      "source_sha256": "8ce1ae2c7afe12e92167da67a48ff7e541a89376933ee2763bca81a8d32e1ab2",
+      "media": "media/548a19c6cf5b247cfe1116e8.mp4",
+      "preview_sha256": "a4a12edee15e99f7809426c6c5f38630784495ffe54ce6c15c1a7f0ebf412564",
+      "duration": 5.633333333333334,
+      "review_method": "ai_assisted",
+      "intervals": [
+        {
+          "start_seconds": 0,
+          "end_seconds": 0.5,
+          "action": "gesture"
+        },
+        {
+          "start_seconds": 0.5,
+          "end_seconds": 3.75,
+          "action": "hug"
+        },
+        {
+          "start_seconds": 3.75,
+          "end_seconds": 5.63,
+          "action": "normal"
+        }
+      ]
+    },
+    {
+      "video": "airtlab/non-violent/cam1/51.mp4",
+      "dataset": "airtlab",
+      "split": "train",
+      "group": "airtlab/non-violent/51.mp4",
+      "source_sha256": "091821473e87db58bd4ba77c318e66faa1f14704112f85ab09f8afe0ae3c58ba",
+      "media": "media/d5e4241bf146c7e49f9c7749.mp4",
+      "preview_sha256": "9ecaab23106b7b2a94a6bd17436b0253c8d976bceeff50e33db9d61ab9087088",
+      "duration": 4.966666666666667,
+      "review_method": "ai_assisted",
+      "intervals": [
+        {
+          "start_seconds": 0,
+          "end_seconds": 1.25,
+          "action": "gesture"
+        },
+        {
+          "start_seconds": 1.25,
+          "end_seconds": 4.96,
+          "action": "hug"
+        }
+      ]
+    },
+    {
+      "video": "airtlab/non-violent/cam2/52.mp4",
+      "dataset": "airtlab",
+      "split": "development",
+      "group": "airtlab/non-violent/52.mp4",
+      "source_sha256": "0cd5e68b8ca15214b36a2573235d2f14be87755c5d04f79156a4a6da784825f0",
+      "media": "media/982ac1353acf837a30543d63.mp4",
+      "preview_sha256": "499e2474b85f677d87f05494e9599e00463df9e2e9839e707bb1d69cb705a29e",
+      "duration": 3.966666666666667,
+      "review_method": "ai_assisted",
+      "intervals": [
+        {
+          "start_seconds": 0,
+          "end_seconds": 0.75,
+          "action": "gesture"
+        },
+        {
+          "start_seconds": 0.75,
+          "end_seconds": 3.5,
+          "action": "hug"
+        },
+        {
+          "start_seconds": 3.5,
+          "end_seconds": 3.96,
+          "action": "normal"
+        }
+      ]
+    },
+    {
+      "video": "airtlab/non-violent/cam1/58.mp4",
+      "dataset": "airtlab",
+      "split": "test",
+      "group": "airtlab/non-violent/58.mp4",
+      "source_sha256": "39f054f0fae35071b40f0314f1bb886c835826ceb8c81525af22d453824a18e1",
+      "media": "media/a97c752f2de3dd86692f93f7.mp4",
+      "preview_sha256": "a91c567b9206ab0165b497451e5365fb75eff5f15af42197d0307b074ded52e2",
+      "duration": 4.066666666666666,
+      "review_method": "ai_assisted",
+      "intervals": [
+        {
+          "start_seconds": 0,
+          "end_seconds": 0.5,
+          "action": "normal"
+        },
+        {
+          "start_seconds": 0.5,
+          "end_seconds": 3.5,
+          "action": "hug"
+        },
+        {
+          "start_seconds": 3.5,
+          "end_seconds": 4.06,
+          "action": "normal"
+        }
+      ]
+    },
+    {
+      "video": "airtlab/non-violent/cam2/59.mp4",
+      "dataset": "airtlab",
+      "split": "test",
+      "group": "airtlab/non-violent/59.mp4",
+      "source_sha256": "4f0e41a4170cd15718faad460b0e578f220ca2a1ac06e6d67e5a16a755a0081a",
+      "media": "media/73ee477495fb14d550a855b1.mp4",
+      "preview_sha256": "5261c62bafd872419ebb8ecc0bf4157c26f2d911ee7bddd8af82c8c44f78c5ae",
+      "duration": 7.866666666666666,
+      "review_method": "ai_assisted",
+      "intervals": [
+        {
+          "start_seconds": 0,
+          "end_seconds": 1.5,
+          "action": "gesture"
+        },
+        {
+          "start_seconds": 1.5,
+          "end_seconds": 4.25,
+          "action": "handshake_greet"
+        },
+        {
+          "start_seconds": 4.25,
+          "end_seconds": 5,
+          "action": "normal"
+        },
+        {
+          "start_seconds": 5,
+          "end_seconds": 7.86,
+          "action": "handshake_greet"
+        }
+      ]
+    },
+    {
+      "video": "airtlab/non-violent/cam1/9.mp4",
+      "dataset": "airtlab",
+      "split": "train",
+      "group": "airtlab/non-violent/9.mp4",
+      "source_sha256": "13d3bfdca1cb4842bb758f85725883056b1b1812cfe6392c1d3d97425a0f6324",
+      "media": "media/481ad4b4f1489fa3d2cfb72a.mp4",
+      "preview_sha256": "40b08ad5e5e838d3bdb2d25ae5fa0dff748a4d8b76ad168ebc127b8ed417e672",
+      "duration": 4.066666666666666,
+      "review_method": "ai_assisted",
+      "intervals": [
+        {
+          "start_seconds": 0,
+          "end_seconds": 4.06,
+          "action": "handshake_greet"
+        }
+      ]
+    },
+    {
+      "video": "airtlab/violent/cam2/101.mp4",
+      "dataset": "airtlab",
+      "split": "test",
+      "group": "airtlab/violent/101.mp4",
+      "source_sha256": "262a1f6653d237cf4246f64286182f0025e6e28766072ab579fb83c4636589d2",
+      "media": "media/eec1206f97eba6c0c196f6ff.mp4",
+      "preview_sha256": "15909602f3a956e9caf46cd823f8574a081544030668e448af5f2048a7f74338",
+      "duration": 6.066666666666666,
+      "review_method": "ai_assisted",
+      "intervals": [
+        {
+          "start_seconds": 0,
+          "end_seconds": 6.06,
+          "action": "fight"
+        }
+      ]
+    },
+    {
+      "video": "airtlab/violent/cam1/103.mp4",
+      "dataset": "airtlab",
+      "split": "development",
+      "group": "airtlab/violent/103.mp4",
+      "source_sha256": "1b34b44f96b67ea3df351c2c9d59545fe75e31d2b57a313714c6159baae480c7",
+      "media": "media/16cc048323e3d43e5f403e6b.mp4",
+      "preview_sha256": "5b5f96c6dddbf3e7d263e03e80374099dc33da53bdee3fd40a3b117477ecab91",
+      "duration": 4.766666666666667,
+      "review_method": "ai_assisted",
+      "intervals": [
+        {
+          "start_seconds": 0,
+          "end_seconds": 1.75,
+          "action": "gesture"
+        },
+        {
+          "start_seconds": 2,
+          "end_seconds": 3.25,
+          "action": "fight"
+        },
+        {
+          "start_seconds": 3.25,
+          "end_seconds": 4.76,
+          "action": "uncertain"
+        }
+      ]
+    },
+    {
+      "video": "airtlab/violent/cam2/106.mp4",
+      "dataset": "airtlab",
+      "split": "development",
+      "group": "airtlab/violent/106.mp4",
+      "source_sha256": "49ff0914701fc46dd24880260288a78464e93078b962ab92b895d50f28233834",
+      "media": "media/7e7173f4b76a71bf4f5d3934.mp4",
+      "preview_sha256": "8062ec66f11debb196433b010e190138c1196df0bd221bffaefdc9a1fd05681e",
+      "duration": 5,
+      "review_method": "ai_assisted",
+      "intervals": [
+        {
+          "start_seconds": 0,
+          "end_seconds": 5,
+          "action": "fight"
+        }
+      ]
+    },
+    {
+      "video": "airtlab/violent/cam2/107.mp4",
+      "dataset": "airtlab",
+      "split": "train",
+      "group": "airtlab/violent/107.mp4",
+      "source_sha256": "208edfc83e7734ee5760b73cfaa60693db587a01c0ccc69af971adab8d75c7c6",
+      "media": "media/c1c74645faa65f9732575a88.mp4",
+      "preview_sha256": "21ead5326b93010825e5b1f7d48778dab5dcaa406781575fb8b8fed794bb6f97",
+      "duration": 3.8666666666666667,
+      "review_method": "ai_assisted",
+      "intervals": [
+        {
+          "start_seconds": 0.75,
+          "end_seconds": 3.25,
+          "action": "fight"
+        },
+        {
+          "start_seconds": 3.25,
+          "end_seconds": 3.86,
+          "action": "uncertain"
+        }
+      ]
+    },
+    {
+      "video": "airtlab/violent/cam1/109.mp4",
+      "dataset": "airtlab",
+      "split": "calibration",
+      "group": "airtlab/violent/109.mp4",
+      "source_sha256": "14dc2cc4d72c874d292716b07a0244bbb5ece8886f5334b1579ef9438f96e018",
+      "media": "media/267bf99e88ca0e9b4c48cebd.mp4",
+      "preview_sha256": "d20832133b502760a7f0b62a0aa5a712156b2dd24c93130e6d6a0207526962f0",
+      "duration": 3.4,
+      "review_method": "ai_assisted",
+      "intervals": [
+        {
+          "start_seconds": 0.75,
+          "end_seconds": 2.25,
+          "action": "fight"
+        },
+        {
+          "start_seconds": 2.25,
+          "end_seconds": 3.4,
+          "action": "uncertain"
+        }
+      ]
+    },
+    {
+      "video": "airtlab/violent/cam2/11.mp4",
+      "dataset": "airtlab",
+      "split": "development",
+      "group": "airtlab/violent/11.mp4",
+      "source_sha256": "2cfe615dacde2e74055c48fd5158e75d1f2dfa4578da32c15038ee7ccbfd074b",
+      "media": "media/016c274ce9cdb01c075ae122.mp4",
+      "preview_sha256": "185128ac7dab73d933528d6d5b07ebed5b257fdca44f3199061adbd30493fcb2",
+      "duration": 4.433333333333334,
+      "review_method": "ai_assisted",
+      "intervals": [
+        {
+          "start_seconds": 0,
+          "end_seconds": 1.25,
+          "action": "gesture"
+        },
+        {
+          "start_seconds": 1.5,
+          "end_seconds": 3.8,
+          "action": "fight"
+        },
+        {
+          "start_seconds": 3.8,
+          "end_seconds": 4.43,
+          "action": "uncertain"
+        }
+      ]
+    },
+    {
+      "video": "airtlab/violent/cam1/40.mp4",
+      "dataset": "airtlab",
+      "split": "train",
+      "group": "airtlab/violent/40.mp4",
+      "source_sha256": "1eec04d7b17ee357f5380c79a67ac51c63298c8a876325454e5323a951d5fcff",
+      "media": "media/fd28c6fe7e2789fc65da2899.mp4",
+      "preview_sha256": "29deb2f94c36d4cd9493958a9662d6a57c91fcbdef99dd62bd2d6ca8b35a6b09",
+      "duration": 4.033333333333333,
+      "review_method": "ai_assisted",
+      "intervals": [
+        {
+          "start_seconds": 0,
+          "end_seconds": 2.25,
+          "action": "gesture"
+        },
+        {
+          "start_seconds": 2.5,
+          "end_seconds": 3.6,
+          "action": "fight"
+        },
+        {
+          "start_seconds": 3.6,
+          "end_seconds": 4.03,
+          "action": "uncertain"
+        }
+      ]
+    },
+    {
+      "video": "airtlab/violent/cam2/73.mp4",
+      "dataset": "airtlab",
+      "split": "test",
+      "group": "airtlab/violent/73.mp4",
+      "source_sha256": "697395492ef8e95ea8b321c6902ab698008f8dfbfcf22d924ebaaff4d7744534",
+      "media": "media/c759d98923c092b8e0cd0caf.mp4",
+      "preview_sha256": "69d0397ece5486e3009c6d7d1d2c88b63b61f32611e4ed7f42ee371136357860",
+      "duration": 4.8,
+      "review_method": "ai_assisted",
+      "intervals": [
+        {
+          "start_seconds": 0,
+          "end_seconds": 0.5,
+          "action": "gesture"
+        },
+        {
+          "start_seconds": 0.75,
+          "end_seconds": 4.8,
+          "action": "fight"
+        }
+      ]
+    },
+    {
+      "video": "airtlab/violent/cam2/74.mp4",
+      "dataset": "airtlab",
+      "split": "calibration",
+      "group": "airtlab/violent/74.mp4",
+      "source_sha256": "22787d0bfb0d6434840d7933508baaaee4c2fba97928527f014aed0737b71566",
+      "media": "media/cbc2d08f4a5c76da49f63f2d.mp4",
+      "preview_sha256": "1b7c0b5519e17aadc3d8c178e1961a76f6c2bc347c3e421440b28d23419124bc",
+      "duration": 3.5,
+      "review_method": "ai_assisted",
+      "intervals": [
+        {
+          "start_seconds": 0.9,
+          "end_seconds": 2.5,
+          "action": "fight"
+        },
+        {
+          "start_seconds": 2.5,
+          "end_seconds": 3.5,
+          "action": "uncertain"
+        }
+      ]
+    },
+    {
+      "video": "airtlab/violent/cam1/79.mp4",
+      "dataset": "airtlab",
+      "split": "train",
+      "group": "airtlab/violent/79.mp4",
+      "source_sha256": "09167c6a8ea2fbffb6c07472d3521901f236884352b080cab43361114515c1ea",
+      "media": "media/fa3d5fd7ba5235fd4efbc1c8.mp4",
+      "preview_sha256": "d3f7909457717fdf8d0becb5a1a6ccbc429520d3a2b7fa8fa030684026814a18",
+      "duration": 3.433333333333333,
+      "review_method": "ai_assisted",
+      "intervals": [
+        {
+          "start_seconds": 0.75,
+          "end_seconds": 2.25,
+          "action": "fight"
+        },
+        {
+          "start_seconds": 2.25,
+          "end_seconds": 3.43,
+          "action": "uncertain"
+        }
+      ]
+    },
+    {
+      "video": "airtlab/violent/cam2/8.mp4",
+      "dataset": "airtlab",
+      "split": "test",
+      "group": "airtlab/violent/8.mp4",
+      "source_sha256": "142f86f75838ab15644211c6bd8a01b247e17ed2809bf85eea75b3ecb3e9a9ed",
+      "media": "media/6d653d3161281022d9c9b6f7.mp4",
+      "preview_sha256": "6970c0c8c4d10a86f28227fe7f85119993424ed1827555090d62d5949e32b7d7",
+      "duration": 6.766666666666667,
+      "review_method": "ai_assisted",
+      "intervals": [
+        {
+          "start_seconds": 0,
+          "end_seconds": 3.25,
+          "action": "fight"
+        },
+        {
+          "start_seconds": 3.25,
+          "end_seconds": 6.76,
+          "action": "uncertain"
+        }
+      ]
+    },
+    {
+      "video": "airtlab/violent/cam1/85.mp4",
+      "dataset": "airtlab",
+      "split": "train",
+      "group": "airtlab/violent/85.mp4",
+      "source_sha256": "1ec9f66883e0ffd4def0ee3baea178a326d14e2d8360d9ed82eecb1bdf634815",
+      "media": "media/fe04c64db046bb18f4eb6b75.mp4",
+      "preview_sha256": "73f471199bdb9d34ff25ba004e7fc7cccd20957462473dbfd259f83410becb9d",
+      "duration": 4.2,
+      "review_method": "ai_assisted",
+      "intervals": [
+        {
+          "start_seconds": 0.25,
+          "end_seconds": 1.75,
+          "action": "fight"
+        },
+        {
+          "start_seconds": 1.75,
+          "end_seconds": 4.2,
+          "action": "uncertain"
+        }
+      ]
+    },
+    {
+      "video": "airtlab/violent/cam1/86.mp4",
+      "dataset": "airtlab",
+      "split": "calibration",
+      "group": "airtlab/violent/86.mp4",
+      "source_sha256": "0b9e0bc3016f8a5225745d9146597ea24cb2951ec6a9693fe1924414e2c7921a",
+      "media": "media/59f57ad3fabac19176b714ad.mp4",
+      "preview_sha256": "4bb41fe55500f43b9752fce44273dbe7f1711cbfcf392a191bd8763f6bfb443d",
+      "duration": 11.666666666666666,
+      "review_method": "ai_assisted",
+      "intervals": [
+        {
+          "start_seconds": 0,
+          "end_seconds": 8.5,
+          "action": "uncertain"
+        },
+        {
+          "start_seconds": 9,
+          "end_seconds": 11.25,
+          "action": "fight"
+        },
+        {
+          "start_seconds": 11.25,
+          "end_seconds": 11.66,
+          "action": "uncertain"
+        }
+      ]
+    },
+    {
+      "video": "airtlab/violent/cam1/9.mp4",
+      "dataset": "airtlab",
+      "split": "train",
+      "group": "airtlab/violent/9.mp4",
+      "source_sha256": "1ee09f90f9e36db91885b5d9f90e981cd7fe448efcbb01ddb0cc8e4595609ec3",
+      "media": "media/4b332735787d01fec4755a87.mp4",
+      "preview_sha256": "1c6f87f2ea2cb48105cc6791c9f122064632e26ee3c0e0873437d048854192f1",
+      "duration": 5.333333333333333,
+      "review_method": "ai_assisted",
+      "intervals": [
+        {
+          "start_seconds": 0.25,
+          "end_seconds": 5.3,
+          "action": "fight"
+        }
+      ]
+    },
+    {
+      "video": "airtlab/violent/cam1/99.mp4",
+      "dataset": "airtlab",
+      "split": "train",
+      "group": "airtlab/violent/99.mp4",
+      "source_sha256": "1becb347c461a8e73fc7f901c36eca64745ea9f05fb6f50edc0bf1d8c3447e04",
+      "media": "media/7c5b0006066c260881323d8e.mp4",
+      "preview_sha256": "0ccc6a1a4f529acc6045fceb4d8ac0e04c976a9412162f883f1cf165d00d1226",
+      "duration": 2.8,
+      "review_method": "ai_assisted",
+      "intervals": [
+        {
+          "start_seconds": 1,
+          "end_seconds": 2,
+          "action": "fight"
+        },
+        {
+          "start_seconds": 2,
+          "end_seconds": 2.8,
+          "action": "uncertain"
+        }
+      ]
+    }
+  ]
+}
