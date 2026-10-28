@@ -40,6 +40,10 @@ class DetectionCache:
         self.entries.move_to_end(key)
         return self.entries[key][1]
 
+    def prefetch(self, frames):
+        if hasattr(self.detector, "prefetch"):
+            self.detector.prefetch(frames)
+
 
 @dataclass(frozen=True)
 class ClipConfig:
@@ -216,6 +220,10 @@ def build_clip_inputs(frames, detector, config, *, include_person_boxes=False):
     )
     left, top, right, bottom = bounds
     content = [frame[top:bottom, left:right] for frame in frames]
+    if hasattr(detector, "prefetch"):
+        detector.prefetch(
+            [content[index] for index in (0, len(content) // 2, len(content) - 1)]
+        )
     sampled_boxes = [
         [detection.bbox_xyxy for detection in detector.detect(content[index])]
         for index in (0, len(content) // 2, len(content) - 1)

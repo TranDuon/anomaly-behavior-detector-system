@@ -123,6 +123,7 @@ class FightProcessor:
             settings.models_dir,
             settings.fight_allow_pilot,
             cpu_threads=settings.fight_cpu_threads,
+            batch_detection=True,
         )
         self.thread = None
         self.stop_event = threading.Event()
@@ -170,7 +171,10 @@ class FightProcessor:
                     "Phiên ghi trước chưa kết thúc; hãy Dừng/chờ hoàn tất rồi thử lại."
                 )
             candidate = FightRuntime(
-                settings.models_dir, allow_pilot, cpu_threads=settings.fight_cpu_threads
+                settings.models_dir,
+                allow_pilot,
+                cpu_threads=settings.fight_cpu_threads,
+                batch_detection=True,
             )
             if not candidate.model_ready and not preview:
                 raise ValueError(candidate.message)
@@ -240,6 +244,7 @@ class FightProcessor:
             ),
             "prediction_age_seconds": round(age, 3) if age is not None else None,
             "dropped_samples": self.dropped_samples,
+            "analysis_incomplete": self.dropped_samples > 0,
             "model_loaded": self.runtime.model_ready,
             "model": {
                 "architecture": self.runtime.metadata.get("architecture"),
@@ -247,6 +252,8 @@ class FightProcessor:
                 "cpu_threads": getattr(
                     self.runtime, "cpu_threads", settings.fight_cpu_threads
                 ),
+                "cpu_optimization": getattr(self.runtime, "cpu_optimization", "none"),
+                "pose_prefetch": getattr(self.runtime, "batch_detection", False),
                 "pilot_required": getattr(self.runtime, "pilot_required", False),
                 "pilot_default_allowed": settings.fight_allow_pilot,
                 "deployment": self.runtime.metadata.get("deployment", {}),
@@ -364,12 +371,20 @@ class FightProcessor:
         )
         self.active_event, self.event_frames = None, []
 
+    def reset_after_sample_loss(self):
+        self.finish_event()
+        self.runtime.reset()
+        self.runtime.result["message"] = (
+            "CPU xử lý không kịp, đã mất mẫu; đang thu lại clip, không kết luận bình thường."
+        )
+
     def run(self, source):
         is_file = isinstance(source, str) and Path(source).is_file()
         live_mode = not is_file or self.replay
         capture = open_capture(source)
         writer = reader = None
         pending = deque(maxlen=self.runtime.config.frames * 2)
+        observed_drops = 0
         live_lock = threading.Lock()
         latest = {"frame": None, "ended": False, "count": 0, "limit_reached": False}
         started = self.session_started or time.monotonic()
@@ -468,6 +483,7 @@ class FightProcessor:
                         )
                         pending.clear()
                         self.frame_count = latest["count"]
+                        sampled_drops = self.dropped_samples
                     if not samples:
                         if ended:
                             if is_file or latest["limit_reached"]:
@@ -476,7 +492,10 @@ class FightProcessor:
                         self.stop_event.wait(0.02)
                         continue
                     timestamp = samples[-1][1]
-                for index, (sample, sample_time) in enumerate(samples):
+                    if sampled_drops > observed_drops and not self.preview:
+                        self.reset_after_sample_loss()
+                    observed_drops = sampled_drops
+                for sample, sample_time in samples:
                     result = (
                         {
                             "state": "unavailable",
@@ -490,7 +509,7 @@ class FightProcessor:
                         else self.runtime.push(
                             sample,
                             sample_time,
-                            predict=index == len(samples) - 1,
+                            predict=True,
                             sampled=live_mode,
                         )
                     )

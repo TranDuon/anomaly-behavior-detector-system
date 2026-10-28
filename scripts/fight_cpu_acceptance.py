@@ -12,6 +12,49 @@ import torch
 from scripts.fight_pilot import write_json
 
 
+def compare_modes(offline, replay, time_tolerance=1 / 12):
+    baseline = {
+        round(row["prediction_timestamp"], 6): row["score"]
+        for row in offline["predictions"]
+    }
+    first_times = [
+        round(row["prediction_timestamp"], 6) for row in offline["predictions"]
+    ]
+    second_times = [
+        round(row["prediction_timestamp"], 6) for row in replay["predictions"]
+    ]
+    differences = [
+        abs(row["score"] - baseline[round(row["prediction_timestamp"], 6)])
+        for row in replay["predictions"]
+        if round(row["prediction_timestamp"], 6) in baseline
+    ]
+    first_events, second_events = offline["events"], replay["events"]
+    interval_parity = len(first_events) == len(second_events) and all(
+        all(
+            isinstance(first.get(key), (int, float))
+            and isinstance(second.get(key), (int, float))
+            and abs(first[key] - second[key]) <= time_tolerance + 1e-6
+            for key in ("started_at", "ended_at")
+        )
+        for first, second in zip(first_events, second_events)
+    )
+    return {
+        "video": offline["video"],
+        "matching_prediction_timestamps": len(differences),
+        "maximum_matching_score_difference": max(differences, default=None),
+        "offline_events": len(first_events),
+        "replay_events": len(second_events),
+        "all_prediction_timestamps_match": bool(first_times)
+        and first_times == second_times,
+        "event_intervals_match": interval_parity,
+        "event_time_tolerance_seconds": time_tolerance,
+        "full_timeline_parity": bool(first_times)
+        and first_times == second_times
+        and max(differences, default=float("inf")) <= 1e-4
+        and interval_parity,
+    }
+
+
 def diagnostic_summary(results, comparisons):
     modes = {}
     for mode in ("uploaded_file", "camera_replay"):
@@ -38,13 +81,17 @@ def diagnostic_summary(results, comparisons):
             for row in comparisons
         )
     )
+    full_parity = parity and all(
+        row.get("full_timeline_parity", False) for row in comparisons
+    )
     return {
         "public_clip_any_alarm": modes,
         "label_scope": "Publisher whole-clip any-alarm diagnostic only; not action timestamps or independent acceptance",
         "replay_freshness_passed": fresh,
         "matching_score_and_event_count_parity": parity,
-        "integration_smoke_passed": fresh and parity,
-        "integration_scope": "Freshness, matching-window scores and event counts only; equal counts do not prove equal event intervals or action correctness",
+        "full_timeline_parity": full_parity,
+        "integration_smoke_passed": fresh and full_parity,
+        "integration_scope": "Freshness, complete prediction timestamps, scores and alarm intervals; not action correctness or physical phone acceptance",
         "approved_for_demo": False,
         "physical_phone_tested": False,
     }
@@ -195,23 +242,8 @@ def run(args):
         comparisons = []
         for index in range(0, len(results), 2):
             offline, replay = results[index : index + 2]
-            baseline = {
-                round(row["prediction_timestamp"], 6): row["score"]
-                for row in offline["predictions"]
-            }
-            differences = [
-                abs(row["score"] - baseline[round(row["prediction_timestamp"], 6)])
-                for row in replay["predictions"]
-                if round(row["prediction_timestamp"], 6) in baseline
-            ]
             comparisons.append(
-                {
-                    "video": offline["video"],
-                    "matching_prediction_timestamps": len(differences),
-                    "maximum_matching_score_difference": max(differences, default=None),
-                    "offline_events": len(offline["events"]),
-                    "replay_events": len(replay["events"]),
-                }
+                compare_modes(offline, replay, 1 / server.processor.runtime.config.fps)
             )
         report = {
             "scope": "Real CPU API integration/throughput, not event accuracy or physical iPhone acceptance",

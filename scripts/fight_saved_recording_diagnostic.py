@@ -18,7 +18,7 @@ def diagnose(models, video, metadata, output):
         raise ValueError("Refuse replacing an existing diagnostic")
     torch.set_num_threads(4)
     cv2.setNumThreads(1)
-    runtime = FightRuntime(models_dir=models, allow_pilot=True)
+    runtime = FightRuntime(models_dir=models, allow_pilot=True, batch_detection=True)
     if not runtime.model_ready:
         raise ValueError(runtime.message)
     runtime.warmup()
@@ -85,6 +85,8 @@ def diagnose(models, video, metadata, output):
             if row["event"] == "started"
         ],
         "prediction_count": len(predictions),
+        "cpu_optimization": getattr(runtime, "cpu_optimization", "none"),
+        "pose_prefetch": getattr(runtime, "batch_detection", False),
         "predictions": predictions,
         "approved_for_demo": False,
     }

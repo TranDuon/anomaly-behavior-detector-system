@@ -36,6 +36,7 @@ class PoseDetector:
         self.device = device
         self.model = YOLO(str(model_path or self.config.model_name))
         self.cache = {}
+        self.batch_detection = False
 
     def retain(self, frames):
         owners = {id(DetectionCache.owner(frame)) for frame in frames}
@@ -43,14 +44,64 @@ class PoseDetector:
             key: value for key, value in self.cache.items() if key[0] in owners
         }
 
-    def poses(self, frame):
+    @staticmethod
+    def frame_key(frame):
         owner = DetectionCache.owner(frame)
-        key = (
+        return (
             id(owner),
             frame.__array_interface__["data"][0],
             frame.shape,
             frame.strides,
         )
+
+    @staticmethod
+    def records(result):
+        records = []
+        if result.keypoints is not None:
+            for box, points in zip(
+                result.boxes.xyxy.cpu().numpy(), result.keypoints.data.cpu().numpy()
+            ):
+                if (
+                    points.shape != (17, 3)
+                    or not np.isfinite(points).all()
+                    or not np.isfinite(box).all()
+                ):
+                    continue
+                records.append(
+                    {
+                        "box": np.asarray(box, dtype=np.float32),
+                        "points": np.asarray(points, dtype=np.float32),
+                    }
+                )
+        return records
+
+    def prefetch(self, frames):
+        if not getattr(self, "batch_detection", False):
+            return
+        missing = {
+            self.frame_key(frame): frame
+            for frame in frames
+            if self.frame_key(frame) not in self.cache
+        }
+        if len(missing) < 2 or len({frame.shape for frame in missing.values()}) != 1:
+            return
+        results = self.model.predict(
+            list(missing.values()),
+            imgsz=self.config.image_size,
+            conf=self.config.confidence,
+            device=self.device,
+            verbose=False,
+        )
+        if len(results) != len(missing):
+            raise ValueError("Batched pose output count differs from source frames")
+        for (key, frame), result in zip(missing.items(), results):
+            self.cache[key] = (DetectionCache.owner(frame), self.records(result))
+        while len(self.cache) > 64:
+            del self.cache[next(iter(self.cache))]
+
+    def poses(self, frame):
+        owner = DetectionCache.owner(frame)
+        key = self.frame_key(frame)
         if key not in self.cache:
             result = self.model.predict(
                 frame,
@@ -59,24 +110,7 @@ class PoseDetector:
                 device=self.device,
                 verbose=False,
             )[0]
-            records = []
-            if result.keypoints is not None:
-                for box, points in zip(
-                    result.boxes.xyxy.cpu().numpy(), result.keypoints.data.cpu().numpy()
-                ):
-                    if (
-                        points.shape != (17, 3)
-                        or not np.isfinite(points).all()
-                        or not np.isfinite(box).all()
-                    ):
-                        continue
-                    records.append(
-                        {
-                            "box": np.asarray(box, dtype=np.float32),
-                            "points": np.asarray(points, dtype=np.float32),
-                        }
-                    )
-            self.cache[key] = (owner, records)
+            self.cache[key] = (owner, self.records(result))
             if len(self.cache) > 64:
                 del self.cache[next(iter(self.cache))]
         return self.cache[key][1]

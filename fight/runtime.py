@@ -119,10 +119,13 @@ class FightRuntime:
         pose_detector=None,
         input_kind="rgb",
         cpu_threads=4,
+        batch_detection=False,
     ):
         if type(cpu_threads) is not int or cpu_threads not in range(1, 9):
             raise ValueError("CPU threads must be between 1 and 8")
         self.cpu_threads = cpu_threads
+        self.batch_detection = batch_detection
+        self.cpu_optimization = "none"
         self.config = config or ClipConfig()
         self.predictor = predictor
         self.detector = detector
@@ -179,6 +182,8 @@ class FightRuntime:
                 self.predictor = torch.jit.load(
                     str(model_path), map_location="cpu"
                 ).eval()
+                self.predictor = torch.jit.freeze(self.predictor)
+                self.cpu_optimization = "frozen"
                 self.gate = EventGate(
                     threshold, threshold * 0.7, **self.metadata.get("event_gate", {})
                 )
@@ -387,3 +392,5 @@ class FightRuntime:
                 model_path=self.models_dir / self.pose_config.model_name,
             )
         self.detector = self.pose_detector
+        if self.batch_detection:
+            self.pose_detector.batch_detection = True

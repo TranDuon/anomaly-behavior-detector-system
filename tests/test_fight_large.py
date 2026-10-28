@@ -241,6 +241,33 @@ def test_live_status_hides_stale_red_prediction(monkeypatch):
     assert processor.runtime.result["state"] == "fighting"
 
 
+def test_status_reports_incomplete_analysis_after_lost_samples():
+    from api.fight_server import FightProcessor
+
+    processor = FightProcessor()
+    assert not processor.status()["analysis_incomplete"]
+    processor.dropped_samples = 1
+    assert processor.status()["analysis_incomplete"]
+
+
+def test_lost_samples_close_old_alert_and_require_a_new_complete_clip():
+    from api.fight_server import FightProcessor
+
+    processor = FightProcessor()
+    processor.runtime = FightRuntime(predictor=BrightModel(), detector=People())
+    processor.runtime.gate.active = True
+    processor.runtime.samples.append(np.zeros((32, 40, 3), np.uint8))
+    processor.runtime.result.update(state="fighting", score=0.99)
+    closed = []
+    processor.finish_event = lambda: closed.append(True)
+    processor.reset_after_sample_loss()
+    assert closed == [True]
+    assert not processor.runtime.gate.active and not processor.runtime.samples
+    assert processor.runtime.result["state"] == "warming_up"
+    assert processor.runtime.result["score"] is None
+    assert "đã mất mẫu" in processor.runtime.result["message"]
+
+
 def test_missing_people_ends_active_alert_without_claiming_normal():
     detector = People()
     runtime = FightRuntime(
@@ -260,8 +287,16 @@ def test_missing_people_ends_active_alert_without_claiming_normal():
     assert not runtime.gate.active
 
 
-def test_processor_uploaded_file_and_paced_camera_replay(tmp_path):
+@pytest.mark.parametrize("predict_delay", [0, 0.32])
+def test_processor_uploaded_file_and_paced_camera_replay(tmp_path, predict_delay):
+    import time
+
     from api.fight_server import FightProcessor
+
+    class DelayedModel(BrightModel):
+        def forward(self, values):
+            time.sleep(predict_delay)
+            return super().forward(values)
 
     source = tmp_path / "recorded.avi"
     writer = cv2.VideoWriter(str(source), cv2.VideoWriter_fourcc(*"MJPG"), 8, (40, 32))
@@ -272,7 +307,7 @@ def test_processor_uploaded_file_and_paced_camera_replay(tmp_path):
     for replay in (False, True):
         processor = FightProcessor()
         processor.runtime = FightRuntime(
-            predictor=BrightModel(),
+            predictor=DelayedModel(),
             config=ClipConfig(frames=4, fps=4, size=16, stride_seconds=0.25),
             detector=People(),
         )
