@@ -37,6 +37,8 @@ Cửa sổ video và sự kiện không phải cùng chỉ số. Precision/recal
 
 Đã tạo danh sách **91 nguồn public chờ duyệt** từ manifest đang có, không chọn bằng điểm model. Chưa có nhãn thời gian được duyệt: preflight hiện chặn training thay vì tự bịa nhãn. Chưa chạy lượt GPU mới và chưa có checkpoint cải thiện mới.
 
+Ngày 28/10/2026 đã chạy notebook CPU với revision `6f5f6a33ca57554e1e8dd9be6613ba14fc4f6c4d`, tạo đủ 91 preview H.264 và [gói review trên Drive](https://drive.google.com/file/d/1vCBijxxj76Cy7mHB7lAfAebbGRuhQTL-/view?usp=drivesdk), 43.632.169 bytes. [Thư mục log/artifact](https://drive.google.com/drive/folders/17LAvACt2MTOdsjieP4xCAPpQB5T8yPwX). Runtime đã tự unassign; không dùng GPU. Gói đã tải về `logs/refinement-review-drive-v1`, đối chiếu checksum đủ 91 preview và kiểm source identity; manifest public gốc cũng đã chép vào thư mục local để import nhãn thuận tiện. Không có source nào tự được duyệt và checkpoint ứng dụng không đổi.
+
 Đối chiếu đầu ra khởi tạo trên mẫu public với đúng checkpoint local đã qua. Đo CPU tại máy này: 4 threads nhanh hơn 1/2 trong microbenchmark; vì vậy giữ mặc định 4, không tuyên bố đã khắc phục độ trễ realtime. Cần tiếp tục đo cả pipeline, hoặc đánh giá model nhẹ hơn nếu CPU vẫn không đáp ứng.
 
 Tham khảo: [fine-tuning MMAction2](https://mmaction2.readthedocs.io/en/latest/user_guides/finetune.html), [định dạng nhãn người/thời điểm của AVA](https://sites.research.google/gr/ava/download/). Dự án hiện dùng pipeline riêng, không tuyên bố đã chuyển sang MMAction2 hoặc đạt kết quả AVA.
