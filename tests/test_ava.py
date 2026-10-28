@@ -23,6 +23,17 @@ def test_ava_class_ids_are_one_indexed_and_not_softmax_or_resigmoided():
     assert actions[0]["fight_hit_person"] == pytest.approx(0.8)
     assert actions[0]["hug_person"] == pytest.approx(0.7)
     assert actions[1]["hand_shake"] == pytest.approx(0.9)
+    predictions[0, 70] = 0.95
+    assert action_scores(predictions)[0]["kick_person"] == pytest.approx(0.95)
+
+
+def test_slowfast_uses_official_32_frame_temporal_subsampling():
+    frames = np.zeros((12, 48, 64, 3), dtype=np.uint8)
+    inputs, boxes = ava_inputs(frames, [[0, 0, 63, 47]], num_frames=32)
+    assert inputs.shape == (1, 3, 32, 256, 341)
+    assert boxes.shape == (1, 5)
+    with pytest.raises(ValueError, match="4/32"):
+        ava_inputs(frames, [[0, 0, 63, 47]], num_frames=16)
 
 
 def test_ava_rejects_invalid_outputs_and_empty_regions():

@@ -1,0 +1,501 @@
+{
+  "schema_version": 1,
+  "scope": "Small repeated-public hit and kick diagnostic, not independent phone acceptance. Hit includes punching/slapping; mixed hit_or_kick intervals do not prove separate subtype recognition.",
+  "source_repository": "https://raw.githubusercontent.com/airtlab/A-Dataset-for-Automatic-Violence-Detection-in-Videos",
+  "source_revision": "1f7747e104301ccaa82ef5a2f6804b51ced1c398",
+  "original_manifest_sha256": "2729886482a2f5b8ad9e4a1344c458ee8878c273ee1e2bbb9a0e54b2e8289dde",
+  "protocol": {
+    "lookback_seconds": 1,
+    "step_seconds": 0.5,
+    "label_anchor_seconds_before_end": 0.5,
+    "private_data_policy": "No private recordings in corpus, calibration, model selection or uploads",
+    "selection": "Threshold on calibration only; checkpoint chosen by development only; test evaluated after selection frozen",
+    "scope_limitations": [
+      "AI-assisted AIRTLab labels",
+      "Only two independent development kick performances; no separate development hit performance",
+      "Only one additional PKU recording, already used for past diagnostics",
+      "No physical-phone kicking test yet"
+    ]
+  },
+  "sources": [
+    {
+      "video": "airtlab/non-violent/cam2/16.mp4",
+      "dataset": "airtlab",
+      "split": "calibration",
+      "group": "airtlab/non-violent/16.mp4",
+      "sha256": "3d81161832093c208a5f1d74f823483e5ee8b6619d729ee63cd7370598f27e5c",
+      "fps": 30,
+      "frames": 159,
+      "repository_path": "violence-detection-dataset/non-violent/cam2/16.mp4",
+      "intervals": [
+        {
+          "start_seconds": 0,
+          "end_seconds": 1.75,
+          "action": "handshake_greet",
+          "label": 0,
+          "review_method": "ai_assisted"
+        },
+        {
+          "start_seconds": 1.75,
+          "end_seconds": 5.3,
+          "action": "hug",
+          "label": 0,
+          "review_method": "ai_assisted"
+        }
+      ]
+    },
+    {
+      "video": "airtlab/non-violent/cam1/17.mp4",
+      "dataset": "airtlab",
+      "split": "development",
+      "group": "airtlab/non-violent/17.mp4",
+      "sha256": "675d1bac717e6307293227850d1afc19c4c49ee999b44a6a76a62e745d5ffde0",
+      "fps": 30,
+      "frames": 231,
+      "repository_path": "violence-detection-dataset/non-violent/cam1/17.mp4",
+      "intervals": [
+        {
+          "start_seconds": 0,
+          "end_seconds": 7.7,
+          "action": "gesture",
+          "label": 0,
+          "review_method": "ai_assisted"
+        }
+      ]
+    },
+    {
+      "video": "airtlab/non-violent/cam1/19.mp4",
+      "dataset": "airtlab",
+      "split": "calibration",
+      "group": "airtlab/non-violent/19.mp4",
+      "sha256": "0a68def5d2f36c0916c6a394a561bcc2789c57d597deafa6e9a752fa613acfad",
+      "fps": 30,
+      "frames": 74,
+      "repository_path": "violence-detection-dataset/non-violent/cam1/19.mp4",
+      "intervals": [
+        {
+          "start_seconds": 0,
+          "end_seconds": 2.46,
+          "action": "handshake_greet",
+          "label": 0,
+          "review_method": "ai_assisted"
+        }
+      ]
+    },
+    {
+      "video": "airtlab/non-violent/cam2/23.mp4",
+      "dataset": "airtlab",
+      "split": "test",
+      "group": "airtlab/non-violent/23.mp4",
+      "sha256": "3a12423874ae10565a8d8df654db70da6964a59f293cc579711346a9ec0306dc",
+      "fps": 30,
+      "frames": 177,
+      "repository_path": "violence-detection-dataset/non-violent/cam2/23.mp4",
+      "intervals": [
+        {
+          "start_seconds": 0,
+          "end_seconds": 0.75,
+          "action": "gesture",
+          "label": 0,
+          "review_method": "ai_assisted"
+        },
+        {
+          "start_seconds": 0.75,
+          "end_seconds": 2.25,
+          "action": "highfive_clap",
+          "label": 0,
+          "review_method": "ai_assisted"
+        },
+        {
+          "start_seconds": 2.25,
+          "end_seconds": 5.9,
+          "action": "gesture",
+          "label": 0,
+          "review_method": "ai_assisted"
+        }
+      ]
+    },
+    {
+      "video": "airtlab/non-violent/cam1/28.mp4",
+      "dataset": "airtlab",
+      "split": "calibration",
+      "group": "airtlab/non-violent/28.mp4",
+      "sha256": "18d8222a2640af12b7e5fcec5154b72c80db8fa244607c5bdb4ac460ee7151bc",
+      "fps": 30,
+      "frames": 141,
+      "repository_path": "violence-detection-dataset/non-violent/cam1/28.mp4",
+      "intervals": [
+        {
+          "start_seconds": 0,
+          "end_seconds": 1,
+          "action": "normal",
+          "label": 0,
+          "review_method": "ai_assisted"
+        },
+        {
+          "start_seconds": 1,
+          "end_seconds": 3.5,
+          "action": "hug",
+          "label": 0,
+          "review_method": "ai_assisted"
+        },
+        {
+          "start_seconds": 3.5,
+          "end_seconds": 4.7,
+          "action": "normal",
+          "label": 0,
+          "review_method": "ai_assisted"
+        }
+      ]
+    },
+    {
+      "video": "airtlab/non-violent/cam2/31.mp4",
+      "dataset": "airtlab",
+      "split": "development",
+      "group": "airtlab/non-violent/31.mp4",
+      "sha256": "57b7ae5cb1e7bb99c58c04e70be620a5afbeb1308d5fadf3afd565209f28f4a3",
+      "fps": 30,
+      "frames": 230,
+      "repository_path": "violence-detection-dataset/non-violent/cam2/31.mp4",
+      "intervals": [
+        {
+          "start_seconds": 0,
+          "end_seconds": 2,
+          "action": "gesture",
+          "label": 0,
+          "review_method": "ai_assisted"
+        },
+        {
+          "start_seconds": 2,
+          "end_seconds": 7.66,
+          "action": "hug",
+          "label": 0,
+          "review_method": "ai_assisted"
+        }
+      ]
+    },
+    {
+      "video": "airtlab/non-violent/cam2/46.mp4",
+      "dataset": "airtlab",
+      "split": "calibration",
+      "group": "airtlab/non-violent/46.mp4",
+      "sha256": "8ce1ae2c7afe12e92167da67a48ff7e541a89376933ee2763bca81a8d32e1ab2",
+      "fps": 30,
+      "frames": 169,
+      "repository_path": "violence-detection-dataset/non-violent/cam2/46.mp4",
+      "intervals": [
+        {
+          "start_seconds": 0,
+          "end_seconds": 0.5,
+          "action": "gesture",
+          "label": 0,
+          "review_method": "ai_assisted"
+        },
+        {
+          "start_seconds": 0.5,
+          "end_seconds": 3.75,
+          "action": "hug",
+          "label": 0,
+          "review_method": "ai_assisted"
+        },
+        {
+          "start_seconds": 3.75,
+          "end_seconds": 5.63,
+          "action": "normal",
+          "label": 0,
+          "review_method": "ai_assisted"
+        }
+      ]
+    },
+    {
+      "video": "airtlab/non-violent/cam2/52.mp4",
+      "dataset": "airtlab",
+      "split": "development",
+      "group": "airtlab/non-violent/52.mp4",
+      "sha256": "0cd5e68b8ca15214b36a2573235d2f14be87755c5d04f79156a4a6da784825f0",
+      "fps": 30,
+      "frames": 119,
+      "repository_path": "violence-detection-dataset/non-violent/cam2/52.mp4",
+      "intervals": [
+        {
+          "start_seconds": 0,
+          "end_seconds": 0.75,
+          "action": "gesture",
+          "label": 0,
+          "review_method": "ai_assisted"
+        },
+        {
+          "start_seconds": 0.75,
+          "end_seconds": 3.5,
+          "action": "hug",
+          "label": 0,
+          "review_method": "ai_assisted"
+        },
+        {
+          "start_seconds": 3.5,
+          "end_seconds": 3.96,
+          "action": "normal",
+          "label": 0,
+          "review_method": "ai_assisted"
+        }
+      ]
+    },
+    {
+      "video": "airtlab/non-violent/cam1/58.mp4",
+      "dataset": "airtlab",
+      "split": "test",
+      "group": "airtlab/non-violent/58.mp4",
+      "sha256": "39f054f0fae35071b40f0314f1bb886c835826ceb8c81525af22d453824a18e1",
+      "fps": 30,
+      "frames": 122,
+      "repository_path": "violence-detection-dataset/non-violent/cam1/58.mp4",
+      "intervals": [
+        {
+          "start_seconds": 0,
+          "end_seconds": 0.5,
+          "action": "normal",
+          "label": 0,
+          "review_method": "ai_assisted"
+        },
+        {
+          "start_seconds": 0.5,
+          "end_seconds": 3.5,
+          "action": "hug",
+          "label": 0,
+          "review_method": "ai_assisted"
+        },
+        {
+          "start_seconds": 3.5,
+          "end_seconds": 4.06,
+          "action": "normal",
+          "label": 0,
+          "review_method": "ai_assisted"
+        }
+      ]
+    },
+    {
+      "video": "airtlab/non-violent/cam2/59.mp4",
+      "dataset": "airtlab",
+      "split": "test",
+      "group": "airtlab/non-violent/59.mp4",
+      "sha256": "4f0e41a4170cd15718faad460b0e578f220ca2a1ac06e6d67e5a16a755a0081a",
+      "fps": 30,
+      "frames": 236,
+      "repository_path": "violence-detection-dataset/non-violent/cam2/59.mp4",
+      "intervals": [
+        {
+          "start_seconds": 0,
+          "end_seconds": 1.5,
+          "action": "gesture",
+          "label": 0,
+          "review_method": "ai_assisted"
+        },
+        {
+          "start_seconds": 1.5,
+          "end_seconds": 4.25,
+          "action": "handshake_greet",
+          "label": 0,
+          "review_method": "ai_assisted"
+        },
+        {
+          "start_seconds": 4.25,
+          "end_seconds": 5,
+          "action": "normal",
+          "label": 0,
+          "review_method": "ai_assisted"
+        },
+        {
+          "start_seconds": 5,
+          "end_seconds": 7.86,
+          "action": "handshake_greet",
+          "label": 0,
+          "review_method": "ai_assisted"
+        }
+      ]
+    },
+    {
+      "video": "airtlab/violent/cam2/101.mp4",
+      "dataset": "airtlab",
+      "split": "test",
+      "group": "airtlab/violent/101.mp4",
+      "sha256": "262a1f6653d237cf4246f64286182f0025e6e28766072ab579fb83c4636589d2",
+      "fps": 30,
+      "frames": 182,
+      "repository_path": "violence-detection-dataset/violent/cam2/101.mp4",
+      "intervals": [
+        {
+          "start_seconds": 0,
+          "end_seconds": 2,
+          "action": "hit",
+          "label": 1,
+          "review_method": "ai_assisted",
+          "evidence_fps": 3
+        },
+        {
+          "start_seconds": 4.75,
+          "end_seconds": 5.75,
+          "action": "hit",
+          "label": 1,
+          "review_method": "ai_assisted",
+          "evidence_fps": 3
+        }
+      ]
+    },
+    {
+      "video": "airtlab/violent/cam1/109.mp4",
+      "dataset": "airtlab",
+      "split": "calibration",
+      "group": "airtlab/violent/109.mp4",
+      "sha256": "14dc2cc4d72c874d292716b07a0244bbb5ece8886f5334b1579ef9438f96e018",
+      "fps": 30,
+      "frames": 102,
+      "repository_path": "violence-detection-dataset/violent/cam1/109.mp4",
+      "intervals": [
+        {
+          "start_seconds": 0.75,
+          "end_seconds": 2.25,
+          "action": "hit",
+          "label": 1,
+          "review_method": "ai_assisted",
+          "evidence_fps": 3
+        }
+      ]
+    },
+    {
+      "video": "airtlab/violent/cam1/48.mp4",
+      "dataset": "airtlab",
+      "split": "development",
+      "group": "airtlab/violent/48.mp4",
+      "sha256": "c1d7988c78362995f10865029041049bf90d5ab3f67c9989f0c804a82e046f72",
+      "fps": 30,
+      "frames": 179,
+      "repository_path": "violence-detection-dataset/violent/cam1/48.mp4",
+      "intervals": [
+        {
+          "start_seconds": 0.6,
+          "end_seconds": 2.4,
+          "action": "kick",
+          "label": 1,
+          "review_method": "ai_assisted",
+          "evidence_fps": 3
+        },
+        {
+          "start_seconds": 4.5,
+          "end_seconds": 5.8,
+          "action": "kick",
+          "label": 1,
+          "review_method": "ai_assisted",
+          "evidence_fps": 3
+        }
+      ]
+    },
+    {
+      "video": "airtlab/violent/cam1/65.mp4",
+      "dataset": "airtlab",
+      "split": "development",
+      "group": "airtlab/violent/65.mp4",
+      "sha256": "62c60fe3b3ff1bf5690d2033569dce44fa4b1098daeae1a72498d9bdd48ceeba",
+      "fps": 30,
+      "frames": 125,
+      "repository_path": "violence-detection-dataset/violent/cam1/65.mp4",
+      "intervals": [
+        {
+          "start_seconds": 0,
+          "end_seconds": 3.5,
+          "action": "kick",
+          "label": 1,
+          "review_method": "ai_assisted",
+          "evidence_fps": 3
+        }
+      ]
+    },
+    {
+      "video": "airtlab/violent/cam1/86.mp4",
+      "dataset": "airtlab",
+      "split": "calibration",
+      "group": "airtlab/violent/86.mp4",
+      "sha256": "0b9e0bc3016f8a5225745d9146597ea24cb2951ec6a9693fe1924414e2c7921a",
+      "fps": 30,
+      "frames": 350,
+      "repository_path": "violence-detection-dataset/violent/cam1/86.mp4",
+      "intervals": [
+        {
+          "start_seconds": 9,
+          "end_seconds": 11.25,
+          "action": "hit_or_kick",
+          "label": 1,
+          "review_method": "ai_assisted",
+          "evidence_fps": 3
+        }
+      ]
+    },
+    {
+      "video": "pku/0360-R",
+      "dataset": "pku",
+      "split": "test",
+      "group": "pku/0360",
+      "fps": 30,
+      "frames": 1339,
+      "sha256": "0fbf547fba27fd0bcf34e27718f79e13d25bf065d5c24d5b144a3ac12a99bb53",
+      "provided_path": "pku/0360-R.avi",
+      "intervals": [
+        {
+          "start_seconds": 3.2666666666666666,
+          "end_seconds": 5.733333333333333,
+          "action": "handshake_greet",
+          "label": 0,
+          "review_method": "publisher_temporal",
+          "action_id": 14
+        },
+        {
+          "start_seconds": 8.666666666666666,
+          "end_seconds": 10.9,
+          "action": "giving",
+          "label": 0,
+          "review_method": "publisher_temporal",
+          "action_id": 12
+        },
+        {
+          "start_seconds": 15.833333333333334,
+          "end_seconds": 17.666666666666668,
+          "action": "pat_back",
+          "label": 0,
+          "review_method": "publisher_temporal",
+          "action_id": 21
+        },
+        {
+          "start_seconds": 19.8,
+          "end_seconds": 22.6,
+          "action": "hug",
+          "label": 0,
+          "review_method": "publisher_temporal",
+          "action_id": 16
+        },
+        {
+          "start_seconds": 25.366666666666667,
+          "end_seconds": 27.533333333333335,
+          "action": "gesture",
+          "label": 0,
+          "review_method": "publisher_temporal",
+          "action_id": 24
+        },
+        {
+          "start_seconds": 29.8,
+          "end_seconds": 31.066666666666666,
+          "action": "kick",
+          "label": 1,
+          "review_method": "publisher_temporal",
+          "action_id": 18
+        },
+        {
+          "start_seconds": 34.766666666666666,
+          "end_seconds": 36.1,
+          "action": "hit",
+          "label": 1,
+          "review_method": "publisher_temporal",
+          "action_id": 26
+        }
+      ]
+    }
+  ]
+}

@@ -16,13 +16,18 @@ AVA_ACTIONS = {
     68: "hand_shake",
     69: "hand_wave",
     70: "hug_person",
+    71: "kick_person",
     73: "lift_person",
     76: "push_person",
 }
 AVA_CHECKPOINT_URL = "https://dl.fbaipublicfiles.com/pytorchvideo/model_zoo/ava/SLOW_4x16_R50_DETECTION.pyth"
+AVA_CHECKPOINTS = {
+    "slow_r50": AVA_CHECKPOINT_URL,
+    "slowfast_r50": "https://dl.fbaipublicfiles.com/pytorchvideo/model_zoo/ava/SLOWFAST_8x8_R50_DETECTION.pyth",
+}
 
 
-def ava_inputs(frames, boxes, short_side=256):
+def ava_inputs(frames, boxes, short_side=256, num_frames=4):
     images = np.asarray(frames)
     if images.ndim != 4 or images.shape[-1] != 3 or images.dtype != np.uint8:
         raise ValueError("Expected nonempty uint8 BGR video frames")
@@ -30,6 +35,8 @@ def ava_inputs(frames, boxes, short_side=256):
         raise ValueError(
             "Official AVA input requires positive dimensions and short side 256"
         )
+    if num_frames not in {4, 32}:
+        raise ValueError("Official AVA Slow/SlowFast requires 4/32 frames")
     proposals = np.asarray(boxes, dtype=np.float32).reshape(-1, 4).copy()
     if not np.isfinite(proposals).all():
         raise ValueError("Finite AVA person proposals required")
@@ -40,7 +47,7 @@ def ava_inputs(frames, boxes, short_side=256):
         (proposals[:, 2] <= proposals[:, 0]) | (proposals[:, 3] <= proposals[:, 1])
     ):
         raise ValueError("Nonempty AVA person proposals required")
-    indices = torch.linspace(0, len(images) - 1, 4).long().numpy()
+    indices = torch.linspace(0, len(images) - 1, num_frames).long().numpy()
     rgb = (
         torch.from_numpy(images[indices, :, :, ::-1].copy()).permute(3, 0, 1, 2).float()
         / 255
@@ -74,18 +81,35 @@ def action_scores(predictions):
 
 
 class AvaPersonActions:
-    def __init__(self, checkpoint):
-        from pytorchvideo.models.hub import slow_r50_detection
+    def __init__(self, checkpoint, variant="slow_r50", device="cpu"):
+        from pytorchvideo.models.hub import slow_r50_detection, slowfast_r50_detection
 
+        if variant not in AVA_CHECKPOINTS:
+            raise ValueError("Unsupported official AVA architecture")
+        self.variant, self.device = variant, device
         checkpoint = Path(checkpoint)
         self.checkpoint_sha256 = hashlib.sha256(checkpoint.read_bytes()).hexdigest()
         weights = torch.load(checkpoint, map_location="cpu", weights_only=True)
-        self.model = slow_r50_detection(pretrained=False).cpu().eval()
+        factory = (
+            slow_r50_detection if variant == "slow_r50" else slowfast_r50_detection
+        )
+        self.model = factory(pretrained=False).eval()
         self.model.load_state_dict(weights["model_state"], strict=True)
+        self.model.to(device)
+
+    def tensors(self, frames, boxes):
+        inputs, proposals = ava_inputs(
+            frames, boxes, num_frames=4 if self.variant == "slow_r50" else 32
+        )
+        inputs, proposals = inputs.to(self.device), proposals.to(self.device)
+        if self.variant == "slowfast_r50":
+            indices = torch.linspace(0, 31, 8, device=inputs.device).long()
+            inputs = [inputs.index_select(2, indices), inputs]
+        return inputs, proposals
 
     def predict(self, frames, boxes):
         if not len(boxes):
             return []
-        inputs, proposals = ava_inputs(frames, boxes)
+        inputs, proposals = self.tensors(frames, boxes)
         with torch.inference_mode():
             return action_scores(self.model(inputs, proposals))
