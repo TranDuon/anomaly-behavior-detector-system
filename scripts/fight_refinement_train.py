@@ -249,7 +249,7 @@ def window_key(row, clip, base_sha, pose_sha, pose_config=None):
         "pose_sha256": pose_sha,
         "base_classifier_sha256": base_sha,
         "motion": asdict(MotionConfig()),
-        "schema": 1,
+        "schema": 2,
     }
     return hashlib.sha256(json.dumps(identity, sort_keys=True).encode()).hexdigest()
 

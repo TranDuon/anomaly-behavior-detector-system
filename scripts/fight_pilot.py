@@ -211,16 +211,26 @@ def read_frames(row, config):
         ).astype(int)
         capture.set(cv2.CAP_PROP_POS_FRAMES, int(positions[0]))
         current = int(positions[0])
+        previous_position = None
+        previous_frame = None
         for position in positions:
+            if position == previous_position:
+                frames.append(previous_frame.copy())
+                continue
             while current < position:
                 if not capture.grab():
-                    raise ValueError("Video ended before the selected clip")
+                    raise ValueError(
+                        f"Video ended before selected frame {position}: {row['path']}"
+                    )
                 current += 1
             ok, frame = capture.read()
             current += 1
             if not ok:
-                raise ValueError("Cannot decode selected clip")
+                raise ValueError(
+                    f"Cannot decode selected frame {position}: {row['path']}"
+                )
             frames.append(frame)
+            previous_position, previous_frame = position, frame
         return frames
     finally:
         capture.release()
