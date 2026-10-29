@@ -23,6 +23,20 @@ SPEC = {
     "color": "RGB",
     "version": 1,
 }
+AUX_VERSION = 2
+AUX_NAMES = (
+    "base_score",
+    "people_fraction",
+    "is_pair",
+    "motion_mean",
+    "motion_peak",
+    "motion_recent",
+    "motion_change",
+    "pair_center_distance",
+    "pair_iou",
+    "region_motion_mean",
+    "region_motion_peak",
+)
 
 
 def digest(path):
@@ -57,9 +71,14 @@ def rgb_inputs(frames, device="cpu"):
     return ((inputs - mean) / std).permute(3, 0, 1, 2).unsqueeze(0), (size[1], size[0])
 
 
+def interaction_candidates(count):
+    candidates = [(index,) for index in range(count)]
+    candidates += list(itertools.combinations(range(count), 2))
+    return candidates
+
+
 def interaction_bag(features, boxes):
-    candidates = [(index,) for index in range(len(features))]
-    candidates += list(itertools.combinations(range(len(features)), 2))
+    candidates = interaction_candidates(len(features))
     values, regions = [], []
     for indices in candidates:
         first = features[indices[0]]
@@ -77,6 +96,73 @@ def interaction_bag(features, boxes):
     return (torch.stack(values) if values else features.new_empty((0, 4096))), regions
 
 
+def fusion_auxiliary(frames, people, base_score, candidates, boxes=None):
+    small = [
+        cv2.resize(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY), (64, 36))
+        for frame in frames
+    ]
+    motion_maps = np.asarray(
+        [
+            np.abs(current.astype(np.float32) - previous.astype(np.float32)) / 255
+            for previous, current in zip(small, small[1:])
+        ],
+        dtype=np.float32,
+    )
+    motion = motion_maps.mean(axis=(1, 2)) if len(motion_maps) else np.empty(0)
+    mean = float(motion.mean()) if len(motion) else 0.0
+    peak = float(motion.max()) if len(motion) else 0.0
+    recent = float(motion[-2:].mean()) if len(motion) else 0.0
+    early = float(motion[:2].mean()) if len(motion) else 0.0
+    boxes = np.asarray(boxes, dtype=np.float32) if boxes is not None else None
+    source_height, source_width = frames[0].shape[:2]
+    values = []
+    for indices in candidates:
+        pair_distance = pair_iou = 0.0
+        region_mean, region_peak = mean, peak
+        if boxes is not None and len(boxes) > max(indices):
+            selected = boxes[list(indices)]
+            left, top = selected[:, :2].min(axis=0)
+            right, bottom = selected[:, 2:].max(axis=0)
+            x1 = max(0, min(63, int(np.floor(left * 64 / source_width))))
+            y1 = max(0, min(35, int(np.floor(top * 36 / source_height))))
+            x2 = max(x1 + 1, min(64, int(np.ceil(right * 64 / source_width))))
+            y2 = max(y1 + 1, min(36, int(np.ceil(bottom * 36 / source_height))))
+            region_motion = motion_maps[:, y1:y2, x1:x2]
+            if region_motion.size:
+                per_frame = region_motion.mean(axis=(1, 2))
+                region_mean = float(per_frame.mean())
+                region_peak = float(per_frame.max())
+            if len(indices) == 2:
+                first, second = selected
+                centers = (selected[:, :2] + selected[:, 2:]) / 2
+                heights = (selected[:, 3] - selected[:, 1]).clip(min=1)
+                pair_distance = min(
+                    1.0, float(np.linalg.norm(centers[0] - centers[1]) / heights.mean() / 3)
+                )
+                intersection = max(0, min(first[2], second[2]) - max(first[0], second[0])) * max(
+                    0, min(first[3], second[3]) - max(first[1], second[1])
+                )
+                first_area = max(0, first[2] - first[0]) * max(0, first[3] - first[1])
+                second_area = max(0, second[2] - second[0]) * max(0, second[3] - second[1])
+                pair_iou = float(intersection / max(first_area + second_area - intersection, 1))
+        values.append(
+            (
+                float(base_score),
+                min(1.0, people / 6),
+                float(len(indices) == 2),
+                mean,
+                peak,
+                recent,
+                recent - early,
+                pair_distance,
+                pair_iou,
+                region_mean,
+                region_peak,
+            )
+        )
+    return np.asarray(values, dtype=np.float32).reshape(-1, len(AUX_NAMES))
+
+
 class InteractionHead(nn.Module):
     def __init__(self):
         super().__init__()
@@ -90,6 +176,28 @@ class InteractionHead(nn.Module):
         return self.layers(
             ((features - self.mean) / self.std.clamp_min(0.05)).clamp(-12, 12)
         ).flatten()
+
+
+class InteractionHeadV2(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.register_buffer("mean", torch.zeros(4096))
+        self.register_buffer("std", torch.ones(4096))
+        self.register_buffer("aux_mean", torch.zeros(len(AUX_NAMES)))
+        self.register_buffer("aux_std", torch.ones(len(AUX_NAMES)))
+        self.layers = nn.Sequential(
+            nn.Linear(4096 + len(AUX_NAMES), 192),
+            nn.ReLU(),
+            nn.Dropout(0.35),
+            nn.Linear(192, 1),
+        )
+
+    def forward(self, features, auxiliary):
+        visual = ((features - self.mean) / self.std.clamp_min(0.05)).clamp(-12, 12)
+        context = (
+            (auxiliary - self.aux_mean) / self.aux_std.clamp_min(0.01)
+        ).clamp(-12, 12)
+        return self.layers(torch.cat((visual, context), dim=1)).flatten()
 
 
 class ActionEngine:
@@ -130,6 +238,7 @@ class ActionEngine:
             int(line.split(": ", 1)[0]): line.split(": ", 1)[1] for line in lines
         }
         self.head = None
+        self.head_version = 0
         self.metadata = {
             "threshold": 0.4,
             "confirm_seconds": 0.4,
@@ -149,7 +258,15 @@ class ActionEngine:
                 raise ValueError(
                     "Fine-tuned branch/source/preprocessing fingerprint mismatch"
                 )
-            self.head = InteractionHead().to(device)
+            self.head_version = int(metadata.get("head_version", 1))
+            if self.head_version not in {1, 2} or (
+                self.head_version == 2
+                and metadata.get("aux_version") != AUX_VERSION
+            ):
+                raise ValueError("Unsupported interaction head version")
+            self.head = (
+                InteractionHeadV2() if self.head_version == 2 else InteractionHead()
+            ).to(device)
             self.head.load_state_dict(
                 torch.load(
                     self.weights / "interaction.pt",
@@ -162,7 +279,7 @@ class ActionEngine:
             self.metadata = metadata
 
     @torch.inference_mode()
-    def extract(self, frames):
+    def extract_features(self, frames):
         from mmdet.apis import inference_detector
 
         inputs, shape = rgb_inputs(frames, self.device)
@@ -172,13 +289,17 @@ class ActionEngine:
         order = selected.scores.argsort(descending=True)[:6]
         boxes = selected.bboxes[order].detach().cpu().numpy()
         if not len(boxes):
-            return np.empty((0, 4096), np.float32), {
+            return (
+                np.empty((0, 4096), np.float32),
+                np.empty((0, len(AUX_NAMES)), np.float32),
+                {
                 "people": 0,
                 "person_boxes": [],
                 "actions": [],
                 "base_score": 0.0,
                 "candidate_regions": [],
-            }
+                },
+            )
         scaled = torch.as_tensor(boxes, device=self.device).clone()
         scaled[:, [0, 2]] *= shape[1] / frames[0].shape[1]
         scaled[:, [1, 3]] *= shape[0] / frames[0].shape[0]
@@ -190,6 +311,7 @@ class ActionEngine:
         )
         scores = result["cls_score"].sigmoid().cpu().numpy()
         features = result["bbox_feats"].mean(dim=(2, 3, 4))
+        candidates = interaction_candidates(len(features))
         bag, regions = interaction_bag(features, boxes)
         actions = []
         for box, values in zip(boxes, scores):
@@ -205,23 +327,46 @@ class ActionEngine:
                     "fight_score": float(values[64]),
                 }
             )
-        return bag.cpu().numpy(), {
+        base_score = float(scores[:, 64].max())
+        auxiliary = fusion_auxiliary(
+            frames, len(boxes), base_score, candidates, boxes=boxes
+        )
+        return bag.cpu().numpy(), auxiliary, {
             "people": len(boxes),
             "person_boxes": boxes.tolist(),
             "actions": actions,
-            "base_score": float(scores[:, 64].max()),
+            "base_score": base_score,
             "candidate_regions": regions,
         }
 
+    def extract(self, frames):
+        bag, _, output = self.extract_features(frames)
+        return bag, output
+
     @torch.inference_mode()
     def infer(self, frames):
-        bag, output = self.extract(frames)
+        bag, auxiliary, output = self.extract_features(frames)
         score = output["base_score"]
         regions = output["person_boxes"]
         if self.head is not None and len(bag):
+            features = torch.from_numpy(bag).to(self.device)
             scores = (
-                self.head(torch.from_numpy(bag).to(self.device)).sigmoid().cpu().numpy()
+                (
+                    self.head(
+                        features, torch.from_numpy(auxiliary).to(self.device)
+                    )
+                    if self.head_version == 2
+                    else self.head(features)
+                )
+                .sigmoid()
+                .cpu()
+                .numpy()
             )
             index = int(scores.argmax())
             score, regions = float(scores[index]), [output["candidate_regions"][index]]
+            if self.head_version == 2:
+                output["fusion_context"] = {
+                    name: float(value)
+                    for name, value in zip(AUX_NAMES, auxiliary[index])
+                }
         return {**output, "score": score, "regions": regions}

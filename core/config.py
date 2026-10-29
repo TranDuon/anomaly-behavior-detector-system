@@ -76,7 +76,7 @@ class Settings(BaseSettings):
     # ── API ────────────────────────────────────────────────────────────────
     api_host: str = "0.0.0.0"
     api_port: int = 8000
-    stream_fps_cap: int = 25               # max FPS sent over MJPEG stream
+    stream_fps_cap: int = 30               # max FPS sent over MJPEG stream
     jpeg_quality: int = 85
 
     # ── Visualisation ──────────────────────────────────────────────────────

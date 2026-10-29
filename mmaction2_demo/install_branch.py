@@ -10,7 +10,15 @@ import zipfile
 
 import torch
 
-from action_engine import InteractionHead, ROOT, SOURCE_SHA, SPEC, digest
+from action_engine import (
+    AUX_VERSION,
+    InteractionHead,
+    InteractionHeadV2,
+    ROOT,
+    SOURCE_SHA,
+    SPEC,
+    digest,
+)
 
 
 def main():
@@ -39,7 +47,17 @@ def main():
             or not 0 < metadata["threshold"] < 1
         ):
             raise ValueError("Unexpected data policy or threshold")
-        head = InteractionHead()
+        head_version = int(metadata.get("head_version", 1))
+        if head_version not in {1, 2} or (
+            head_version == 2 and metadata.get("aux_version") != AUX_VERSION
+        ):
+            raise ValueError("Unsupported interaction head version")
+        if (
+            head_version == 2
+            and metadata.get("operating_point_feasible") is not True
+        ):
+            raise ValueError("Fusion v2 calibration gate did not pass")
+        head = InteractionHeadV2() if head_version == 2 else InteractionHead()
         head.load_state_dict(
             torch.load(
                 staging / "interaction.pt", map_location="cpu", weights_only=True
