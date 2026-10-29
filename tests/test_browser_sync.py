@@ -62,6 +62,25 @@ def test_ui_file_change_changes_the_revision_used_by_reload_guard(
     assert after in server.frontend().body.decode()
 
 
+def test_start_keeps_events_in_separate_sessions(monkeypatch):
+    import api.fight_server as server
+
+    runtime = SimpleNamespace(model_ready=True, warmup=lambda: None)
+    monkeypatch.setattr(server, "FightRuntime", lambda *args, **kwargs: runtime)
+    processor = server.FightProcessor()
+    monkeypatch.setattr(processor, "run", lambda source: None)
+    processor.events = [{"id": "old"}]
+    processor.start("first")
+    processor.thread.join()
+    first_id = processor.session_id
+    assert processor.events == []
+    processor.events.append({"id": "first-event"})
+    processor.start("second")
+    processor.thread.join()
+    assert processor.session_id != first_id
+    assert processor.events == []
+
+
 def test_rejected_start_from_another_tab_does_not_stop_or_replace_active_model(
     monkeypatch,
 ):

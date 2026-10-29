@@ -1,0 +1,19 @@
+{
+  "source_sha256": "163785949c5178484012a6593d12d6fcf4d36be404fa42b5899b314e91f4703b",
+  "engine_sha256": "3e6c99b92473df5cd24ad1421c58cd1aa97d8ce8804ed8fa76bae0c05311b4d6",
+  "manifest_sha256": "81064990f6c36a165f6716f635313e4402e80554392d7c884131223a5fae5f9e",
+  "spec": {
+    "sample_fps": 3.75,
+    "buffer_frames": 9,
+    "model_frames": 8,
+    "keyframe_index": 4,
+    "short_side": 256,
+    "decision_stride_seconds": 0.5333333333333333,
+    "color": "RGB",
+    "version": 1
+  },
+  "threshold": 0.029518365463677865,
+  "confirm_seconds": 0.4,
+  "approved_for_demo": false,
+  "scope": "Repeated-public pilot calibration only; no private camera data or training; test not used for selection"
+}
