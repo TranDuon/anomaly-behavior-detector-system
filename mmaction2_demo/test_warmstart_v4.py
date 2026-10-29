@@ -66,6 +66,7 @@ def test_tiny_training_bundle_and_frozen_resume(tmp_path, monkeypatch):
     write(manifest, {"schema_version": 2, "scope_profile": "indoor_room_fight_v2",
                      "readiness": "ready", "sources": sources})
     write(paths["pack"] / "PACKAGE.json", {"manifest_sha256": digest(manifest)})
+    (paths["pack"] / "manifest.json").write_bytes(manifest.read_bytes())
     monkeypatch.setattr(trainer, "ActionEngine", lambda **kw: object())
     monkeypatch.setattr(trainer, "cache_sources", lambda engine, sources, *args:
                         [r for r in cached_rows if r["video"] in {s["video"] for s in sources}])

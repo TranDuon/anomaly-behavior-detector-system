@@ -12,6 +12,11 @@ Nếu checkpoint nằm cạnh gói indoor, notebook tự dùng bản đó khi đ
 Notebook kiểm hash checkpoint, metadata và manifest trong gói trước khi train. Trọng số
 AVA/detector chính thức được kiểm SHA-256 và lưu lại trên Drive để dùng lần sau.
 
+Manifest trong ZIP được kiểm SHA-256 với `PACKAGE.json`, sau đó đối chiếu nội dung
+JSON với source. Khác xuống dòng CRLF/LF hoặc cách trình bày JSON vẫn hợp lệ;
+đổi nhãn, media hoặc split vẫn bị chặn. Không cần upload lại gói dữ liệu chỉ vì
+GitHub chuẩn hóa ký tự xuống dòng của Windows.
+
 ## Điểm khác so với refinement v3
 
 V4 cập nhật trực tiếp trọng số head tương tác đã học trong `interaction.pt`.

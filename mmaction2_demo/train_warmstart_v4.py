@@ -21,6 +21,8 @@ import numpy as np
 import torch
 from sklearn.metrics import roc_auc_score
 
+from scripts.manifest_identity import validate_pack_manifest
+
 from action_engine import (
     AUX_NAMES, AUX_VERSION, SOURCE_SHA, PERSON_SHA, SPEC, ROOT,
     ActionEngine, InteractionHead, InteractionHeadV2, digest,
@@ -165,8 +167,9 @@ def run(args):
     corpus = json.loads(args.manifest.read_text(encoding="utf-8"))
     validate_indoor_corpus(corpus)
     package_meta = json.loads((args.pack / "PACKAGE.json").read_text(encoding="utf-8"))
-    if package_meta["manifest_sha256"] != digest(args.manifest):
-        raise ValueError("Drive pack and repository manifest differ")
+    manifest_identity = validate_pack_manifest(
+        args.manifest, (args.pack / "manifest.json").read_bytes(), package_meta
+    )
     base = args.weights / "interaction.pt"
     metadata = json.loads((args.weights / "interaction.json").read_text(encoding="utf-8"))
     if (metadata["checkpoint_sha256"] != digest(base)
@@ -185,6 +188,7 @@ def run(args):
         "seed": 42, "lr": args.lr, "max_epochs": args.epochs, "patience": 20,
         "training_mode": "Warm-start existing interaction weights; frozen AVA/detector; indoor hard-negative mining",
         "private_data_used": False,
+        "pack_manifest_identity": manifest_identity,
     }
     protocol_path = args.output / "protocol.json"
     if protocol_path.exists() and json.loads(protocol_path.read_text()) != protocol:
