@@ -200,8 +200,37 @@ class InteractionHeadV2(nn.Module):
         return self.layers(torch.cat((visual, context), dim=1)).flatten()
 
 
+class TunedRefinementHead(nn.Module):
+    """Calibrate the installed v1/v2 interaction head against indoor hard negatives."""
+
+    def __init__(self):
+        super().__init__()
+        self.register_buffer("mean", torch.zeros(4096))
+        self.register_buffer("std", torch.ones(4096))
+        self.register_buffer("aux_mean", torch.zeros(len(AUX_NAMES)))
+        self.register_buffer("aux_std", torch.ones(len(AUX_NAMES)))
+        self.register_buffer("prior_mean", torch.zeros(1))
+        self.register_buffer("prior_std", torch.ones(1))
+        self.layers = nn.Sequential(
+            nn.Linear(4096 + len(AUX_NAMES) + 1, 192),
+            nn.ReLU(),
+            nn.Dropout(0.35),
+            nn.Linear(192, 1),
+        )
+
+    def forward(self, features, auxiliary, prior):
+        visual = ((features - self.mean) / self.std.clamp_min(0.05)).clamp(-12, 12)
+        context = ((auxiliary - self.aux_mean) / self.aux_std.clamp_min(0.01)).clamp(
+            -12, 12
+        )
+        prior = ((prior.reshape(-1, 1) - self.prior_mean) / self.prior_std.clamp_min(0.01)).clamp(
+            -12, 12
+        )
+        return self.layers(torch.cat((visual, context, prior), dim=1)).flatten()
+
+
 class ActionEngine:
-    def __init__(self, weights=None, device="cuda:0", tuned=False):
+    def __init__(self, weights=None, device="cuda:0", tuned=False, refined=False):
         from mmengine import Config
         from mmaction.utils import register_all_modules
         from mmdet.apis import init_detector
@@ -238,6 +267,7 @@ class ActionEngine:
             int(line.split(": ", 1)[0]): line.split(": ", 1)[1] for line in lines
         }
         self.head = None
+        self.refinement = None
         self.head_version = 0
         self.metadata = {
             "threshold": 0.4,
@@ -247,6 +277,8 @@ class ActionEngine:
             "spec": SPEC,
             "scope": "Original AVA action scores; not a calibrated violence classifier",
         }
+        if refined and not tuned:
+            raise ValueError("A refinement head requires the fine-tuned branch")
         if tuned:
             metadata = json.loads((self.weights / "interaction.json").read_text())
             if (
@@ -277,6 +309,39 @@ class ActionEngine:
             )
             self.head.eval()
             self.metadata = metadata
+        if refined:
+            refinement_path = self.weights / "interaction_refined.pt"
+            refinement_metadata_path = self.weights / "interaction_refined.json"
+            refinement_metadata = json.loads(refinement_metadata_path.read_text())
+            if (
+                refinement_metadata.get("source_sha256") != SOURCE_SHA
+                or refinement_metadata.get("spec") != SPEC
+                or refinement_metadata.get("aux_version") != AUX_VERSION
+                or refinement_metadata.get("base_checkpoint_sha256")
+                != digest(self.weights / "interaction.pt")
+                or refinement_metadata.get("checkpoint_sha256") != digest(refinement_path)
+            ):
+                raise ValueError("Fine-tuned refinement/source fingerprint mismatch")
+            self.refinement = TunedRefinementHead().to(device)
+            self.refinement.load_state_dict(
+                torch.load(refinement_path, map_location=device, weights_only=True),
+                strict=True,
+            )
+            self.refinement.eval()
+            self.metadata = refinement_metadata
+
+    @torch.inference_mode()
+    def tuned_scores(self, bag, auxiliary):
+        if self.head is None:
+            raise ValueError("Fine-tuned interaction head is required")
+        features = torch.from_numpy(bag).to(self.device)
+        context = torch.from_numpy(auxiliary).to(self.device)
+        logits = (
+            self.head(features, context)
+            if self.head_version == 2
+            else self.head(features)
+        )
+        return logits.sigmoid().cpu().numpy()
 
     @torch.inference_mode()
     def extract_features(self, frames):
@@ -350,7 +415,7 @@ class ActionEngine:
         regions = output["person_boxes"]
         if self.head is not None and len(bag):
             features = torch.from_numpy(bag).to(self.device)
-            scores = (
+            prior = (
                 (
                     self.head(
                         features, torch.from_numpy(auxiliary).to(self.device)
@@ -362,6 +427,18 @@ class ActionEngine:
                 .cpu()
                 .numpy()
             )
+            scores = prior
+            if self.refinement is not None:
+                scores = (
+                    self.refinement(
+                        features,
+                        torch.from_numpy(auxiliary).to(self.device),
+                        torch.from_numpy(prior).to(self.device),
+                    )
+                    .sigmoid()
+                    .cpu()
+                    .numpy()
+                )
             index = int(scores.argmax())
             score, regions = float(scores[index]), [output["candidate_regions"][index]]
             if self.head_version == 2:
@@ -369,4 +446,6 @@ class ActionEngine:
                     name: float(value)
                     for name, value in zip(AUX_NAMES, auxiliary[index])
                 }
+            if self.refinement is not None:
+                output["legacy_tuned_score"] = float(prior[index])
         return {**output, "score": score, "regions": regions}

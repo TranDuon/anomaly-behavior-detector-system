@@ -200,7 +200,12 @@ class FightProcessor:
                 raise RuntimeError(
                     "Phiên ghi trước chưa kết thúc; hãy Dừng/chờ hoàn tất rồi thử lại."
                 )
-            if backend not in {"legacy", "mmaction_original", "mmaction_tuned"}:
+            if backend not in {
+                "legacy",
+                "mmaction_original",
+                "mmaction_tuned",
+                "mmaction_tuned_refined",
+            }:
                 raise ValueError("Model không hợp lệ.")
             if backend == "legacy":
                 candidate = FightRuntime(
@@ -213,7 +218,9 @@ class FightProcessor:
                 from fight.mmaction_runtime import MMActionRuntime
 
                 candidate = MMActionRuntime(
-                    tuned=backend == "mmaction_tuned", allow_pilot=allow_pilot
+                    tuned=backend in {"mmaction_tuned", "mmaction_tuned_refined"},
+                    refined=backend == "mmaction_tuned_refined",
+                    allow_pilot=allow_pilot,
                 )
             if not candidate.model_ready and not preview:
                 raise ValueError(candidate.message)

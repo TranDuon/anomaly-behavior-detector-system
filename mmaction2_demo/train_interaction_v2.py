@@ -29,7 +29,6 @@ from action_engine import (
 )
 from train_interaction import (
     annotation_at,
-    development_rank,
     event_metrics,
     metrics,
     public_frames,
@@ -304,6 +303,34 @@ def hard_negative_report(rows, values, threshold):
     return report
 
 
+def require_both_classes(rows, purpose):
+    labels = {row["label"] for row in rows if row["label"] is not None}
+    if labels != {0, 1}:
+        raise ValueError(f"{purpose} requires both reviewed classes; found {sorted(labels)}")
+
+
+def development_rank(rows, values):
+    """Rank the weakest evaluable indoor dataset, never an obsolete RLVS cohort."""
+    cohorts = []
+    for dataset in sorted({row["dataset"] for row in rows}):
+        selected = [
+            (row, score)
+            for row, score in zip(rows, values)
+            if row["dataset"] == dataset and row["label"] is not None
+        ]
+        if {row["label"] for row, _ in selected} == {0, 1}:
+            cohorts.append(
+                metrics(
+                    [row for row, _ in selected],
+                    [score for _, score in selected],
+                    0.5,
+                )["ap"]
+            )
+    if not cohorts:
+        raise ValueError("Development split has no indoor dataset with both reviewed classes")
+    return min(cohorts)
+
+
 def train_loss(head, row):
     logits = head(row["bag"], row["aux"])
     target = logits.new_tensor(float(row["label"]))
@@ -363,6 +390,8 @@ def run(args):
     ]
     if {row["label"] for row in training} != {0, 1}:
         raise ValueError("Training requires both classes with person coverage")
+    require_both_classes(partitions["development"], "Development split")
+    require_both_classes(partitions["calibration"], "Calibration split")
 
     head = InteractionHeadV2().to(args.device)
     head.mean.copy_(torch.cat([row["bag"] for row in training]).mean(0))

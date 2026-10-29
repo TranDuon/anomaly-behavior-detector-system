@@ -8,7 +8,9 @@
 .\run_local.cmd
 ```
 
-Mở http://localhost:8000. Chưa có checkpoint đánh nhau mới vẫn xem được giao diện và preview camera. LSTM Ped2 và các luật chạy nhanh/lảng vảng cũ không được dùng làm fallback.
+ Mở http://localhost:8000. Chưa có checkpoint đánh nhau mới vẫn xem được giao diện và preview camera. LSTM Ped2 và các luật chạy nhanh/lảng vảng cũ không được dùng làm fallback.
+
+MMAction2: dùng [notebook hiệu chỉnh checkpoint fine-tuned](https://colab.research.google.com/github/TranDuon/anomaly-behavior-detector-system/blob/main/colab/mmaction_tuned_refinement_drive.ipynb) khi nhánh fine-tuned báo đỏ lúc hai người đến gần. Notebook giữ nguyên checkpoint cũ, tạo một head refinement riêng từ dữ liệu indoor AIRTLab + SBU, và xuất ZIP để cài thành lựa chọn `MMAction2 fine-tuned + hiệu chỉnh indoor` trên web.
 
 ## Thử phương pháp trước khi train lớn
 

@@ -25,7 +25,13 @@ Video camera riêng không được tải lên Drive hoặc đưa vào train. Ch
 4. Notebook tái sử dụng cache v1 nếu có, bổ sung tín hiệu v2 rồi lưu cache tại `SENTINEL/artifacts/mmaction_interaction_v2/feature_cache.zip`. Mỗi revision có thư mục riêng tại `SENTINEL/artifacts/mmaction_interaction_v2/runs/<git-sha>/`.
 5. Tải `mmaction_interaction_v2_pilot.zip` từ thư mục run đã hoàn tất. Chỉ cài nếu có `report.json` và calibration đạt gate.
 
-Gói dữ liệu hiện đã tạo: 512 video indoor (AIRTLab 230, SBU 282), chia theo nhóm nguồn thành train 401, development 36, calibration 37 và test 38; 209 nguồn fight, 52 nguồn có pre-fight context và 0 mục quarantine. Các mốc pre-fight của AIRTLab có AI hỗ trợ, chưa phải nhãn human-gold; xem `DATASET_SOURCES.md` trong ZIP và rà các đoạn này trước khi kết luận chất lượng model. ZIP không nằm trong Git; tải lên Drive thủ công từ đường dẫn ở bước 1.
+Gói dữ liệu hiện đã tạo: 512 video indoor (AIRTLab 230, SBU 282), chia theo nhóm nguồn có phân tầng thành train 311, development 77, calibration 74 và test 50. Mỗi dataset trong development, calibration và test đều có cả fight và non-fight; điều này tránh lỗi chọn checkpoint khi một cohort chỉ chứa một lớp. Gói có 209 nguồn fight, 52 nguồn có pre-fight context và 0 mục quarantine. Các mốc pre-fight của AIRTLab có AI hỗ trợ, chưa phải nhãn human-gold; xem `DATASET_SOURCES.md` trong ZIP và rà các đoạn này trước khi kết luận chất lượng model. ZIP không nằm trong Git; tải lên Drive thủ công từ đường dẫn ở bước 1.
+
+## Nâng cấp checkpoint fine-tuned đã có
+
+Khi checkpoint `mmaction_interaction_pilot.zip` đã nằm tại `SENTINEL/artifacts/mmaction_interaction_v1/` trên Drive, chạy [notebook refinement v3](../colab/mmaction_tuned_refinement_drive.ipynb). Notebook tạo cache riêng bằng chính head fine-tuned hiện có, rồi train `interaction_refined.pt` với các hard-negative indoor. Kết quả nằm ở `SENTINEL/artifacts/mmaction_tuned_refinement_v3/runs/<git-sha>/mmaction_tuned_refinement_v3_pilot.zip`.
+
+Cài ZIP v3 bằng `mmaction2_demo/install_branch.cmd`, sau đó chọn **MMAction2 fine-tuned + hiệu chỉnh indoor** trên web. Nhánh fine-tuned cũ vẫn giữ nguyên để so sánh; installer chỉ thay `interaction_refined.pt` và metadata tương ứng.
 
 Không cài checkpoint nếu run thiếu `report.json` hoặc calibration chưa đạt mục tiêu. Báo cáo khóa các điều kiện ban đầu: precision tối thiểu 0,75, recall tối thiểu 0,60 và false-positive rate tối đa 0,10 trên calibration. Đây là gate kỹ thuật, không phải bằng chứng model đã đạt chất lượng triển khai thực tế.
 

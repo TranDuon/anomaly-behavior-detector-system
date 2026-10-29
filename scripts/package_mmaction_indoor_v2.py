@@ -90,11 +90,43 @@ def video_duration(path):
     return frames / fps
 
 
-def assigned_split(group):
-    bucket = int(hashlib.sha256(group.encode()).hexdigest()[:8], 16) % 10
-    if bucket < 7:
-        return "train"
-    return ("development", "calibration", "test")[bucket - 7]
+def assign_stratified_splits(records):
+    """Keep camera/performance groups together while giving every split both labels.
+
+    AIRTLab performances are either violent or non-violent, so assigning them with
+    one hash stream can accidentally leave a small evaluation split with one class.
+    SBU performance pairs contain several action classes and are assigned by pair.
+    """
+    groups = {}
+    for record in records:
+        groups.setdefault(record["group"], []).append(record)
+    strata = {}
+    for group, members in groups.items():
+        dataset = members[0]["dataset"]
+        labels = {member["source_label"] for member in members}
+        label = next(iter(labels)) if dataset == "airtlab" and len(labels) == 1 else "mixed"
+        strata.setdefault((dataset, label), []).append(group)
+    for _, names in strata.items():
+        ordered = sorted(names, key=lambda name: hashlib.sha256(name.encode()).hexdigest())
+        count = len(ordered)
+        train = round(count * 0.60)
+        development = round(count * 0.15)
+        calibration = round(count * 0.15)
+        # Every stratum in this package has at least four performance groups.
+        cuts = (train, train + development, train + development + calibration)
+        for index, group in enumerate(ordered):
+            split = (
+                "train"
+                if index < cuts[0]
+                else "development"
+                if index < cuts[1]
+                else "calibration"
+                if index < cuts[2]
+                else "test"
+            )
+            for record in groups[group]:
+                record["split"] = split
+    return records
 
 
 def read_tags(path):
@@ -238,7 +270,6 @@ def airtlab_sources(root, output):
                     "normal",
                 )
             group = f"airtlab/{label}/{clip_id}.mp4"
-            split = assigned_split(group)
             for camera in ("cam1", "cam2"):
                 source = base / label / camera / f"{clip_id}.mp4"
                 if not source.is_file():
@@ -257,7 +288,7 @@ def airtlab_sources(root, output):
                     ]
                     method = "ai_assisted_contact_sheet"
                 records.append(
-                    source_record(video, "airtlab", group, source, target, split, action, method, intervals)
+                    source_record(video, "airtlab", group, source, target, "train", action, method, intervals)
                 )
     return records
 
@@ -266,7 +297,6 @@ def sbu_sources(root, output):
     records = []
     pairs = sorted(path for path in root.iterdir() if path.is_dir() and path.name.startswith("s"))
     for pair in pairs:
-        split = assigned_split("sbu/" + pair.name)
         for action_dir in sorted(path for path in pair.iterdir() if path.is_dir()):
             action = SBU_ACTIONS.get(action_dir.name)
             if action is None:
@@ -285,7 +315,7 @@ def sbu_sources(root, output):
                         "sbu/" + pair.name,
                         take / "skeleton_pos.txt",
                         target,
-                        split,
+                        "train",
                         action,
                         "publisher_action_class",
                     )
@@ -312,7 +342,9 @@ def main():
     parser.add_argument("--archive", type=Path, required=True)
     args = parser.parse_args()
     (args.pack / "media").mkdir(parents=True, exist_ok=True)
-    sources = airtlab_sources(args.airtlab, args.pack) + sbu_sources(args.sbu, args.pack)
+    sources = assign_stratified_splits(
+        airtlab_sources(args.airtlab, args.pack) + sbu_sources(args.sbu, args.pack)
+    )
     manifest, quarantine = build({"sources": sources})
     write(args.manifest, manifest)
     write(args.quarantine, {"items": quarantine})

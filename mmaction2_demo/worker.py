@@ -20,7 +20,10 @@ def reply(value):
 def main():
     torch.set_num_threads(4)
     with contextlib.redirect_stdout(sys.stderr):
-        engine = ActionEngine(tuned="--tuned" in sys.argv)
+        engine = ActionEngine(
+            tuned="--tuned" in sys.argv or "--refined" in sys.argv,
+            refined="--refined" in sys.argv,
+        )
     reply({"ready": True, "metadata": engine.metadata})
     for line in sys.stdin:
         try:
