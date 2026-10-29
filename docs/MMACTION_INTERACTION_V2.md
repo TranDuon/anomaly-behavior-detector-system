@@ -29,6 +29,8 @@ Gói dữ liệu hiện đã tạo: 512 video indoor (AIRTLab 230, SBU 282), chi
 
 ## Nâng cấp checkpoint fine-tuned đã có
 
+Để **tiếp tục cập nhật trọng số checkpoint cũ** với hard negatives và có checkpoint/resume mỗi epoch, dùng [notebook warm-start v4](../colab/mmaction_warmstart_drive.ipynb) và [hướng dẫn v4](MMACTION_WARMSTART_V4.md). Nhánh v3 dưới đây giữ head cũ cố định và học một head hiệu chỉnh riêng.
+
 Khi checkpoint `mmaction_interaction_pilot.zip` đã nằm tại `SENTINEL/artifacts/mmaction_interaction_v1/` trên Drive, chạy [notebook refinement v3](../colab/mmaction_tuned_refinement_drive.ipynb). Notebook tạo cache riêng bằng chính head fine-tuned hiện có, rồi train `interaction_refined.pt` với các hard-negative indoor. Kết quả nằm ở `SENTINEL/artifacts/mmaction_tuned_refinement_v3/runs/<git-sha>/mmaction_tuned_refinement_v3_pilot.zip`.
 
 Cài ZIP v3 bằng `mmaction2_demo/install_branch.cmd`, sau đó chọn **MMAction2 fine-tuned + hiệu chỉnh indoor** trên web. Nhánh fine-tuned cũ vẫn giữ nguyên để so sánh; installer chỉ thay `interaction_refined.pt` và metadata tương ứng.
