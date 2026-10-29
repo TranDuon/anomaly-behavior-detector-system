@@ -91,6 +91,7 @@ class SessionRecording:
                             "regions",
                             "actions",
                             "base_score",
+                            "fusion_context",
                             "inference_seconds",
                             "message",
                         )

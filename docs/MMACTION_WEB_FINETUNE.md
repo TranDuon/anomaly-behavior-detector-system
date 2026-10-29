@@ -1,5 +1,7 @@
 # MMAction2 web and interaction fine-tuning
 
+> The current retraining path is [MMAction2 Interaction Fusion v2](MMACTION_INTERACTION_V2.md). The v1 process below remains for reproducibility and is no longer the preferred path for a new checkpoint.
+
 The CPU FightWatch runtime remains the default. The web selector adds an isolated GPU MMAction2 original runtime and an optional trained interaction branch. Python 3.13/CPU web code never imports MMCV; file-backed local IPC calls the separate Python 3.10/CUDA environment. Both uploaded files and live camera samples use this same runtime, timestamp sampling and event gate. Workers close after processing. Original AVA labels are displayed per person, and recordings include action predictions.
 
 ## Training scope

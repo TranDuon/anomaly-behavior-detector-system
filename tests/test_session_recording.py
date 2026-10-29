@@ -178,9 +178,108 @@ def test_realtime_session_records_without_alert_and_stops_at_limit(
     status = processor.status()["recording"]
     assert status["phase"] == "saved" and status["video"] and status["report"]
     report = json.loads(processor.recording.report_path.read_text(encoding="utf-8"))
+    assert report["recording"]["fps"] == 10
+    assert report["recording"]["video_frames"] == 5
+    assert report["frame_source_timestamps"] == pytest.approx(
+        [0.0, 0.1, 0.2, 0.3, 0.4]
+    )
+    assert report["metadata"]["clip"]["fps"] == 8
+    assert report["metadata"]["reported_source_fps"] == 10
     assert report["predictions"]
     assert all(row["state"] == "normal" for row in report["predictions"])
     assert report["metadata"]["session_end"]["phase"] == "completed"
+
+
+def test_replay_preview_keeps_source_cadence_while_inference_is_slow(
+    tmp_path, monkeypatch
+):
+    import time
+
+    import api.fight_server as server
+
+    class SlowLowScore(nn.Module):
+        def forward(self, clips):
+            time.sleep(0.35)
+            return clips.mean(dim=(1, 2, 3, 4)) * 0 - 5
+
+    detector = SimpleNamespace(
+        detect=lambda frame: [SimpleNamespace(bbox_xyxy=[2, 2, 30, 30])]
+    )
+    runtime = FightRuntime(
+        predictor=SlowLowScore(),
+        config=ClipConfig(frames=2, fps=2, size=16, stride_seconds=0.5),
+        detector=detector,
+    )
+    source = tmp_path / "paced.avi"
+    writer = cv2.VideoWriter(
+        str(source), cv2.VideoWriter_fourcc(*"MJPG"), 12, (40, 32)
+    )
+    for index in range(18):
+        writer.write(np.full((32, 40, 3), index * 5, np.uint8))
+    writer.release()
+
+    processor = server.FightProcessor()
+    processor.runtime = runtime
+    processor.preview = False
+    processor.replay = True
+    processor.evidence_dir = tmp_path
+    published = []
+    monkeypatch.setattr(
+        processor,
+        "publish_frame",
+        lambda frame, result: published.append(time.monotonic()),
+    )
+    processor.run(str(source))
+
+    gaps = [current - previous for previous, current in zip(published, published[1:])]
+    assert processor.phase == "completed", processor.error
+    assert len(published) == 18
+    assert max(gaps) < 0.3
+
+
+def test_slow_jpeg_preview_does_not_block_source_capture(tmp_path, monkeypatch):
+    import time
+
+    import api.fight_server as server
+
+    runtime = FightRuntime(
+        predictor=SimpleNamespace(),
+        config=ClipConfig(frames=2, fps=2, size=16, stride_seconds=0.5),
+        detector=None,
+    )
+    runtime.push = lambda frame, timestamp, **kwargs: {
+        "state": "normal",
+        "score": 0.0,
+        "regions": [],
+        "people": 0,
+        "event": None,
+        "prediction_timestamp": timestamp,
+        "message": "test",
+    }
+    source = tmp_path / "fast-source.avi"
+    writer = cv2.VideoWriter(
+        str(source), cv2.VideoWriter_fourcc(*"MJPG"), 20, (40, 32)
+    )
+    for index in range(20):
+        writer.write(np.full((32, 40, 3), index * 5, np.uint8))
+    writer.release()
+
+    processor = server.FightProcessor()
+    processor.runtime = runtime
+    processor.replay = True
+    processor.evidence_dir = tmp_path
+    published = []
+
+    def slow_publish(frame, result):
+        time.sleep(0.12)
+        published.append(result)
+
+    monkeypatch.setattr(processor, "publish_frame", slow_publish)
+    processor.run(str(source))
+
+    assert processor.phase == "completed", processor.error
+    assert processor.frame_count == 20
+    assert 1 <= len(published) < processor.frame_count
 
 
 def test_preview_cannot_silently_record_or_start_a_camera(monkeypatch):

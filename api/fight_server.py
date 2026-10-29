@@ -1,5 +1,6 @@
 import json
 import hashlib
+import math
 import os
 import threading
 import time
@@ -42,6 +43,7 @@ LABELS = {
     "warming_up": "COLLECTING CLIP",
     "unavailable": "MODEL NOT READY",
     "insufficient": "CHECK CAMERA VIEW",
+    "preview": "PREVIEW ONLY",
 }
 
 
@@ -162,6 +164,7 @@ class FightProcessor:
         self.session_started = None
         self.session_id = None
         self.dropped_samples = 0
+        self.preview_frame_count = 0
         self.frame_count = self.total_frames = 0
         self.timestamp = self.latency = 0.0
         self.output = None
@@ -199,7 +202,13 @@ class FightProcessor:
                 raise RuntimeError(
                     "Phiên ghi trước chưa kết thúc; hãy Dừng/chờ hoàn tất rồi thử lại."
                 )
-            if backend not in {"legacy", "mmaction_original", "mmaction_tuned", "mmaction_calibrated"}:
+            if backend not in {
+                "legacy",
+                "mmaction_original",
+                "mmaction_tuned",
+                "mmaction_tuned_refined",
+                "mmaction_calibrated",
+            }:
                 raise ValueError("Model không hợp lệ.")
             if backend == "legacy":
                 candidate = FightRuntime(
@@ -212,8 +221,10 @@ class FightProcessor:
                 from fight.mmaction_runtime import MMActionRuntime
 
                 candidate = MMActionRuntime(
-                    tuned=backend == "mmaction_tuned", allow_pilot=allow_pilot,
+                    tuned=backend in {"mmaction_tuned", "mmaction_tuned_refined"},
+                    refined=backend == "mmaction_tuned_refined",
                     calibrated=backend == "mmaction_calibrated",
+                    allow_pilot=allow_pilot,
                 )
             if not candidate.model_ready and not preview:
                 raise ValueError(candidate.message)
@@ -224,10 +235,6 @@ class FightProcessor:
             if not preview:
                 candidate.warmup()
             self.runtime = candidate
-            self.events = []
-            self.active_event = None
-            self.event_frames = []
-            self.session_id = uuid.uuid4().hex
             self.stop_event.clear()
             self.preview = preview
             self.replay = replay
@@ -238,7 +245,12 @@ class FightProcessor:
             self.timestamp = self.latency = 0.0
             self.session_started = time.monotonic()
             self.dropped_samples = 0
+            self.preview_frame_count = 0
             self.output = self.jpeg = None
+            self.session_id = uuid.uuid4().hex
+            self.events = []
+            self.active_event = None
+            self.event_frames = []
             self.before.clear()
             self.thread = threading.Thread(target=self.run, args=(source,), daemon=True)
             self.thread.start()
@@ -251,6 +263,7 @@ class FightProcessor:
             if live_clock and self.session_started is not None and self.is_running()
             else self.timestamp
         )
+        measured_seconds = max(0.0, current_time)
         observed_at = prediction.get("prediction_timestamp")
         age = max(0.0, current_time - observed_at) if observed_at is not None else None
         stale = (
@@ -282,6 +295,16 @@ class FightProcessor:
             ),
             "frame_count": self.frame_count,
             "total_frames": self.total_frames,
+            "source_fps_actual": (
+                round(self.frame_count / measured_seconds, 2)
+                if live_clock and measured_seconds >= 1
+                else None
+            ),
+            "preview_fps_actual": (
+                round(self.preview_frame_count / measured_seconds, 2)
+                if live_clock and measured_seconds >= 1
+                else None
+            ),
             "timestamp": self.timestamp,
             "latency_seconds": round(
                 max(self.latency, current_time - self.timestamp), 3
@@ -335,6 +358,59 @@ class FightProcessor:
                 yield b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + jpeg + b"\r\n"
             if not self.is_running():
                 break
+
+    def publish_frame(self, frame, result):
+        return self.publish_preview(frame, result)
+
+    def publish_preview(self, frame, result):
+        preview = bounded_image(frame, settings.fight_preview_max_width)
+        scale = preview.shape[1] / frame.shape[1]
+        display = dict(result)
+        if scale != 1:
+            for key in ("person_boxes", "regions"):
+                display[key] = [[coordinate * scale for coordinate in box] for box in result.get(key, [])]
+            display["actions"] = [
+                {**person, "box": [coordinate * scale for coordinate in person["box"]]}
+                for person in result.get("actions", [])
+            ]
+        image = annotate(preview, display)
+        ok, encoded = cv2.imencode(".jpg", image, [cv2.IMWRITE_JPEG_QUALITY, settings.jpeg_quality])
+        if ok:
+            with self.condition:
+                self.jpeg = encoded.tobytes()
+                self.revision += 1
+                self.condition.notify_all()
+
+
+    def live_preview_result(self, timestamp):
+        if self.preview:
+            return {
+                "state": "preview",
+                "score": None,
+                "regions": [],
+                "person_boxes": [],
+                "actions": [],
+                "visible_people": None,
+                "people": 0,
+                "event": None,
+                "message": "Chỉ xem trước camera",
+            }
+        result = dict(self.runtime.result)
+        observed_at = result.get("prediction_timestamp")
+        if (
+            observed_at is not None
+            and timestamp - observed_at > self.runtime.gate.max_observation_gap
+        ):
+            result.update(
+                state="insufficient",
+                person_boxes=[],
+                regions=[],
+                actions=[],
+                visible_people=None,
+                event=None,
+                score_stale=True,
+            )
+        return result
 
     def record(self, frame, result):
         self.before.append((self.timestamp, frame.copy()))
@@ -419,6 +495,56 @@ class FightProcessor:
         )
         self.active_event, self.event_frames = None, []
 
+    def rebuild_file_event_clips(self, source, fps):
+        if not self.events:
+            return
+        capture = open_capture(source)
+        if not capture.isOpened():
+            raise ValueError("Không mở lại được video nguồn để dựng clip sự kiện.")
+        writers = {}
+        frame_counts = {event["id"]: 0 for event in self.events}
+        try:
+            index = 0
+            while True:
+                ok, frame = capture.read()
+                if not ok:
+                    break
+                timestamp = index / fps
+                index += 1
+                for event in self.events:
+                    if not (
+                        event["clip_started_at"] - 1e-6
+                        <= timestamp
+                        <= event["clip_ended_at"] + 1e-6
+                    ):
+                        continue
+                    output = bounded_image(frame, settings.fight_output_max_width)
+                    writer = writers.get(event["id"])
+                    if writer is None:
+                        path = self.evidence_dir / f"{event['id']}.mp4"
+                        writer = cv2.VideoWriter(
+                            str(path),
+                            cv2.VideoWriter_fourcc(*"mp4v"),
+                            fps,
+                            (output.shape[1], output.shape[0]),
+                        )
+                        if not writer.isOpened():
+                            raise RuntimeError("Không tạo được clip sự kiện full-FPS.")
+                        writers[event["id"]] = writer
+                    writer.write(output)
+                    frame_counts[event["id"]] += 1
+        finally:
+            capture.release()
+            for writer in writers.values():
+                writer.release()
+        for event in self.events:
+            if frame_counts[event["id"]]:
+                event["clip_fps"] = fps
+                event["clip_frames"] = frame_counts[event["id"]]
+                (self.evidence_dir / f"{event['id']}.json").write_text(
+                    json.dumps(event, ensure_ascii=False, indent=2), encoding="utf-8"
+                )
+
     def reset_after_sample_loss(self):
         self.finish_event()
         self.runtime.reset()
@@ -426,35 +552,20 @@ class FightProcessor:
             "CPU xử lý không kịp, đã mất mẫu; đang thu lại clip, không kết luận bình thường."
         )
 
-    def publish_preview(self, frame, result):
-        preview = bounded_image(frame, settings.fight_preview_max_width)
-        scale = preview.shape[1] / frame.shape[1]
-        display = dict(result)
-        if scale != 1:
-            for key in ("person_boxes", "regions"):
-                display[key] = [[coordinate * scale for coordinate in box] for box in result.get(key, [])]
-            display["actions"] = [
-                {**person, "box": [coordinate * scale for coordinate in person["box"]]}
-                for person in result.get("actions", [])
-            ]
-        image = annotate(preview, display)
-        ok, encoded = cv2.imencode(".jpg", image, [cv2.IMWRITE_JPEG_QUALITY, settings.jpeg_quality])
-        if ok:
-            with self.condition:
-                self.jpeg = encoded.tobytes()
-                self.revision += 1
-                self.condition.notify_all()
-
     def run(self, source):
         is_file = isinstance(source, str) and Path(source).is_file()
         live_mode = not is_file or self.replay
         capture = open_capture(source)
-        writer = reader = presenter = None
+        writer = reader = None
+        previewer = None
+        fps = None
         pending = deque(maxlen=self.runtime.config.frames * 2)
         observed_drops = 0
         live_lock = threading.Lock()
-        latest = {"frame": None, "ended": False, "count": 0, "limit_reached": False,
-                  "timestamp": 0.0, "result": dict(self.runtime.result), "display_error": None}
+        preview_lock = threading.Lock()
+        preview_event = threading.Event()
+        preview_latest = {"packet": None}
+        latest = {"frame": None, "ended": False, "count": 0, "limit_reached": False}
         started = self.session_started or time.monotonic()
         try:
             if not capture.isOpened():
@@ -472,9 +583,10 @@ class FightProcessor:
                     raise ValueError(
                         "Ghi test chỉ dành cho luồng camera hoặc phát lại realtime."
                     )
+                recording_fps = min(60.0, fps)
                 recording = self.recording = SessionRecording(
                     self.evidence_dir,
-                    self.runtime.config.fps,
+                    recording_fps,
                     {
                         "deployment": self.runtime.metadata.get("deployment", {}),
                         "clip": self.runtime.config.to_dict(),
@@ -494,11 +606,36 @@ class FightProcessor:
                         "reported_source_fps": fps,
                     },
                     limit_seconds=settings.fight_test_record_seconds,
+                    capacity=max(12, math.ceil(recording_fps * 2)),
                 )
             if live_mode:
 
+                # Opening a physical/network camera can take seconds. Source timestamps,
+                # recording limits and freshness begin when capture is actually ready,
+                # not while the driver is still opening.
+                started = time.monotonic()
+                self.session_started = started
+
+                def publish_live():
+                    while not self.stop_event.is_set() or preview_latest["packet"]:
+                        preview_event.wait(0.1)
+                        preview_event.clear()
+                        with preview_lock:
+                            packet = preview_latest["packet"]
+                            preview_latest["packet"] = None
+                        if packet is None:
+                            continue
+                        preview_frame, preview_timestamp = packet
+                        self.publish_frame(
+                            preview_frame,
+                            self.live_preview_result(preview_timestamp),
+                        )
+                        self.preview_frame_count += 1
+
                 def read_live():
                     next_sample = 0.0
+                    next_preview = 0.0
+                    preview_interval = 1 / settings.stream_fps_cap
                     source_index = 0
                     while not self.stop_event.is_set():
                         ok, frame = capture.read()
@@ -518,45 +655,29 @@ class FightProcessor:
                             with live_lock:
                                 latest["limit_reached"] = True
                             break
+                        if recording:
+                            recording.offer(frame, timestamp)
                         with live_lock:
-                            latest.update(frame=frame, timestamp=timestamp, count=latest["count"] + 1)
+                            latest.update(frame=frame, count=latest["count"] + 1)
                             if timestamp + 1e-6 >= next_sample:
-                                if recording:
-                                    recording.offer(frame, timestamp)
                                 if len(pending) == pending.maxlen:
                                     self.dropped_samples += 1
                                 pending.append((frame, timestamp))
                                 while next_sample <= timestamp + 1e-6:
                                     next_sample += 1 / self.runtime.config.fps
+                        if timestamp + 1e-6 >= next_preview:
+                            with preview_lock:
+                                preview_latest["packet"] = (frame, timestamp)
+                            preview_event.set()
+                            while next_preview <= timestamp + 1e-6:
+                                next_preview += preview_interval
                     with live_lock:
                         latest["ended"] = True
 
+                previewer = threading.Thread(target=publish_live, daemon=True)
+                previewer.start()
                 reader = threading.Thread(target=read_live, daemon=True)
                 reader.start()
-
-                def present_live():
-                    previous_count = -1
-                    try:
-                        while not self.stop_event.is_set():
-                            tick = time.monotonic()
-                            with live_lock:
-                                current_frame = latest["frame"]
-                                count = latest["count"]
-                                source_time = latest["timestamp"]
-                                display_result = dict(latest["result"])
-                            if current_frame is not None and count != previous_count:
-                                observed = display_result.get("prediction_timestamp")
-                                if observed is not None and (source_time < observed or source_time - observed > self.runtime.gate.max_observation_gap):
-                                    display_result.update(state="insufficient", person_boxes=[], regions=[], actions=[], score_stale=True)
-                                self.publish_preview(current_frame, display_result)
-                                previous_count = count
-                            self.stop_event.wait(max(0.0, 1 / min(fps, 30) - (time.monotonic() - tick)))
-                    except Exception as error:
-                        with live_lock:
-                            latest["display_error"] = str(error)
-
-                presenter = threading.Thread(target=present_live, daemon=True)
-                presenter.start()
             last_evidence = -1.0
             while not self.stop_event.is_set():
                 if not live_mode:
@@ -576,9 +697,6 @@ class FightProcessor:
                         pending.clear()
                         self.frame_count = latest["count"]
                         sampled_drops = self.dropped_samples
-                        display_error = latest["display_error"]
-                    if display_error:
-                        raise RuntimeError("Không hiển thị được video: " + display_error)
                     if not samples:
                         if ended:
                             if is_file or latest["limit_reached"]:
@@ -622,9 +740,6 @@ class FightProcessor:
                         last_evidence = sample_time
                 if self.preview:
                     self.runtime.result = result
-                if live_mode:
-                    with live_lock:
-                        latest["result"] = dict(result)
                 self.timestamp = timestamp
                 self.latency = (
                     max(0.0, time.monotonic() - started - timestamp)
@@ -644,7 +759,7 @@ class FightProcessor:
                         if not writer.isOpened():
                             raise RuntimeError("Không tạo được video kết quả.")
                     writer.write(output_image)
-                    self.publish_preview(frame, result)
+                    self.publish_frame(frame, result)
             self.phase = "stopped" if self.stop_event.is_set() else "completed"
             if is_file and writer is not None:
                 self.output = f"/api/evidence/{output_path.name}"
@@ -652,16 +767,21 @@ class FightProcessor:
             self.phase, self.error = "error", str(error)
         finally:
             self.stop_event.set()
-            if presenter:
-                presenter.join(timeout=2)
-                if latest["frame"] is not None:
-                    self.publish_preview(latest["frame"], latest["result"])
+            preview_event.set()
             capture.release()
             if reader:
                 reader.join(timeout=2)
+            if previewer:
+                previewer.join(timeout=2)
             if writer:
                 writer.release()
             self.finish_event()
+            if is_file and not self.replay and fps is not None and self.events:
+                try:
+                    self.rebuild_file_event_clips(source, fps)
+                except Exception as error:
+                    self.error = "Không dựng được clip sự kiện full-FPS: " + str(error)
+                    self.phase = "error"
             if self.recording:
                 self.recording.finish(
                     outcome={

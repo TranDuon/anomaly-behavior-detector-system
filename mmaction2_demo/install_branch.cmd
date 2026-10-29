@@ -2,7 +2,7 @@
 setlocal
 cd /d "%~dp0"
 if "%~1"=="" (
-  echo Drag mmaction_interaction_pilot.zip onto this file. Stop web recognition first.
+  echo Drag an interaction pilot ZIP (including mmaction_tuned_refinement_v3_pilot.zip) onto this file. Stop web recognition first.
   pause
   exit /b 1
 )

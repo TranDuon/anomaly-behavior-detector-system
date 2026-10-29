@@ -205,6 +205,37 @@ def test_evidence_resamples_missing_frames_in_source_time(tmp_path):
     capture.release()
 
 
+def test_uploaded_event_clip_is_rebuilt_at_source_fps(tmp_path):
+    from api.fight_server import FightProcessor
+
+    source = tmp_path / "source.mp4"
+    writer = cv2.VideoWriter(
+        str(source), cv2.VideoWriter_fourcc(*"mp4v"), 12, (40, 32)
+    )
+    assert writer.isOpened()
+    for index in range(24):
+        writer.write(np.full((32, 40, 3), index * 8, np.uint8))
+    writer.release()
+
+    processor = FightProcessor()
+    processor.evidence_dir = tmp_path
+    processor.events = [
+        {
+            "id": "event-full-fps",
+            "clip_started_at": 0.25,
+            "clip_ended_at": 1.25,
+        }
+    ]
+    processor.rebuild_file_event_clips(source, 12)
+
+    clip = cv2.VideoCapture(str(tmp_path / "event-full-fps.mp4"))
+    assert clip.get(cv2.CAP_PROP_FPS) == pytest.approx(12, abs=0.1)
+    assert clip.get(cv2.CAP_PROP_FRAME_COUNT) == 13
+    clip.release()
+    assert processor.events[0]["clip_fps"] == 12
+    assert processor.events[0]["clip_frames"] == 13
+
+
 def test_low_fps_reset_preserves_custom_gate_settings():
     runtime = FightRuntime(
         predictor=BrightModel(),

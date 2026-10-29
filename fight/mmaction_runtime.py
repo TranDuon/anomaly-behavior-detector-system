@@ -29,13 +29,22 @@ def person_action_regions(actions, threshold):
 
 
 class MMActionRuntime:
-    def __init__(self, tuned=False, allow_pilot=False, calibrated=False):
-        self.backend_name = "mmaction_tuned" if tuned else "mmaction_original"
+    def __init__(self, tuned=False, refined=False, allow_pilot=False, calibrated=False):
+        self.backend_name = (
+            "mmaction_tuned_refined"
+            if refined
+            else "mmaction_tuned"
+            if tuned
+            else "mmaction_original"
+        )
+
         self.calibrated = calibrated
         if calibrated:
             self.backend_name = "mmaction_calibrated"
+
         self.device = "cuda:0"
         self.tuned = tuned
+        self.refined = refined
         self.config = ClipConfig(
             frames=9, fps=3.75, size=256, stride_seconds=16 / 30, region_mode="full"
         )
@@ -51,7 +60,12 @@ class MMActionRuntime:
             "architecture": "mmaction_slowonly_r101",
             "deployment": {
                 "display_name": (
-                    "MMAction2 · gốc hiệu chỉnh public" if calibrated else "MMAction2 · nhánh tương tác fine-tuned"
+                    "MMAction2 · gốc hiệu chỉnh public"
+                    if calibrated
+                    else "MMAction2 · fine-tuned đã hiệu chỉnh hard-negative"
+                    if refined
+                    else "MMAction2 · nhánh tương tác fine-tuned"
+
                     if tuned
                     else "MMAction2 · checkpoint gốc · RGB chuẩn"
                 )
@@ -69,6 +83,12 @@ class MMActionRuntime:
                 available
                 and (ROOT / "weights/interaction.json").is_file()
                 and (ROOT / "weights/interaction.pt").is_file()
+            )
+        if refined:
+            available = (
+                available
+                and (ROOT / "weights/interaction_refined.json").is_file()
+                and (ROOT / "weights/interaction_refined.pt").is_file()
             )
         self.model_ready = available and allow_pilot
         self.message = (
@@ -119,7 +139,9 @@ class MMActionRuntime:
             TORCH_HOME=str(ROOT / "weights/torch-cache"),
         )
         command = [str(ROOT / "env/python.exe"), str(ROOT / "worker.py")]
-        if self.tuned:
+        if self.refined:
+            command.append("--refined")
+        elif self.tuned:
             command.append("--tuned")
         if self.calibrated:
             command.append("--calibrated")
