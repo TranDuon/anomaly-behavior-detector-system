@@ -29,18 +29,8 @@ def person_action_regions(actions, threshold):
 
 
 class MMActionRuntime:
-    def __init__(self, tuned=False, refined=False, allow_pilot=False, calibrated=False):
-        self.backend_name = (
-            "mmaction_tuned_refined"
-            if refined
-            else "mmaction_tuned"
-            if tuned
-            else "mmaction_original"
-        )
-
-        self.calibrated = calibrated
-        if calibrated:
-            self.backend_name = "mmaction_calibrated"
+    def __init__(self, tuned=False, allow_pilot=False):
+        self.backend_name = "mmaction_interaction_v1" if tuned else "mmaction_original"
 
         self.device = "cuda:0"
         self.tuned = tuned
@@ -59,12 +49,7 @@ class MMActionRuntime:
             "architecture": "mmaction_interaction_v1" if tuned else "mmaction_slowonly_r101",
             "deployment": {
                 "display_name": (
-                    "MMAction2 · gốc hiệu chỉnh public"
-                    if calibrated
-                    else "MMAction2 · fine-tuned đã hiệu chỉnh hard-negative"
-                    if refined
-                    else "MMAction2 · nhánh tương tác fine-tuned"
-
+                    "MMAction2 · interaction v1"
                     if tuned
                     else "MMAction2 · checkpoint gốc · RGB chuẩn"
                 )
@@ -134,8 +119,6 @@ class MMActionRuntime:
         command = [str(ROOT / "env/python.exe"), str(ROOT / "worker.py")]
         if self.tuned:
             command.append("--tuned")
-        if self.calibrated:
-            command.append("--calibrated")
         self.process = subprocess.Popen(
             command,
             stdin=subprocess.PIPE,

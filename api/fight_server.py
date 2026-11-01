@@ -205,9 +205,7 @@ class FightProcessor:
             if backend not in {
                 "legacy",
                 "mmaction_original",
-                "mmaction_tuned",
-                "mmaction_tuned_refined",
-                "mmaction_calibrated",
+                "mmaction_interaction_v1",
             }:
                 raise ValueError("Model không hợp lệ.")
             if backend == "legacy":
@@ -221,9 +219,7 @@ class FightProcessor:
                 from fight.mmaction_runtime import MMActionRuntime
 
                 candidate = MMActionRuntime(
-                    tuned=backend in {"mmaction_tuned", "mmaction_tuned_refined"},
-                    refined=backend == "mmaction_tuned_refined",
-                    calibrated=backend == "mmaction_calibrated",
+                    tuned=backend == "mmaction_interaction_v1",
                     allow_pilot=allow_pilot,
                 )
             if not candidate.model_ready and not preview:
