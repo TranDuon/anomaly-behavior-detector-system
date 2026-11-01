@@ -1,0 +1,11 @@
+# Notebook Colab: đánh nhau / vật nhau / ngã chung
+
+Notebook: [`colab/mmaction_general_fall_finetune.ipynb`](../colab/mmaction_general_fall_finetune.ipynb). Chọn Colab **T4 GPU** rồi chạy các cell theo thứ tự. Không chạy train trên máy Windows. Đầu vào checkpoint v1 nằm trong `artifacts/fall_general_v1/mmaction_interaction_v1_parent.zip` (2 MB); notebook tìm gói này trên `MyDrive/SENTINEL/artifacts/fall_general_v1/` hoặc yêu cầu upload trực tiếp vào Colab. SHA-256 của `interaction.pt` phải là `8c5808db106aacd0f43b72a0e76178b2dec039e0a1766d996bb8374b7e4dddb7`.
+
+Notebook tải [GMDCSA24 v2.1](https://zenodo.org/records/13354453) (ngã và hoạt động thường ngày có mốc) và [Surveillance Camera Fight Dataset](https://github.com/seymanurakti/fight-detection-surv-dataset) (fight và non-fight). Tác giả SCFD cho biết các clip fight có cảnh wrestling, nhưng không đánh dấu clip nào là vật nhau. Do đó model học từ **nhãn fight chung** chứa loại hành vi này; checkpoint mới cần thử trực tiếp trên video vật nhau để xác nhận. Không dùng môn vật thể thao làm nhãn dương.
+
+Quy trình: tải dữ liệu trên Colab → kiểm tra hash ZIP và checkpoint cha → chuẩn bị môi trường MMAction2 → trích đặc trưng AVA, lưu cache lên Drive → fine-tune `InteractionHead` từ v1 → chọn epoch theo development → chọn threshold theo development → đánh giá subject 4 và tập SCFD test → xuất `interaction.pt`, `interaction.json`, `report.json`, `protocol.json` và `mmaction_interaction_fall_wrestle_pilot.zip` vào `MyDrive/SENTINEL/artifacts/mmaction_interaction_fall_wrestle/<RUN_TAG>/`.
+
+**Kiểm thử trước khi chạy Colab:** notebook và trainer đã biên dịch; unit test chỉ kiểm tra cấu trúc dữ liệu, split, mốc ngã và checkpoint cha. Chưa chạy notebook, chưa có checkpoint mới hay chỉ số thực nghiệm. Trước khi thay model trên web, đọc báo cáo kiểm thử và xem video đánh nhau, vật nhau, ngã, ôm, ngồi/nằm xuống từ camera mục tiêu.
+
+Các nguồn đã thấy trong lần chuẩn bị bước 2 gồm 544 video AIRTLab/SBU/RLVS. Notebook thử nghiệm này **không đưa 480 nguồn chưa được duyệt thời gian vào train**. Nó vẫn warm-start từ checkpoint v1 nên giữ trọng số ban đầu, rồi bổ sung SCFD và GMDCSA24. Nếu muốn train đủ 544 nguồn ở lần sau, cần xem lại split/nhãn và thêm một manifest riêng.

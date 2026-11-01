@@ -22,6 +22,8 @@ models/*.ts
 sentinel_fight_only_runtime*.zip
 fightwatch_source*.zip
 artifacts/mmaction_indoor_review_v2/
+artifacts/assault_extension_v1/
+artifacts/fall_general_v1/
 mmaction2_demo/env/
 mmaction2_demo/repo/
 mmaction2_demo/weights/

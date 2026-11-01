@@ -230,7 +230,7 @@ class TunedRefinementHead(nn.Module):
 
 
 class ActionEngine:
-    def __init__(self, weights=None, device="cuda:0", tuned=False, refined=False):
+    def __init__(self, weights=None, device="cuda:0", tuned=False):
         from mmengine import Config
         from mmaction.utils import register_all_modules
         from mmdet.apis import init_detector
@@ -267,7 +267,6 @@ class ActionEngine:
             int(line.split(": ", 1)[0]): line.split(": ", 1)[1] for line in lines
         }
         self.head = None
-        self.refinement = None
         self.head_version = 0
         self.metadata = {
             "threshold": 0.4,
@@ -277,8 +276,6 @@ class ActionEngine:
             "spec": SPEC,
             "scope": "Original AVA action scores; not a calibrated violence classifier",
         }
-        if refined and not tuned:
-            raise ValueError("A refinement head requires the fine-tuned branch")
         if tuned:
             metadata = json.loads((self.weights / "interaction.json").read_text())
             if (
@@ -291,14 +288,9 @@ class ActionEngine:
                     "Fine-tuned branch/source/preprocessing fingerprint mismatch"
                 )
             self.head_version = int(metadata.get("head_version", 1))
-            if self.head_version not in {1, 2} or (
-                self.head_version == 2
-                and metadata.get("aux_version") != AUX_VERSION
-            ):
-                raise ValueError("Unsupported interaction head version")
-            self.head = (
-                InteractionHeadV2() if self.head_version == 2 else InteractionHead()
-            ).to(device)
+            if self.head_version != 1:
+                raise ValueError("Only mmaction_interaction_v1 is supported")
+            self.head = InteractionHead().to(device)
             self.head.load_state_dict(
                 torch.load(
                     self.weights / "interaction.pt",
@@ -309,26 +301,6 @@ class ActionEngine:
             )
             self.head.eval()
             self.metadata = metadata
-        if refined:
-            refinement_path = self.weights / "interaction_refined.pt"
-            refinement_metadata_path = self.weights / "interaction_refined.json"
-            refinement_metadata = json.loads(refinement_metadata_path.read_text())
-            if (
-                refinement_metadata.get("source_sha256") != SOURCE_SHA
-                or refinement_metadata.get("spec") != SPEC
-                or refinement_metadata.get("aux_version") != AUX_VERSION
-                or refinement_metadata.get("base_checkpoint_sha256")
-                != digest(self.weights / "interaction.pt")
-                or refinement_metadata.get("checkpoint_sha256") != digest(refinement_path)
-            ):
-                raise ValueError("Fine-tuned refinement/source fingerprint mismatch")
-            self.refinement = TunedRefinementHead().to(device)
-            self.refinement.load_state_dict(
-                torch.load(refinement_path, map_location=device, weights_only=True),
-                strict=True,
-            )
-            self.refinement.eval()
-            self.metadata = refinement_metadata
 
     @torch.inference_mode()
     def tuned_scores(self, bag, auxiliary):
@@ -428,17 +400,6 @@ class ActionEngine:
                 .numpy()
             )
             scores = prior
-            if self.refinement is not None:
-                scores = (
-                    self.refinement(
-                        features,
-                        torch.from_numpy(auxiliary).to(self.device),
-                        torch.from_numpy(prior).to(self.device),
-                    )
-                    .sigmoid()
-                    .cpu()
-                    .numpy()
-                )
             index = int(scores.argmax())
             score, regions = float(scores[index]), [output["candidate_regions"][index]]
             if self.head_version == 2:
@@ -446,6 +407,4 @@ class ActionEngine:
                     name: float(value)
                     for name, value in zip(AUX_NAMES, auxiliary[index])
                 }
-            if self.refinement is not None:
-                output["legacy_tuned_score"] = float(prior[index])
         return {**output, "score": score, "regions": regions}

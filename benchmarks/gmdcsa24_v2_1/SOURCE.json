@@ -1,0 +1,49 @@
+{
+  "repository": "https://github.com/ekramalam/GMDCSA24-A-Dataset-for-Human-Fall-Detection-in-Videos",
+  "tag": "v2.1",
+  "tree_sha": "5abac7693229900cf80f722e878fbb119211fc1c",
+  "zenodo": "https://zenodo.org/records/13354453",
+  "archive_md5": "3d36f2c5c1a666b99639e4e9fd843efb",
+  "files": [
+    {
+      "path": "Subject 1/Fall.csv",
+      "sha256": "28e55e3fd60f791f02c821e91c2a64362a1dabdbd46a916279655eab83a49754",
+      "git_blob": "2d840025af02560bed58e21bcd161fbf5b3f1969"
+    },
+    {
+      "path": "Subject 1/ADL.csv",
+      "sha256": "9899703edb31776c5b837449f1a9c0efd9f1d84369f0b1443b63253abc38e3a2",
+      "git_blob": "2f26cbeb71d0f5a2f3d804d728966bdf37f0a5a8"
+    },
+    {
+      "path": "Subject 2/Fall.csv",
+      "sha256": "b6829461084e99183014ac72447ebd6879038e1093a23054f396de4426fbde60",
+      "git_blob": "cab03b6b53b745b30f5b298ed38f1fb734ef60d4"
+    },
+    {
+      "path": "Subject 2/ADL.csv",
+      "sha256": "c83c19c116e14d82f644040dc07bb14474486c501cb760275a7397837798ea04",
+      "git_blob": "055d70d630c6dd7ab979700039b3e113b44d58eb"
+    },
+    {
+      "path": "Subject 3/Fall.csv",
+      "sha256": "02a9a5f5c5f0b178510f6e512cf200b8f8a626ecea5c61a1e713046d73046470",
+      "git_blob": "b2c4bd125a1e3e2c48b8f60a0e257dc2a3d2227e"
+    },
+    {
+      "path": "Subject 3/ADL.csv",
+      "sha256": "e98afe16fb80677a06b7dd19769611cfed13e59eb0f85a7668ae22baf15bc3c2",
+      "git_blob": "ff4ddf4658413d55d48c1e680fe5c40ce4707600"
+    },
+    {
+      "path": "Subject 4/Fall.csv",
+      "sha256": "d8cbc7f404dcf0cf674f18fa4c963a382aa64e7c93f2053194915bd0bdb5b4e5",
+      "git_blob": "31c1625bbf51eff2e5bd767455c400f50f5786e4"
+    },
+    {
+      "path": "Subject 4/ADL.csv",
+      "sha256": "9b9a4aef43725126d8f8d9cf04a393ba98dfea9f30554e6391cc0584ea661c2d",
+      "git_blob": "4d97c1ba3b3a43290529ae5c7be236322706816d"
+    }
+  ]
+}

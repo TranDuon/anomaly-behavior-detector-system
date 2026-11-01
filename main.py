@@ -17,6 +17,12 @@ def main():
     )
     run.add_argument("--source", required=True)
     run.add_argument("--allow-pilot", action="store_true")
+    run.add_argument(
+        "--backend",
+        choices=("legacy", "mmaction_original", "mmaction_interaction_v1"),
+        default="legacy",
+        help="legacy = FightWatch X3D-S + pose",
+    )
     args = parser.parse_args()
     if args.mode == "serve":
         import uvicorn
@@ -27,7 +33,7 @@ def main():
 
     processor = FightProcessor()
     source = int(args.source) if args.source.isdigit() else args.source
-    processor.start(source, args.allow_pilot)
+    processor.start(source, args.allow_pilot, backend=args.backend)
     try:
         while processor.is_running():
             print(processor.status(), flush=True)

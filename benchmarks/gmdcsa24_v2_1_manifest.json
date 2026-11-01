@@ -1,0 +1,3381 @@
+{
+  "schema_version": 1,
+  "source": "https://zenodo.org/records/13354453",
+  "version": "v2.1",
+  "publisher_tree_sha": "5abac7693229900cf80f722e878fbb119211fc1c",
+  "archive_md5": "3d36f2c5c1a666b99639e4e9fd843efb",
+  "split_policy": "subjects 1-2 train; 3 development; 4 test; no fall calibration set yet",
+  "positive_actions": [
+    "fight",
+    "wrestle",
+    "fall"
+  ],
+  "negative_actions": [
+    "normal",
+    "hug",
+    "greet",
+    "sit_lie",
+    "sport_play"
+  ],
+  "counts": {
+    "publisher_temporal": 78,
+    "publisher_clip_negative": 81,
+    "needs_temporal_review": 1
+  },
+  "video_files_verified": false,
+  "sources": [
+    {
+      "video": "Subject 1/Fall/01.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_1",
+      "subject": 1,
+      "split": "train",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 6.0,
+      "publisher_class_text": "Falling (SW)[3.4 to 6]; Sitting[0 to 3.4]",
+      "publisher_git_blob": "464da3ca519be06f93ed71898082013a4a7e4fae",
+      "publisher_bytes": 6891695,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 3.4,
+          "end_seconds": 6.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 1/Fall/02.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_1",
+      "subject": 1,
+      "split": "train",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 6.0,
+      "publisher_class_text": "Falling (SW)[1.9 to 6]; Sitting[0 to 1.9]",
+      "publisher_git_blob": "f0d333d834ca13fd0c0a920e7a7826e830bd9b38",
+      "publisher_bytes": 6422328,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 1.9,
+          "end_seconds": 6.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 1/Fall/03.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_1",
+      "subject": 1,
+      "split": "train",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 5.0,
+      "publisher_class_text": "Falling (SW)[2.5 to 5]; Sitting[0 to 2.5]",
+      "publisher_git_blob": "70e6942e9a980ff73c85f3fe378563ca0486b3d7",
+      "publisher_bytes": 6030324,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 2.5,
+          "end_seconds": 5.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 1/Fall/04.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_1",
+      "subject": 1,
+      "split": "train",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 4.0,
+      "publisher_class_text": "Falling (SW)[2.3 to 4]; Sitting[0 to 2.2]",
+      "publisher_git_blob": "0d45e061d21b8d84095ba71b2a39a5c76e2686da",
+      "publisher_bytes": 4966884,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 2.3,
+          "end_seconds": 4.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 1/Fall/05.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_1",
+      "subject": 1,
+      "split": "train",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 5.0,
+      "publisher_class_text": "Falling (SW)[1.8 to 5]:; Walking[0 to 1.8]",
+      "publisher_git_blob": "4e13ed24f6c2af7062b64b1920ef706c51efe94b",
+      "publisher_bytes": 5872655,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 1.8,
+          "end_seconds": 5.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 1/Fall/06.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_1",
+      "subject": 1,
+      "split": "train",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 5.0,
+      "publisher_class_text": "Falling (SW)[2.2 to 5]; Walking[0 to 2.1]",
+      "publisher_git_blob": "debfef11da10f6ed4b0ca84c89077923094f6216",
+      "publisher_bytes": 5830074,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 2.2,
+          "end_seconds": 5.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 1/Fall/07.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_1",
+      "subject": 1,
+      "split": "train",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 5.0,
+      "publisher_class_text": "Falling (SW)[1.1 to 5]; Walking[0 to 1]",
+      "publisher_git_blob": "8d271424161fc31f351ac32dd0ec818e57b13f5a",
+      "publisher_bytes": 5078892,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 1.1,
+          "end_seconds": 5.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 1/Fall/08.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_1",
+      "subject": 1,
+      "split": "train",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 4.0,
+      "publisher_class_text": "Falling (FW)[0.8 to 4]; Walking[0 to 0.8]",
+      "publisher_git_blob": "e9ca3b2c85f0e3d92358d56ff645cd31d0ecf2e8",
+      "publisher_bytes": 4343049,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 0.8,
+          "end_seconds": 4.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 1/Fall/09.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_1",
+      "subject": 1,
+      "split": "train",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 4.0,
+      "publisher_class_text": "Falling (FW)[0.7 to 4]; Standing[0 to 0.6]",
+      "publisher_git_blob": "23ff39749386d6a9bbc535d305ab882c847e36b2",
+      "publisher_bytes": 4585785,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 0.7,
+          "end_seconds": 4.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 1/Fall/10.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_1",
+      "subject": 1,
+      "split": "train",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 4.0,
+      "publisher_class_text": "Falling (FW)[0.7 to 4]; Standing[0 to 0.7]",
+      "publisher_git_blob": "26d5ccd739fb9c3b0e5dfd409b1a8d2a44f4395b",
+      "publisher_bytes": 4346206,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 0.7,
+          "end_seconds": 4.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 1/Fall/11.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_1",
+      "subject": 1,
+      "split": "train",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 6.0,
+      "publisher_class_text": "Falling (BW)[1 to 6]; Standing[0 to 1]",
+      "publisher_git_blob": "791707e0f4fd062796eb147e55f33eb80455ba38",
+      "publisher_bytes": 5961144,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 1.0,
+          "end_seconds": 6.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 1/Fall/12.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_1",
+      "subject": 1,
+      "split": "train",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 6.0,
+      "publisher_class_text": "Falling (BW)[1.9 to 6]; Standing[0 to 1.8]",
+      "publisher_git_blob": "2d192e9a497e28fe4282172f4657e74b4e46ea9e",
+      "publisher_bytes": 6599379,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 1.9,
+          "end_seconds": 6.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 1/Fall/13.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_1",
+      "subject": 1,
+      "split": "train",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 4.0,
+      "publisher_class_text": "Falling (BW)[0.4 to 4]; Standing[0 to 0.3]",
+      "publisher_git_blob": "52f59248963ae683777126ff4bc116a0e33487bc",
+      "publisher_bytes": 1389022,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 0.4,
+          "end_seconds": 4.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 1/Fall/14.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_1",
+      "subject": 1,
+      "split": "train",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 5.0,
+      "publisher_class_text": "Falling (BW) [0.3 to 5]; Standing [0 to 0.2]",
+      "publisher_git_blob": "e021dec61ef3a9fa6215ef42ee62b4c981409811",
+      "publisher_bytes": 1887607,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 0.3,
+          "end_seconds": 5.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 1/Fall/15.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_1",
+      "subject": 1,
+      "split": "train",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 6.0,
+      "publisher_class_text": "Falling (SW) [1.8 to 6] ; Sitting [0 to 2]",
+      "publisher_git_blob": "00e6b42371e41be8246278c09258f5ecf797412b",
+      "publisher_bytes": 2004556,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 1.8,
+          "end_seconds": 6.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 1/Fall/16.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_1",
+      "subject": 1,
+      "split": "train",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 6.0,
+      "publisher_class_text": "Falling (SW) [ 2.8 to 6]; Sitting [0 to 2.9]",
+      "publisher_git_blob": "dbe036c3b4055e1ce2d625332b7de9367b5688c3",
+      "publisher_bytes": 6016916,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 2.8,
+          "end_seconds": 6.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 1/ADL/01.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_1",
+      "subject": 1,
+      "split": "train",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 8.0,
+      "publisher_class_text": "Sitting[0 to 1]; Sleeping[2 to 8]",
+      "publisher_git_blob": "04e48b5b6e6b59f3bd1eb35abfd3025d6f689c83",
+      "publisher_bytes": 8013673,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 8.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 1/ADL/02.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_1",
+      "subject": 1,
+      "split": "train",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 6.0,
+      "publisher_class_text": "Sitting[0 to 0.5]; Sleeping[1.5 to 6]",
+      "publisher_git_blob": "eb7b1428cf66f009bc1aec5b279f3b650a8960a5",
+      "publisher_bytes": 6670980,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 6.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 1/ADL/03.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_1",
+      "subject": 1,
+      "split": "train",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 6.0,
+      "publisher_class_text": "Sitting[0 to 0.5]; Sleeping[1 to 6]",
+      "publisher_git_blob": "13e7d0bdb5caca977e6e957a4a6e437161ee211a",
+      "publisher_bytes": 6595428,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 6.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 1/ADL/04.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_1",
+      "subject": 1,
+      "split": "train",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 5.0,
+      "publisher_class_text": "Sitting[2.5 to 5]; Sleeping[0 to 1.5]",
+      "publisher_git_blob": "73bab7fb62915aa1e27babcb8a5c34e8f4f7af9a",
+      "publisher_bytes": 5936086,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 5.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 1/ADL/05.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_1",
+      "subject": 1,
+      "split": "train",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 10.0,
+      "publisher_class_text": "Reading[6 to 10]; Sitting[3 to 10]; Walking[1 to 3]",
+      "publisher_git_blob": "12568281cd6b0a94b09e82c257d44e0c35d12fc5",
+      "publisher_bytes": 10369324,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 10.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 1/ADL/06.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_1",
+      "subject": 1,
+      "split": "train",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 12.0,
+      "publisher_class_text": "Reading[3 to 12]; Sitting[0 to 2]",
+      "publisher_git_blob": "0d651e7f888b18644b3a387d5a3eff5efe1f84b6",
+      "publisher_bytes": 12423009,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 12.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 1/ADL/07.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_1",
+      "subject": 1,
+      "split": "train",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 7.0,
+      "publisher_class_text": "Reading[0 to 5.5]; Sitting[0 to 7]",
+      "publisher_git_blob": "502fcb3e1f1ada7aeda79ea9bd5347f06f98d577",
+      "publisher_bytes": 7736760,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 7.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 1/ADL/08.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_1",
+      "subject": 1,
+      "split": "train",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 6.0,
+      "publisher_class_text": "Walking[0 to 6]",
+      "publisher_git_blob": "097da56228b25dfc5cd8dc4627bc47bc6ae92346",
+      "publisher_bytes": 6306776,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 6.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 1/ADL/09.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_1",
+      "subject": 1,
+      "split": "train",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 4.0,
+      "publisher_class_text": "Reading[0 to 4]; Walking[0 to 4]",
+      "publisher_git_blob": "1da2946f7ef018844626d48bccfefeb9c4bb5855",
+      "publisher_bytes": 4833796,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 4.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 1/ADL/10.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_1",
+      "subject": 1,
+      "split": "train",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 3.0,
+      "publisher_class_text": "Reading[0 to 2.5]; Walking[0 to 3]",
+      "publisher_git_blob": "c9b6df01e91aa66f5884bb304ca0c9c1e0b8236c",
+      "publisher_bytes": 3847178,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 3.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 1/ADL/11.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_1",
+      "subject": 1,
+      "split": "train",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 9.0,
+      "publisher_class_text": "Reading[5 to 9]; Sitting[3 to 9]; Walking[0 to 2]",
+      "publisher_git_blob": "3e5e84fe53377d46ce17bc4203fd1791cc9c4030",
+      "publisher_bytes": 9299982,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 9.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 1/ADL/12.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_1",
+      "subject": 1,
+      "split": "train",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 7.0,
+      "publisher_class_text": "Reading[0 to 2.5]; Sitting[0 to 3.3]; Standing[3.3 to 5];Walking[5 to 7];",
+      "publisher_git_blob": "16e6d44147f5abc53a009e25d4f6645bc1110acd",
+      "publisher_bytes": 7715103,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 7.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 1/ADL/13.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_1",
+      "subject": 1,
+      "split": "train",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 6.0,
+      "publisher_class_text": "Sitting[3 to 6]; Walking[0 to 2.5]",
+      "publisher_git_blob": "47068d10cf263c6a6c5f9954a7d46fc90bd999ef",
+      "publisher_bytes": 6219096,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 6.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 1/ADL/14.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_1",
+      "subject": 1,
+      "split": "train",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 5.0,
+      "publisher_class_text": "Sitting[0 to 1]; Standing[4.7 to 5]; Walking[1.6 to 4.7]",
+      "publisher_git_blob": "3caf5b0485eba43da171a66bfbdbae8157952dc5",
+      "publisher_bytes": 5850069,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 5.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 1/ADL/15.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_1",
+      "subject": 1,
+      "split": "train",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 7.0,
+      "publisher_class_text": "Sitting[4 to 7]; Walking[0 to 1.5]",
+      "publisher_git_blob": "903da9245132cf70c10124edd0625c958f702cb8",
+      "publisher_bytes": 7233079,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 7.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 1/ADL/16.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_1",
+      "subject": 1,
+      "split": "train",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 3.0,
+      "publisher_class_text": "Sitting[0 to 3]",
+      "publisher_git_blob": "0991a3657ee6458f470a9bc419d901f192b43d7a",
+      "publisher_bytes": 3582225,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 3.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 2/Fall/01.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_2",
+      "subject": 2,
+      "split": "train",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 6.0,
+      "publisher_class_text": "Falling (SW)[1.4 to 6]; Standing[0.4 to 1.2]",
+      "publisher_git_blob": "6f308a3873d5768ea81b932d45a521e520368592",
+      "publisher_bytes": 6472725,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 1.4,
+          "end_seconds": 6.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 2/Fall/02.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_2",
+      "subject": 2,
+      "split": "train",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 8.0,
+      "publisher_class_text": "Falling (SW)[2.7 to 8]; Walking[0 to 2.6]",
+      "publisher_git_blob": "1c18ba2fdc4b859beed605801450fc8694811be0",
+      "publisher_bytes": 8595129,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 2.7,
+          "end_seconds": 8.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 2/Fall/03.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_2",
+      "subject": 2,
+      "split": "train",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 7.0,
+      "publisher_class_text": "Falling (FW)[0 to 7]",
+      "publisher_git_blob": "a1fa1864112af8cf89f58a3d4c9c130065d562db",
+      "publisher_bytes": 7202590,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 7.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 2/Fall/04.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_2",
+      "subject": 2,
+      "split": "train",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 10.0,
+      "publisher_class_text": "Falling (BW)[3.3 to 10]; Standing[0 to 3.1]",
+      "publisher_git_blob": "9d4a8b01af9421c6502d43e150a15d62c0eadba3",
+      "publisher_bytes": 10581582,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 3.3,
+          "end_seconds": 10.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 2/Fall/05.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_2",
+      "subject": 2,
+      "split": "train",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 4.0,
+      "publisher_class_text": "Falling (SW)[0.8 to 4]; Standing[0 to 0.7]",
+      "publisher_git_blob": "3e80c1da4b17eb568740e9b64fb3dc5753d16bef",
+      "publisher_bytes": 4740489,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 0.8,
+          "end_seconds": 4.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 2/Fall/06.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_2",
+      "subject": 2,
+      "split": "train",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 6.0,
+      "publisher_class_text": "Falling (BW)[2.1 to 6]; Walking[0 to 1.9]",
+      "publisher_git_blob": "97383ac778d02479de3cc24db9b69ff0c6849584",
+      "publisher_bytes": 6640674,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 2.1,
+          "end_seconds": 6.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 2/Fall/07.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_2",
+      "subject": 2,
+      "split": "train",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 4.0,
+      "publisher_class_text": "Falling (FW)[2 to 4]; Standing[0 to 1.7]",
+      "publisher_git_blob": "7b1cfd4cd0b314b35d82af83fbcdf68c623df032",
+      "publisher_bytes": 4719515,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 2.0,
+          "end_seconds": 4.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 2/Fall/08.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_2",
+      "subject": 2,
+      "split": "train",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 6.0,
+      "publisher_class_text": "Falling (BW)[3.2 to 6]; Reading[0 to 2.1]; Sitting[0 to 3]",
+      "publisher_git_blob": "8cd7c5c12beed12c7e06aac04a45fd7e554af288",
+      "publisher_bytes": 6240049,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 3.2,
+          "end_seconds": 6.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 2/Fall/09.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_2",
+      "subject": 2,
+      "split": "train",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 5.0,
+      "publisher_class_text": "Falling (BW)[1.8 to 5]; Walking[0 to 1.7]",
+      "publisher_git_blob": "ca17ed27eb8de28445beddd5ff81f603feba28cc",
+      "publisher_bytes": 5848366,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 1.8,
+          "end_seconds": 5.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 2/Fall/10.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_2",
+      "subject": 2,
+      "split": "train",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 11.0,
+      "publisher_class_text": "Falling (BW)[2 to 4]; Falling (SW)[4 to 11]; Walking[0 to 1.8]",
+      "publisher_git_blob": "ff75d8bf78cdf1b97c335cdabb7f2e8b071c8875",
+      "publisher_bytes": 6007745,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 2.0,
+          "end_seconds": 4.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 2/Fall/11.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_2",
+      "subject": 2,
+      "split": "train",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 10.0,
+      "publisher_class_text": "Falling (BW[5.9 to 10]; Walking[0 to 1.3]",
+      "publisher_git_blob": "5b70fef36f608290087a1f962b71c42c0078c5c6",
+      "publisher_bytes": 5742412,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 5.9,
+          "end_seconds": 10.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 2/Fall/12.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_2",
+      "subject": 2,
+      "split": "train",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 12.0,
+      "publisher_class_text": "Falling (BW)[6.9 to 12]; Drinking[3.5 to 5.3]; Standing[3.6 to 6.9]; Walking[0 to 3.6]",
+      "publisher_git_blob": "ebc5325d91bab9c894278cee1073aabeb6b0d800",
+      "publisher_bytes": 2393316,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 6.9,
+          "end_seconds": 12.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 2/Fall/13.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_2",
+      "subject": 2,
+      "split": "train",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 8.0,
+      "publisher_class_text": "Falling (BW)[2.5 to 8]; Standing[0 to 2.5]",
+      "publisher_git_blob": "dfc8b89268975d8200782a2d396309dfe76c13b0",
+      "publisher_bytes": 1617503,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 2.5,
+          "end_seconds": 8.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 2/Fall/14.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_2",
+      "subject": 2,
+      "split": "train",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 11.0,
+      "publisher_class_text": "Falling (BW)[3.4 to 11]; Standing[0 to 3.2]",
+      "publisher_git_blob": "f0cb80f40c0f37d03eace576d400580878aa2930",
+      "publisher_bytes": 2174567,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 3.4,
+          "end_seconds": 11.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 2/Fall/15.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_2",
+      "subject": 2,
+      "split": "train",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 11.0,
+      "publisher_class_text": "Falling (SW)[7.7 to 11]; Sitting[0 to 7.7]; Writing[0 to 4.6]",
+      "publisher_git_blob": "16dc597dc09cbfa521ae2ae49bbb9c97a8199eb1",
+      "publisher_bytes": 12004861,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 7.7,
+          "end_seconds": 11.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 2/Fall/16.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_2",
+      "subject": 2,
+      "split": "train",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 4.0,
+      "publisher_class_text": "Falling (FW)[0.8 to 4]; Walking[0 to 0.6]",
+      "publisher_git_blob": "f78477af55d4f771b2481189d4ee5574872ed0e2",
+      "publisher_bytes": 4208601,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 0.8,
+          "end_seconds": 4.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 2/Fall/17.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_2",
+      "subject": 2,
+      "split": "train",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 6.0,
+      "publisher_class_text": "Falling (FW)[2.5 to 6]; Walking[0 to 2.1]",
+      "publisher_git_blob": "cd27e0f072418fbe9ef8d07b5b8c25efae825de5",
+      "publisher_bytes": 6754763,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 2.5,
+          "end_seconds": 6.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 2/Fall/18.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_2",
+      "subject": 2,
+      "split": "train",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 11.0,
+      "publisher_class_text": "Falling (FW)[9.8 to 11]; Drinking[3.9 to 5.8]; Standing[0 to 2.3]; Walking[2.3 to 4.3]",
+      "publisher_git_blob": "d90432c9d3fdcc402dfd2508549f48b215d24edc",
+      "publisher_bytes": 11908668,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 9.8,
+          "end_seconds": 11.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 2/Fall/19.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_2",
+      "subject": 2,
+      "split": "train",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 15.0,
+      "publisher_class_text": "Falling (FW)[8.2 to 15]; Eating[0.9 4.6]; Standing[0 to 8.1]",
+      "publisher_git_blob": "66c46ddf0ed274e412ff9431475cb32850c50e68",
+      "publisher_bytes": 15941844,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 8.2,
+          "end_seconds": 15.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 2/Fall/20.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_2",
+      "subject": 2,
+      "split": "train",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 11.0,
+      "publisher_class_text": "Falling (FW)[7.9 to 11]; Eating[1.6 to 3.2]; Standing[0 to 7.7]",
+      "publisher_git_blob": "3d2bfea86181a45ad183b9db9374d95b5ef475cb",
+      "publisher_bytes": 11795414,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 7.9,
+          "end_seconds": 11.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 2/Fall/21.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_2",
+      "subject": 2,
+      "split": "train",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 9.0,
+      "publisher_class_text": "Falling (SW)[6.2 to 9]; Standing[0 to 4.9]; Walking[4.9 to 6.1]",
+      "publisher_git_blob": "9d346f09a55e58be2711be4686c0f0ab17069399",
+      "publisher_bytes": 9754803,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 6.2,
+          "end_seconds": 9.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 2/Fall/22.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_2",
+      "subject": 2,
+      "split": "train",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 5.0,
+      "publisher_class_text": "Falling (FW)[1.3 to 5]; Walking[0 to 1.2]",
+      "publisher_git_blob": "52500f56fc9b84d10f66180b54c6ef338c9c117b",
+      "publisher_bytes": 5412975,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 1.3,
+          "end_seconds": 5.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 2/Fall/23.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_2",
+      "subject": 2,
+      "split": "train",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 7.0,
+      "publisher_class_text": "Falling (SW)[3.6 to 7]; Standing[0 to 3.6]",
+      "publisher_git_blob": "2decf8239d0bea7d8eed03f6ef79f1d1f820ace3",
+      "publisher_bytes": 7735091,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 3.6,
+          "end_seconds": 7.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 2/Fall/24.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_2",
+      "subject": 2,
+      "split": "train",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 7.0,
+      "publisher_class_text": "Falling (SW)[3.3 to 6.4]; Sitting[0 to 1.7]; Standing[2 to 3.2]",
+      "publisher_git_blob": "5d145bfacedf5f194e6d7b53b3e495ea89c3bd14",
+      "publisher_bytes": 7389558,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 3.3,
+          "end_seconds": 6.4,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 2/Fall/25.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_2",
+      "subject": 2,
+      "split": "train",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 7.0,
+      "publisher_class_text": "Falling (BW)[3 to 7]; Standing[0 to 3]",
+      "publisher_git_blob": "c8302f6c8b57a41e86d881c2d213d8244e51372c",
+      "publisher_bytes": 7550478,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 3.0,
+          "end_seconds": 7.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 2/ADL/01.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_2",
+      "subject": 2,
+      "split": "train",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 11.0,
+      "publisher_class_text": "Sitting [0 to 7]; Standing [7.3 to 8.1]; Walking[8.1 to 11]",
+      "publisher_git_blob": "fe7fe67df069d313d0ea18129c2685b4d212c65b",
+      "publisher_bytes": 11622498,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 11.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 2/ADL/02.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_2",
+      "subject": 2,
+      "split": "train",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 11.0,
+      "publisher_class_text": "Drinking[10.5 to 11]; Sitting [0 to 11];",
+      "publisher_git_blob": "fe7fc30f9ee1bb33f4066073adcb6d1438fab9fe",
+      "publisher_bytes": 11856629,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 11.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 2/ADL/03.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_2",
+      "subject": 2,
+      "split": "train",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 11.0,
+      "publisher_class_text": "Sitting[5.6 to 7.4]; Sleeping[8 to 11]; Walking[0 to 4.6]",
+      "publisher_git_blob": "47de4d6a2b02b984dbcafab95ca9be3e9850d832",
+      "publisher_bytes": 12178337,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 11.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 2/ADL/04.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_2",
+      "subject": 2,
+      "split": "train",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 70.0,
+      "publisher_class_text": "Exercising[0 to 7]; Standing[0 to 7]",
+      "publisher_git_blob": "3a66525d449c6ff513fd1c20e64108c57039ce3d",
+      "publisher_bytes": 8300595,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 70.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 2/ADL/05.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_2",
+      "subject": 2,
+      "split": "train",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 10.0,
+      "publisher_class_text": "Sitting[0 to 2.8]; Standing[3.1 to 4.1]; Walking[4.1 to 10]",
+      "publisher_git_blob": "33ef1ef9ec869720bcfc5b2d3a7c869811dbc988",
+      "publisher_bytes": 11172187,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 10.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 2/ADL/06.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_2",
+      "subject": 2,
+      "split": "train",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 10.0,
+      "publisher_class_text": "Sitting[9.7 to 3]; Standing[0 to 0.5; 4.2 to 6.5]; Walking[0.5 to 1.8; 6 to 8.7]",
+      "publisher_git_blob": "78e805b3e6cb0ea6c903c22681ab5fc663c215a4",
+      "publisher_bytes": 11333632,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 10.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 2/ADL/07.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_2",
+      "subject": 2,
+      "split": "train",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 13.0,
+      "publisher_class_text": "Exercising[0 to 13]; Standing[0 to 13]",
+      "publisher_git_blob": "0a1e8872bc7d0e276ab004f36484eb1f73d1928d",
+      "publisher_bytes": 13334845,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 13.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 2/ADL/08.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_2",
+      "subject": 2,
+      "split": "train",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 13.0,
+      "publisher_class_text": "Exercising[0 to 13]; Standing[4.5 to 6.2; 10 to 13]",
+      "publisher_git_blob": "f77bc609b8d50e3e777b281fba7974b3df53c4b9",
+      "publisher_bytes": 14001257,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 13.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 2/ADL/09.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_2",
+      "subject": 2,
+      "split": "train",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 10.0,
+      "publisher_class_text": "Sitting[0 to 0.5; 3.7 to 10]; Standing[0.5 to 1.3]; Walking[0.5 to 3.1]",
+      "publisher_git_blob": "a4530f135199908e5ed29f211bd107b30d76bc5e",
+      "publisher_bytes": 11237415,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 10.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 2/ADL/10.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_2",
+      "subject": 2,
+      "split": "train",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 7.0,
+      "publisher_class_text": "Standing[0.1 to 2.1]; Walking[2.1 to 5]",
+      "publisher_git_blob": "f50ccfcbaf330a5128247baa828c7464932accab",
+      "publisher_bytes": 7729870,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 7.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 2/ADL/11.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_2",
+      "subject": 2,
+      "split": "train",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 10.0,
+      "publisher_class_text": "Standing[0 to 4.7]; Walking[5 to 6.5; 8 to 10]",
+      "publisher_git_blob": "1f1c5c3442365b6865c87a77b90dce589996a27a",
+      "publisher_bytes": 10144022,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 10.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 2/ADL/12.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_2",
+      "subject": 2,
+      "split": "train",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 7.0,
+      "publisher_class_text": "Sleeping[3 to 7]; Standing[0 to 0.1]",
+      "publisher_git_blob": "aa83cc15559687e49c40afad920949be7befa61d",
+      "publisher_bytes": 7791870,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 7.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 2/ADL/13.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_2",
+      "subject": 2,
+      "split": "train",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 4.0,
+      "publisher_class_text": "Reading[1 to 4]; Sitting[1 to 4]; Standing[0 to 0.5]",
+      "publisher_git_blob": "e9661d6f2fe026138a9a6f6e0a39bdad7ce6ddc1",
+      "publisher_bytes": 5042870,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 4.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 2/ADL/14.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_2",
+      "subject": 2,
+      "split": "train",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 11.0,
+      "publisher_class_text": "Reading[8.6 to 11]; Sitting[4.6 to 11]; Walking[0 to 3.6]",
+      "publisher_git_blob": "901e7d55fa9b9068139707d48b24b5174405a6f8",
+      "publisher_bytes": 5961059,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 11.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 2/ADL/15.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_2",
+      "subject": 2,
+      "split": "train",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 11.0,
+      "publisher_class_text": "Reading[6.5 to 11]; Sitting[0 to 11]",
+      "publisher_git_blob": "1396d55551b025a78c1da32f099e053428a8c2f4",
+      "publisher_bytes": 6478341,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 11.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 2/ADL/16.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_2",
+      "subject": 2,
+      "split": "train",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 11.0,
+      "publisher_class_text": "Reading[0 to 5.8]; Sleeping[9 to 11]",
+      "publisher_git_blob": "b71643610739371a728d25294ed171ce7c2a696e",
+      "publisher_bytes": 6180584,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 11.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 2/ADL/17.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_2",
+      "subject": 2,
+      "split": "train",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 11.0,
+      "publisher_class_text": "Standing[3.5 to 4; 6.8 to 10]; Walking[4.1 to 6.8]",
+      "publisher_git_blob": "8741b083526efa1181ef276645d54adb7caa59a2",
+      "publisher_bytes": 6329895,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 11.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 2/ADL/18.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_2",
+      "subject": 2,
+      "split": "train",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 11.0,
+      "publisher_class_text": "Standing[2 to 11]; Walking[0 to 2]",
+      "publisher_git_blob": "ed361c185c1b131371fc374b3d247ec7d556e66b",
+      "publisher_bytes": 6235033,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 11.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 2/ADL/19.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_2",
+      "subject": 2,
+      "split": "train",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 11.0,
+      "publisher_class_text": "Sitting[1 to 11]; Walking[0 to 0.6]; Writing[5 to 11]",
+      "publisher_git_blob": "ea4022f059d6bd44dde0351e246f5debecf1b64c",
+      "publisher_bytes": 6099589,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 11.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 2/ADL/20.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_2",
+      "subject": 2,
+      "split": "train",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 11.0,
+      "publisher_class_text": "Drinking[7.4 to 9.4]; Sitting[3.7 to 11]; Standing[0 to 3.2]",
+      "publisher_git_blob": "3c90f0c72943a2470e852a172ad6c45f09b5aeb7",
+      "publisher_bytes": 6259591,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 11.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 2/ADL/21.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_2",
+      "subject": 2,
+      "split": "train",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 10.0,
+      "publisher_class_text": "Standing[0 to 6.6]; Walking[6.6 to 10]",
+      "publisher_git_blob": "6e272dff55b0eb9aceed1d0714860743deee5baa",
+      "publisher_bytes": 5703502,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 10.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 2/ADL/22.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_2",
+      "subject": 2,
+      "split": "train",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 12.0,
+      "publisher_class_text": "Exercising[1.9 to 8.3]; Sitting[9.5 to 10.5]",
+      "publisher_git_blob": "dd4c765469925adbec606818e91de5c9c3e2fdb2",
+      "publisher_bytes": 6399428,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 12.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 2/ADL/23.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_2",
+      "subject": 2,
+      "split": "train",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 7.0,
+      "publisher_class_text": "Eating[4.2 to 5.2]; Sitting[0 to 7]",
+      "publisher_git_blob": "a5b4197ffad9be4dcab62254175763673ccdffe9",
+      "publisher_bytes": 1426689,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 7.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 3/Fall/01.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_3",
+      "subject": 3,
+      "split": "development",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 3.0,
+      "publisher_class_text": "Fall (FW)[0 to 3]",
+      "publisher_git_blob": "63849f8c776ba8197a5df16f9e900bd97e9214be",
+      "publisher_bytes": 4135599,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 3.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 3/Fall/02.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_3",
+      "subject": 3,
+      "split": "development",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 6.0,
+      "publisher_class_text": "Fall (FW)[2.6 to 6]; Standing[1.3 to 2.2]; Walking[0 to 1.3]",
+      "publisher_git_blob": "dd39274c58c56a260cc947902ef2bf34b1320359",
+      "publisher_bytes": 6999116,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 2.6,
+          "end_seconds": 6.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 3/Fall/03.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_3",
+      "subject": 3,
+      "split": "development",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 5.0,
+      "publisher_class_text": "Falling (BW)[1.5 to 5]; Standing[0 to 1.5]",
+      "publisher_git_blob": "41daaee74ceb00e8db32f34525a57c704994f0b5",
+      "publisher_bytes": 5753609,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 1.5,
+          "end_seconds": 5.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 3/Fall/04.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_3",
+      "subject": 3,
+      "split": "development",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 5.0,
+      "publisher_class_text": "Falling (BW)[1.2 to 5]; Walking[0 to 1.2]",
+      "publisher_git_blob": "ce498c960dd528b498b5b328b7a4545b1b52e304",
+      "publisher_bytes": 5697448,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 1.2,
+          "end_seconds": 5.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 3/Fall/05.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_3",
+      "subject": 3,
+      "split": "development",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 10.0,
+      "publisher_class_text": "Falling (BW)[3.2 to 10]; Standing[0 to 3]",
+      "publisher_git_blob": "1663613e3e0f00c3d3e3cf705ef5745223cdf313",
+      "publisher_bytes": 10206712,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 3.2,
+          "end_seconds": 10.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 3/Fall/06.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_3",
+      "subject": 3,
+      "split": "development",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 5.0,
+      "publisher_class_text": "Falling (BW) [0 to 5]",
+      "publisher_git_blob": "fd97835118f3f87c4027eb98d58fdd5cf4a7c11a",
+      "publisher_bytes": 5941313,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 5.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 3/Fall/07.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_3",
+      "subject": 3,
+      "split": "development",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 9.0,
+      "publisher_class_text": "Falling (BW)[1 to 9]; Standing[0 to 1]",
+      "publisher_git_blob": "bca432834b997569b87599a4e25886c342279da8",
+      "publisher_bytes": 9262980,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 1.0,
+          "end_seconds": 9.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 3/Fall/08.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_3",
+      "subject": 3,
+      "split": "development",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 6.0,
+      "publisher_class_text": "Falling (SW)[0 to 6]",
+      "publisher_git_blob": "c3673fff8bbed53b8273f8f52a7dd762082a9fae",
+      "publisher_bytes": 6524154,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 6.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 3/Fall/09.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_3",
+      "subject": 3,
+      "split": "development",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 6.0,
+      "publisher_class_text": "Falling (BW)[3.3 to 6]; Reading[0 to 3.3]; Sitting[0 to 3.4]",
+      "publisher_git_blob": "102824d32ae3fa2296e94ddac23ea836607dc767",
+      "publisher_bytes": 6430062,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 3.3,
+          "end_seconds": 6.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 3/Fall/10.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_3",
+      "subject": 3,
+      "split": "development",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 4.0,
+      "publisher_class_text": "Falling (FW)[1.7 to 4]",
+      "publisher_git_blob": "80f9db9f7fb6ae87c627dceaf73ff2afaf755200",
+      "publisher_bytes": 4533133,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 1.7,
+          "end_seconds": 4.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 3/Fall/11.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_3",
+      "subject": 3,
+      "split": "development",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 8.0,
+      "publisher_class_text": "Falling (FW)[4.7 to 8]; Eating[0 to 2]; Standing[0 to 4.6]",
+      "publisher_git_blob": "9326428d64e7b5053088af4f0f5d63b27f65f65e",
+      "publisher_bytes": 9172835,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 4.7,
+          "end_seconds": 8.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 3/Fall/12.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_3",
+      "subject": 3,
+      "split": "development",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 4.0,
+      "publisher_class_text": "Falling (BW)[1.6 to 4]; Standing[0 to 0.8]",
+      "publisher_git_blob": "e8aa3e0c5c0c994df6f91cdf0ab1d053e8e9a42b",
+      "publisher_bytes": 4513787,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 1.6,
+          "end_seconds": 4.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 3/Fall/13.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_3",
+      "subject": 3,
+      "split": "development",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 4.0,
+      "publisher_class_text": "Falling (BW)[1.4 to 4]; Sitting[0 to 1.4]; Writing[0 to 1.3]",
+      "publisher_git_blob": "d25639c966de928befc72ebfe7c02d8fea071b4b",
+      "publisher_bytes": 4490977,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 1.4,
+          "end_seconds": 4.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 3/Fall/14.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_3",
+      "subject": 3,
+      "split": "development",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 12.0,
+      "publisher_class_text": "Falling (BW)[8.1 to 12]; Standing[4.6 to 8.1];Walking[0 to 4.6]",
+      "publisher_git_blob": "3754524922b86f4367295f1f56b598595a7fa737",
+      "publisher_bytes": 12639388,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 8.1,
+          "end_seconds": 12.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 3/Fall/15.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_3",
+      "subject": 3,
+      "split": "development",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 5.0,
+      "publisher_class_text": "Falling (BW)[1.9 to 5]; Standing[0 to 1.8]",
+      "publisher_git_blob": "baf9b41b71882ba3c9198df259ef0b805b35dc81",
+      "publisher_bytes": 3155467,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 1.9,
+          "end_seconds": 5.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 3/Fall/16.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_3",
+      "subject": 3,
+      "split": "development",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 7.0,
+      "publisher_class_text": "Falling (SW)[1.8 to 7]; Walking[0 to 1.7]",
+      "publisher_git_blob": "a66bfe75bebe8643865bf685fb74e867f23ad6e9",
+      "publisher_bytes": 3349906,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 1.8,
+          "end_seconds": 7.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 3/Fall/17.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_3",
+      "subject": 3,
+      "split": "development",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 8.0,
+      "publisher_class_text": "Falling (BW)[1.4 to 8]; Reading[0 to 1.1]; Sitting[0 to 1.4]",
+      "publisher_git_blob": "c0e414259b54cf9b0c6adea995df9c39ade13927",
+      "publisher_bytes": 4685086,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 1.4,
+          "end_seconds": 8.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 3/Fall/18.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_3",
+      "subject": 3,
+      "split": "development",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 11.0,
+      "publisher_class_text": "Falling (SW)[4.2 to 11]; Sitting[0 to 3.2]",
+      "publisher_git_blob": "4f713e0ebd80c994826dd5932d692d9183f9ab71",
+      "publisher_bytes": 6314610,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 4.2,
+          "end_seconds": 11.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 3/Fall/19.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_3",
+      "subject": 3,
+      "split": "development",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 5.0,
+      "publisher_class_text": "Falling (BW)[2 to 5]; Standing[0 to 1.9]",
+      "publisher_git_blob": "4af4f588d0dfb11947e7a92da3acd44a81f06337",
+      "publisher_bytes": 1163962,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 2.0,
+          "end_seconds": 5.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 3/Fall/20.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_3",
+      "subject": 3,
+      "split": "development",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 6.0,
+      "publisher_class_text": "Falling (FW)[2.3 to 6]; Walking[0 to 2.2]",
+      "publisher_git_blob": "25242c4a325fbccb74c2c98b3f2455bc575f65c2",
+      "publisher_bytes": 1276484,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 2.3,
+          "end_seconds": 6.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 3/Fall/21.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_3",
+      "subject": 3,
+      "split": "development",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 9.0,
+      "publisher_class_text": "Falling (SW)[5.4 to 9]; Drinking[0 to 1.4]; Standing[0 to 4.4]",
+      "publisher_git_blob": "5aada1cbc7c28faa5fedf243436d35e2f181f22d",
+      "publisher_bytes": 9366624,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 5.4,
+          "end_seconds": 9.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 3/ADL/01.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_3",
+      "subject": 3,
+      "split": "development",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 8.0,
+      "publisher_class_text": "Sitting[0 to 8]; Writing[0 to 8]",
+      "publisher_git_blob": "54ae0c8c24fe1331684adede4aa78e78d9be1992",
+      "publisher_bytes": 8915311,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 8.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 3/ADL/02.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_3",
+      "subject": 3,
+      "split": "development",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 9.0,
+      "publisher_class_text": "Exercising[0 to 9]; Standing[0 to 9]",
+      "publisher_git_blob": "a15dfabd23790c9c02cb5b476cc3b10b40281c9f",
+      "publisher_bytes": 9386201,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 9.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 3/ADL/03.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_3",
+      "subject": 3,
+      "split": "development",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 9.0,
+      "publisher_class_text": "Sitting[3 to 7.4]; Sleeping[0 to 1]; Standing[7.6 to 8.4]; Walking[8.5 to 9]",
+      "publisher_git_blob": "2837ecbb2ea84ccbbb78edcffe81778c8fa7bbe9",
+      "publisher_bytes": 10102214,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 9.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 3/ADL/04.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_3",
+      "subject": 3,
+      "split": "development",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 10.0,
+      "publisher_class_text": "Sitting[9.2 to 10]; Standing[2.4 to 3.6; 6.6 to 7.9; Walking[3.6 to 5.2; 7.9 to 9.2]",
+      "publisher_git_blob": "67d22efbe35351a1e5659fb912aba445937e714e",
+      "publisher_bytes": 10300270,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 10.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 3/ADL/05.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_3",
+      "subject": 3,
+      "split": "development",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 5.0,
+      "publisher_class_text": "Exercising[0 to 5]; Standing[0 to 5]",
+      "publisher_git_blob": "9f2017fd9ae2ba00807ece9335f683d18f8a9067",
+      "publisher_bytes": 5410881,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 5.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 3/ADL/06.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_3",
+      "subject": 3,
+      "split": "development",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 8.0,
+      "publisher_class_text": "Exercising[0 to 5.1]; Sitting[5.1 to 8]",
+      "publisher_git_blob": "e66544079bc009369f1c4068b136de9f27606e2d",
+      "publisher_bytes": 9084601,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 8.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 3/ADL/07.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_3",
+      "subject": 3,
+      "split": "development",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 3.0,
+      "publisher_class_text": "Exercising[0 to 3]; Standing[0 to 0.3; 1.5 to 2.2]",
+      "publisher_git_blob": "9506c4c2005c9d3830605a9984ab434e1291120a",
+      "publisher_bytes": 3599323,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 3.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 3/ADL/08.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_3",
+      "subject": 3,
+      "split": "development",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 4.0,
+      "publisher_class_text": "Sitting[0 to 0.8]; Sleeping[0.8 to 4]",
+      "publisher_git_blob": "a38dca4aed2a27d930354beeb7d36911a7b8dd55",
+      "publisher_bytes": 5172948,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 4.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 3/ADL/09.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_3",
+      "subject": 3,
+      "split": "development",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 7.0,
+      "publisher_class_text": "Sitting[2.5 to 6]; Sleeping[0 to 2.2]; Standing[6.2 to 7]",
+      "publisher_git_blob": "cfa82a7a175542ace7bf85d97a639009e2fd0349",
+      "publisher_bytes": 8018966,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 7.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 3/ADL/10.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_3",
+      "subject": 3,
+      "split": "development",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 12.0,
+      "publisher_class_text": "Standing[0 to 12]",
+      "publisher_git_blob": "c164e3c72bea8665392b4158faac3e5296fe0fc9",
+      "publisher_bytes": 12788851,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 12.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 3/ADL/11.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_3",
+      "subject": 3,
+      "split": "development",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 12.0,
+      "publisher_class_text": "Standing[2.7 to 12]; Walking[0 to 2.7]",
+      "publisher_git_blob": "56e5dfb3c70e4b50bbc3fb7f1402ef9fbe9168af",
+      "publisher_bytes": 12320822,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 12.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 3/ADL/12.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_3",
+      "subject": 3,
+      "split": "development",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 10.0,
+      "publisher_class_text": "Reading; Sitting[0.8 to 8.1]; Standing[8.1 to 9.2]; Walking[9.2 to 10]",
+      "publisher_git_blob": "476c8c32f2f6c99494746d51751b7de66683fb36",
+      "publisher_bytes": 5814420,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 10.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 3/ADL/13.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_3",
+      "subject": 3,
+      "split": "development",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 8.0,
+      "publisher_class_text": "Sitting[0 to 8]",
+      "publisher_git_blob": "1501187cf894db4e575a459d2a2af5bf4c20def5",
+      "publisher_bytes": 4930771,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 8.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 3/ADL/14.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_3",
+      "subject": 3,
+      "split": "development",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 8.0,
+      "publisher_class_text": "Drinking[3.5 to 6]; Sitting[0 to 8]",
+      "publisher_git_blob": "f7c184b9c5ec8cb2f2a25cc5eb8d36ed17773bbb",
+      "publisher_bytes": 4901751,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 8.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 3/ADL/15.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_3",
+      "subject": 3,
+      "split": "development",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 7.0,
+      "publisher_class_text": "Reading[0 to 7]; Sitting[0 to 7]",
+      "publisher_git_blob": "fffb9992cfe252162ab9078fe698da63cf09fa92",
+      "publisher_bytes": 4160966,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 7.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 3/ADL/16.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_3",
+      "subject": 3,
+      "split": "development",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 10.0,
+      "publisher_class_text": "Eating[0 to 10]; Sitting[0 to 10]",
+      "publisher_git_blob": "d7971062272b449d7c0c7b75ad1c0f63192febd4",
+      "publisher_bytes": 10556263,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 10.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 3/ADL/17.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_3",
+      "subject": 3,
+      "split": "development",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 12.0,
+      "publisher_class_text": "Drinking[1.8 to 4.1]; Sitting[0 to 12]",
+      "publisher_git_blob": "e9d7bf106c378e9646810f54f40d175828ba69f8",
+      "publisher_bytes": 6499280,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 12.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 3/ADL/18.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_3",
+      "subject": 3,
+      "split": "development",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 11.0,
+      "publisher_class_text": "Eating[5.1 to 5.8]; Sitting[0.6 to 11]; Walking[0 to 0.5]",
+      "publisher_git_blob": "62398c07c61d33a08ca13a1f33daa75c492a1e19",
+      "publisher_bytes": 2171202,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 11.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 3/ADL/19.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_3",
+      "subject": 3,
+      "split": "development",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 6.0,
+      "publisher_class_text": "Walking[1.8 to 5]",
+      "publisher_git_blob": "65627988f84c8eaf7cc10d32b774ebc4b01eefdb",
+      "publisher_bytes": 1375610,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 6.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 3/ADL/20.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_3",
+      "subject": 3,
+      "split": "development",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 9.0,
+      "publisher_class_text": "Sitting[0 to 9]",
+      "publisher_git_blob": "5e4495f59284b006dd40b9dc34f8fcd9061b6fc8",
+      "publisher_bytes": 1841867,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 9.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 3/ADL/21.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_3",
+      "subject": 3,
+      "split": "development",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 10.0,
+      "publisher_class_text": "Drinking[0 to 5.1]; Sitting[ 0 to 10]",
+      "publisher_git_blob": "43ad6357b61726133c9e54749ec8c3d04326c868",
+      "publisher_bytes": 10543223,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 10.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 3/ADL/22.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_3",
+      "subject": 3,
+      "split": "development",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 9.0,
+      "publisher_class_text": "Sitting[0 to 9]; Writing[0 to 9]",
+      "publisher_git_blob": "0af96bfce52598b282df794d19296d15b05dfd61",
+      "publisher_bytes": 9751145,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 9.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 4/Fall/01.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_4",
+      "subject": 4,
+      "split": "test",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 4.0,
+      "publisher_class_text": "Falling (SW)[1.8 to 4]; Standing[0 to 1.5]",
+      "publisher_git_blob": "8765c6ffe2c26e5cabcaf828e0a3d58e972a7fb3",
+      "publisher_bytes": 1714708,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 1.8,
+          "end_seconds": 4.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 4/Fall/02.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_4",
+      "subject": 4,
+      "split": "test",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 2.0,
+      "publisher_class_text": "Falling (SW)[1.5 to 2]; Sleeping[0 to 1.4]",
+      "publisher_git_blob": "2574e2fddf4dd7ddef1bfb25311d78ea0fa40aeb",
+      "publisher_bytes": 1110158,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 1.5,
+          "end_seconds": 2.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 4/Fall/03.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_4",
+      "subject": 4,
+      "split": "test",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 6.0,
+      "publisher_class_text": "Falling (FW)[1.7 to 6]; Walking[0 to 1.7]",
+      "publisher_git_blob": "3076cb2d10c3effc103fc501434ed97ebd27ec75",
+      "publisher_bytes": 2421154,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 1.7,
+          "end_seconds": 6.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 4/Fall/04.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_4",
+      "subject": 4,
+      "split": "test",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 4.0,
+      "publisher_class_text": "Falling (FW)[1.2 to 4]",
+      "publisher_git_blob": "2a220e381a4f59c315623c0c4ff3b28974c52757",
+      "publisher_bytes": 4877049,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 1.2,
+          "end_seconds": 4.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 4/Fall/05.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_4",
+      "subject": 4,
+      "split": "test",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 7.0,
+      "publisher_class_text": "Falling (SW)[2.7 to 7]; Sitting[0 to 2.4]",
+      "publisher_git_blob": "9dbfeb0c94767d4fa341e2c9eeb0cad074c62040",
+      "publisher_bytes": 7685245,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 2.7,
+          "end_seconds": 7.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 4/Fall/06.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_4",
+      "subject": 4,
+      "split": "test",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 6.0,
+      "publisher_class_text": "Falling (SW)[1.1 to 6]; Sitting[0 to 1]",
+      "publisher_git_blob": "d4346932cb7ea8d00393b0e16228a270f45665fa",
+      "publisher_bytes": 6374205,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 1.1,
+          "end_seconds": 6.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 4/Fall/07.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_4",
+      "subject": 4,
+      "split": "test",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 6.0,
+      "publisher_class_text": "Falling (SW)[2.4 to 6]; Walking[0 to 1.6]",
+      "publisher_git_blob": "55d8df5df21e95734daa7931ff492f0d343aff46",
+      "publisher_bytes": 6413959,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 2.4,
+          "end_seconds": 6.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 4/Fall/08.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_4",
+      "subject": 4,
+      "split": "test",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 6.0,
+      "publisher_class_text": "Falling (BW)[2.3 to 6]; Sitting[0 to 2.2]",
+      "publisher_git_blob": "c69072e4ea77168e17b89622fdcffe18d90a6478",
+      "publisher_bytes": 6535767,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 2.3,
+          "end_seconds": 6.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 4/Fall/09.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_4",
+      "subject": 4,
+      "split": "test",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 6.0,
+      "publisher_class_text": "Falling (BW)[2.3 6]; Sitting[0 to 2]",
+      "publisher_git_blob": "eeabf945add5416e7614be282b985418a8266a38",
+      "publisher_bytes": 6249112,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 2.3,
+          "end_seconds": 6.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 4/Fall/10.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_4",
+      "subject": 4,
+      "split": "test",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 5.0,
+      "publisher_class_text": "Falling (FW)[2.2 to 5]; Reading[0 to 2.1]; Sitting[0 to 2.1]",
+      "publisher_git_blob": "381f56ec7837339e93a49e145f9c1a87f4ff3384",
+      "publisher_bytes": 5303241,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 2.2,
+          "end_seconds": 5.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 4/Fall/11.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_4",
+      "subject": 4,
+      "split": "test",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 4.0,
+      "publisher_class_text": "Falling (FW)[1.2 to 4]; Walking[0 to 1]",
+      "publisher_git_blob": "2f7ce1d43b5d4367592fa9398a05685843d06511",
+      "publisher_bytes": 4788639,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 1.2,
+          "end_seconds": 4.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 4/Fall/12.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_4",
+      "subject": 4,
+      "split": "test",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 4.0,
+      "publisher_class_text": "Falling (FW)[1.5 to 4]; Sitting[0 to 1.3]",
+      "publisher_git_blob": "90efc15612205b6eaa17422020f3a4653f577bfa",
+      "publisher_bytes": 4851884,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 1.5,
+          "end_seconds": 4.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 4/Fall/13.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_4",
+      "subject": 4,
+      "split": "test",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 5.0,
+      "publisher_class_text": "Falling (SW)[0.3 to 5]",
+      "publisher_git_blob": "098f7ec72f666a79dfcd426505fcc714e3138d30",
+      "publisher_bytes": 5212102,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 0.3,
+          "end_seconds": 5.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 4/Fall/14.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_4",
+      "subject": 4,
+      "split": "test",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 5.0,
+      "publisher_class_text": "Falling (SW)[0.8 to 5]; Sitting[0 to 0.8]",
+      "publisher_git_blob": "4cbd2676db1360b0224ebf2e5d34d1170aa688d7",
+      "publisher_bytes": 5494513,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 0.8,
+          "end_seconds": 5.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 4/Fall/15.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_4",
+      "subject": 4,
+      "split": "test",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 4.0,
+      "publisher_class_text": "Falling (FW); Sitting[0 to 1.7]",
+      "publisher_git_blob": "fd98b031b3a758ef77ac683e56df46a1ab991f54",
+      "publisher_bytes": 5091720,
+      "annotation_status": "needs_temporal_review",
+      "intervals": []
+    },
+    {
+      "video": "Subject 4/Fall/16.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_4",
+      "subject": 4,
+      "split": "test",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 7.0,
+      "publisher_class_text": "Falling (FW)[3.2 to 7]; Walking[0 to 2.9]",
+      "publisher_git_blob": "1aab68d8e3ceacbf84155bdfc3d486cdc068aa28",
+      "publisher_bytes": 7300320,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 3.2,
+          "end_seconds": 7.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 4/Fall/17.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_4",
+      "subject": 4,
+      "split": "test",
+      "source_category": "Fall",
+      "publisher_duration_seconds": 6.0,
+      "publisher_class_text": "Falling (SW)[2.8 to 6]; Sitting[0 to 2.6]",
+      "publisher_git_blob": "2f22163dbab1ad52917ce81acee90b7638fb8496",
+      "publisher_bytes": 7109838,
+      "annotation_status": "publisher_temporal",
+      "intervals": [
+        {
+          "start_seconds": 2.8,
+          "end_seconds": 6.0,
+          "action": "fall",
+          "label": 1
+        }
+      ]
+    },
+    {
+      "video": "Subject 4/ADL/01.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_4",
+      "subject": 4,
+      "split": "test",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 12.0,
+      "publisher_class_text": "Sitting[0 to 12]",
+      "publisher_git_blob": "7dbf0869841e3fed0814f8851ebacdca1268996d",
+      "publisher_bytes": 12882539,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 12.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 4/ADL/02.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_4",
+      "subject": 4,
+      "split": "test",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 10.0,
+      "publisher_class_text": "Walking[0 to 10]",
+      "publisher_git_blob": "0191212b9bab2146890cd74056e02356c9c84160",
+      "publisher_bytes": 11087188,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 10.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 4/ADL/03.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_4",
+      "subject": 4,
+      "split": "test",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 8.0,
+      "publisher_class_text": "Reading[3.8 to 8]; Sitting[ 0 to 8]",
+      "publisher_git_blob": "3b1105224422fb2bce42f0b1946dfd773cfda15f",
+      "publisher_bytes": 9430862,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 8.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 4/ADL/04.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_4",
+      "subject": 4,
+      "split": "test",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 13.0,
+      "publisher_class_text": "Sitting[0 to 13]",
+      "publisher_git_blob": "77b141141434801e08bb7713ab2a6907712458d0",
+      "publisher_bytes": 13673909,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 13.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 4/ADL/05.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_4",
+      "subject": 4,
+      "split": "test",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 7.0,
+      "publisher_class_text": "Exercising[2.6 to 7]; Walking[0 to 1.9]",
+      "publisher_git_blob": "491b537d4d4ea14807673c29bb7fbee6dcb6bcf7",
+      "publisher_bytes": 7978111,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 7.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 4/ADL/06.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_4",
+      "subject": 4,
+      "split": "test",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 6.0,
+      "publisher_class_text": "Exercising[1.4 to 6]; Walking[0 to 1]",
+      "publisher_git_blob": "8e9aef94e8009fe3dae712a0d371f5bb9dec55e2",
+      "publisher_bytes": 7176201,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 6.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 4/ADL/07.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_4",
+      "subject": 4,
+      "split": "test",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 4.0,
+      "publisher_class_text": "Exercising[0 to 4]",
+      "publisher_git_blob": "8a6aad020ff6f70b01eb3ecd952b5ec445e0a90d",
+      "publisher_bytes": 5575628,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 4.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 4/ADL/08.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_4",
+      "subject": 4,
+      "split": "test",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 12.0,
+      "publisher_class_text": "Drinking[8.5 to 12]; Sitting[2.1 to 12]; Sleeping[0 to 1.1]",
+      "publisher_git_blob": "e8b9a27b55f83f2e23e43169c1e852975a119de2",
+      "publisher_bytes": 12953561,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 12.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 4/ADL/09.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_4",
+      "subject": 4,
+      "split": "test",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 12.0,
+      "publisher_class_text": "Reading[0 to 12]; Sitting[0 to 12]",
+      "publisher_git_blob": "2a7449714447e32018fe9f5ce76eab37b0292e3f",
+      "publisher_bytes": 12447609,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 12.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 4/ADL/10.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_4",
+      "subject": 4,
+      "split": "test",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 12.0,
+      "publisher_class_text": "Sleeping[4.3 to 12]; Walking[0 to 1.4]",
+      "publisher_git_blob": "dd792111af6642e96d831be0adcaea21dfaf8492",
+      "publisher_bytes": 13287314,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 12.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 4/ADL/11.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_4",
+      "subject": 4,
+      "split": "test",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 10.0,
+      "publisher_class_text": "Sitting[0 to 10]; Writing[2.7 to 10]",
+      "publisher_git_blob": "50773e79129d81cee8239d3392c226889b8882da",
+      "publisher_bytes": 11019500,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 10.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 4/ADL/12.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_4",
+      "subject": 4,
+      "split": "test",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 8.0,
+      "publisher_class_text": "Drinking[4.5 to 8]; Reading[0 to 1.6]; Sitting[0 to 8]; Writing[0 to 1.6]",
+      "publisher_git_blob": "ac42729b0dd8a47ec5dfba3b2a6c1263f9dd65a1",
+      "publisher_bytes": 8879979,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 8.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 4/ADL/13.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_4",
+      "subject": 4,
+      "split": "test",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 5.0,
+      "publisher_class_text": "Sitting[0 to 5]; Writing[0 to 5]",
+      "publisher_git_blob": "3816f83a422ce780d5572a32734a30ed612dab43",
+      "publisher_bytes": 5741194,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 5.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 4/ADL/14.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_4",
+      "subject": 4,
+      "split": "test",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 8.0,
+      "publisher_class_text": "Drinking[4.5 to 6.7]; Standing[0 to 0.3; 1.5 to 8]; Walking[0.4 to 1.4]",
+      "publisher_git_blob": "46cb781aa5ff1d5f7c9329d925f077af9c81ff10",
+      "publisher_bytes": 8425027,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 8.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 4/ADL/15.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_4",
+      "subject": 4,
+      "split": "test",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 5.0,
+      "publisher_class_text": "Sitting[0 to 0.5]; Sleeping[1.6 to 5]",
+      "publisher_git_blob": "6dd09260974b158ce54b007641257e7df0055499",
+      "publisher_bytes": 5516254,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 5.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 4/ADL/16.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_4",
+      "subject": 4,
+      "split": "test",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 7.0,
+      "publisher_class_text": "Sitting[0.5 to 2.8]; Sleeping[2.9 to 7]",
+      "publisher_git_blob": "230970de9b41962a4000cc914e61dbfedc15b130",
+      "publisher_bytes": 7385513,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 7.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 4/ADL/17.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_4",
+      "subject": 4,
+      "split": "test",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 6.0,
+      "publisher_class_text": "Walking[0 to 6]",
+      "publisher_git_blob": "dc51aec68e802b763f99f9784246aa449c3ec9e5",
+      "publisher_bytes": 6422176,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 6.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 4/ADL/18.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_4",
+      "subject": 4,
+      "split": "test",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 14.0,
+      "publisher_class_text": "Reading[11.5 to 14]; Sitting[0.7 to 14]",
+      "publisher_git_blob": "0d61b9c24bf30904a34e56584649aae8c28605ba",
+      "publisher_bytes": 5094294,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 14.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 4/ADL/19.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_4",
+      "subject": 4,
+      "split": "test",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 9.0,
+      "publisher_class_text": "Eating[7.7 to 9]; Sitting[6.9 to 9]; Standing[3 to 6.4]; Walking[0 to 1.7]",
+      "publisher_git_blob": "ab0a09dce223c4e51b6ba4e62949dd2055c8b532",
+      "publisher_bytes": 3574963,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 9.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    },
+    {
+      "video": "Subject 4/ADL/20.mp4",
+      "dataset": "gmdcsa24_v2_1",
+      "group": "gmdcsa24/subject_4",
+      "subject": 4,
+      "split": "test",
+      "source_category": "ADL",
+      "publisher_duration_seconds": 17.0,
+      "publisher_class_text": "Drinking[4.6 to 10.4]; Eating[16.2 to 17]; Sitting[2.8 to 17]; Standing[0.7 to 2.6]",
+      "publisher_git_blob": "46fadf2363ccd6fcfb0c3a2b4c49966a94737f74",
+      "publisher_bytes": 6333828,
+      "annotation_status": "publisher_clip_negative",
+      "intervals": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 17.0,
+          "action": "normal",
+          "label": 0
+        }
+      ]
+    }
+  ]
+}

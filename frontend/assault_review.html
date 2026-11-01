@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="vi">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Duyệt dữ liệu vật nhau và ngã nói chung</title>
+<style>
+body{font:16px/1.55 system-ui,sans-serif;background:#101723;color:#e8edf5;margin:0}main{max-width:1080px;margin:auto;padding:28px}h1{font-size:25px;margin:0}p{color:#b4c1d4}.panel{background:#1a2535;border:1px solid #344359;border-radius:12px;padding:18px;margin:18px 0}.grid{display:grid;grid-template-columns:2fr 1fr;gap:18px}video{width:100%;background:#000;max-height:460px}label{display:block;margin:10px 0}input,select,button,textarea{font:inherit;box-sizing:border-box;max-width:100%;padding:8px;border-radius:6px;border:1px solid #52627a;background:#152031;color:inherit}select,textarea{width:100%}button{cursor:pointer;margin:4px}button:disabled{opacity:.4;cursor:default}button.primary{background:#176956}input[type=number]{width:110px}#summary,#message{white-space:pre-wrap}li{margin:10px 0}small{color:#bdc9d8}a{color:#78cbb8}@media(max-width:750px){.grid{grid-template-columns:1fr}main{padding:14px}}
+</style>
+<main>
+<h1>Duyệt khoảng thời gian — vật nhau và ngã nói chung</h1>
+<p>Video công khai · Đầu ra model sau này vẫn gộp chung đánh nhau/vật nhau/ngã.</p>
+<section class="panel"><strong>Quy tắc gán nhãn</strong><p>Ngã bất kỳ nguyên nhân nào → nhãn dương. Ngồi/nằm/cúi xuống chủ động, ôm và bắt tay → nhãn âm. Không thấy rõ chuyển động ngã → “Không chắc”. Vật thể thao/chơi đùa theo quy tắc → nhãn âm. Đoạn chưa đánh dấu được giữ chưa biết.</p><div id="summary">Đang tải…</div></section>
+<div class="grid"><section class="panel">
+<label>Nguồn video <select id="source"></select></label>
+<small id="identity"></small><video id="video" controls preload="metadata"></video>
+<p id="message" role="status"></p>
+<label>Đầu đoạn (giây) <input id="start" type="number" min="0" step="0.001" value="0"><button id="mark-start">Lấy mốc hiện tại</button></label>
+<label>Cuối đoạn (giây) <input id="end" type="number" min="0" step="0.001" value="0"><button id="mark-end">Lấy mốc hiện tại</button></label>
+<label>Hành vi <select id="action">
+<option value="fight">Đánh nhau — đấm/đá</option><option value="wrestle">Vật nhau — ghì/giằng/quật trong xô xát</option><option value="fall">Ngã — bất kỳ nguyên nhân</option><option value="normal">Bình thường</option><option value="hug">Ôm</option><option value="greet">Bắt tay/chào</option><option value="sit_lie">Ngồi/nằm/cúi xuống chủ động</option><option value="sport_play">Thể thao/chơi đùa — nhãn âm</option><option value="uncertain">Không chắc — bỏ khỏi train</option>
+</select></label>
+<label>Ghi chú quan sát (tùy chọn)<textarea id="evidence" rows="2" placeholder="Ví dụ: mất thăng bằng và ngã xuống sàn"></textarea></label>
+<button id="add" class="primary">Thêm đoạn</button><ol id="intervals"></ol>
+</section><section class="panel">
+<h2>Ghi nhận duyệt</h2><label>Tên/mã người duyệt <input id="reviewer" autocomplete="name"></label>
+<button id="reviewed" class="primary">Đã xem và duyệt các đoạn</button><button id="pending">Đánh dấu chờ duyệt</button>
+<p>Chỉ duyệt sau khi xem video. Nếu hai hành vi trùng thời gian, chia đoạn theo hành vi chính; giữ “vật nhau” ở đoạn ghì/giằng và “ngã” ở đoạn mất thăng bằng/tiếp đất.</p>
+<button id="download">Tải nhãn đã lưu</button><label>Nạp lại file nhãn <input id="import" type="file" accept="application/json,.json"></label>
+<p>Nhãn được lưu tự động trong trình duyệt. Tải file JSON để giữ bản sao và kiểm tra bằng lệnh <code>check</code>. Trang này không train hay thay model.</p>
+</section></div>
+</main><script src="assault_review.js"></script>
+</html>

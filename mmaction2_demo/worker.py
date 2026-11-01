@@ -1,6 +1,7 @@
 """Local file-backed JSON IPC; no network listener and no camera access."""
 
 import contextlib
+import argparse
 import json
 from pathlib import Path
 import sys
@@ -18,12 +19,12 @@ def reply(value):
 
 
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--tuned", action="store_true", help="Use interaction v1")
+    args = parser.parse_args()
     torch.set_num_threads(4)
     with contextlib.redirect_stdout(sys.stderr):
-        engine = ActionEngine(
-            tuned="--tuned" in sys.argv or "--refined" in sys.argv,
-            refined="--refined" in sys.argv,
-        )
+        engine = ActionEngine(tuned=args.tuned)
     reply({"ready": True, "metadata": engine.metadata})
     for line in sys.stdin:
         try:
