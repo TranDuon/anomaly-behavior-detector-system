@@ -268,19 +268,21 @@ def threshold_on_calibration(rows, values):
     )
 
 
-def event_metrics(rows, values, sources, threshold):
+def event_metrics(rows, values, sources, threshold, confirm_seconds=0.4):
     from fight.reviewed_events import reviewed_event_metrics, summarize_events
     from fight.runtime import EventGate
 
     reports = []
     for source in sources:
+        if not any(row["video"] == source["video"] for row in rows):
+            continue
         points = [
             {"timestamp": row["timestamp"], "score": score, "people": row["people"]}
             for row, score in zip(rows, values)
             if row["video"] == source["video"]
         ]
         gate, events, active = (
-            EventGate(threshold, threshold * 0.7, confirm_seconds=0.4),
+            EventGate(threshold, threshold * 0.7, confirm_seconds=confirm_seconds),
             [],
             None,
         )

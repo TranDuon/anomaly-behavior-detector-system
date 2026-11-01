@@ -230,7 +230,7 @@ class TunedRefinementHead(nn.Module):
 
 
 class ActionEngine:
-    def __init__(self, weights=None, device="cuda:0", tuned=False):
+    def __init__(self, weights=None, device="cuda:0", tuned=False, refined=False, calibrated=False):
         from mmengine import Config
         from mmaction.utils import register_all_modules
         from mmdet.apis import init_detector
@@ -276,6 +276,21 @@ class ActionEngine:
             "spec": SPEC,
             "scope": "Original AVA action scores; not a calibrated violence classifier",
         }
+        calibration_path = ROOT / "config/original_calibration.json"
+        if calibrated and not tuned:
+            calibration = json.loads(calibration_path.read_text())
+            if (
+                calibration["source_sha256"] != SOURCE_SHA
+                or calibration["engine_sha256"] != hashlib.sha256(Path(__file__).read_text(encoding="utf-8").encode("utf-8")).hexdigest()
+                or calibration["spec"] != SPEC
+                or not 0 < calibration["threshold"] < 1
+                or calibration["confirm_seconds"] not in (0.4, 0.8, 1.2)
+            ):
+                raise ValueError("Incompatible original-model calibration")
+            self.metadata.update(calibration)
+        if refined and not tuned:
+            raise ValueError("A refinement head requires the fine-tuned branch")
+
         if tuned:
             metadata = json.loads((self.weights / "interaction.json").read_text())
             if (

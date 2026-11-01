@@ -530,7 +530,10 @@ def test_annotation_distinguishes_green_people_from_red_fight_regions():
     assert normal[70, 20].tolist() == [40, 200, 60]
     assert normal[70, 5].tolist() == [0, 0, 0]
     alarm = annotate(frame, {**result, "state": "fighting"})
-    assert alarm[70, 5].tolist() == [50, 65, 235]
+    assert alarm[70, 5].tolist() == [0, 0, 0]
+    assert alarm[70, 20].tolist() == [40, 200, 60]
+    person_alarm = annotate(frame, {**result, "state": "fighting", "regions": [[20, 45, 50, 90]]})
+    assert person_alarm[70, 20].tolist() == [50, 65, 235]
     stale = annotate(frame, {**result, "score_stale": True})
     assert stale[70, 20].tolist() == [0, 0, 0]
     assert not frame.any()

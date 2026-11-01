@@ -95,19 +95,24 @@ def annotate(frame, result):
     if not result.get("score_stale", False):
         for box in result.get("person_boxes", []):
             left, top, right, bottom = map(int, box)
-            cv2.rectangle(image, (left, top), (right, bottom), (40, 200, 60), 2)
+            highlighted = result["state"] in {"fighting", "verifying"} and any(
+                len(region) == 4 and all(abs(first - second) <= 2 for first, second in zip(box, region))
+                for region in result.get("regions", [])
+            )
+            person_color = color if highlighted else (40, 200, 60)
+            cv2.rectangle(image, (left, top), (right, bottom), person_color, 2)
             cv2.putText(
                 image,
                 "PERSON",
                 (left, max(48, top - 6)),
                 cv2.FONT_HERSHEY_SIMPLEX,
                 0.45,
-                (40, 200, 60),
+                person_color,
                 1,
             )
         for person in result.get("actions", []):
             left, top, _, _ = map(int, person["box"])
-            for index, action in enumerate(person["labels"][:3]):
+            for index, action in enumerate(person["labels"][:1]):
                 cv2.putText(
                     image,
                     f"{action['name']}: {action['score']:.2f}",
@@ -117,10 +122,6 @@ def annotate(frame, result):
                     (40, 220, 180),
                     1,
                 )
-        if result["state"] in {"fighting", "verifying"}:
-            for region in result.get("regions", []):
-                left, top, right, bottom = map(int, region)
-                cv2.rectangle(image, (left, top), (right, bottom), color, 3)
     cv2.rectangle(image, (0, 0), (image.shape[1], 36), (25, 30, 28), -1)
     label = LABELS.get(result["state"], result["state"])
     visible = result.get("visible_people")
@@ -161,6 +162,7 @@ class FightProcessor:
         self.record_test = False
         self.recording = None
         self.session_started = None
+        self.session_id = None
         self.dropped_samples = 0
         self.preview_frame_count = 0
         self.frame_count = self.total_frames = 0
@@ -203,7 +205,9 @@ class FightProcessor:
             if backend not in {
                 "legacy",
                 "mmaction_original",
-                "mmaction_interaction_v1",
+                "mmaction_tuned",
+                "mmaction_tuned_refined",
+                "mmaction_calibrated",
             }:
                 raise ValueError("Model không hợp lệ.")
             if backend == "legacy":
@@ -217,7 +221,9 @@ class FightProcessor:
                 from fight.mmaction_runtime import MMActionRuntime
 
                 candidate = MMActionRuntime(
-                    tuned=backend == "mmaction_interaction_v1",
+                    tuned=backend in {"mmaction_tuned", "mmaction_tuned_refined"},
+                    refined=backend == "mmaction_tuned_refined",
+                    calibrated=backend == "mmaction_calibrated",
                     allow_pilot=allow_pilot,
                 )
             if not candidate.model_ready and not preview:
@@ -241,6 +247,7 @@ class FightProcessor:
             self.dropped_samples = 0
             self.preview_frame_count = 0
             self.output = self.jpeg = None
+            self.session_id = uuid.uuid4().hex
             self.events = []
             self.active_event = None
             self.event_frames = []
@@ -276,6 +283,7 @@ class FightProcessor:
         prediction["score_stale"] = stale
         return {
             "server": server_identity(),
+            "session_id": self.session_id,
             "running": self.is_running(),
             "preview_mode": self.preview,
             "phase": self.phase,
@@ -352,18 +360,27 @@ class FightProcessor:
                 break
 
     def publish_frame(self, frame, result):
-        image = annotate(frame, result)
-        preview_image = bounded_image(image, settings.fight_preview_max_width)
-        ok, encoded = cv2.imencode(
-            ".jpg",
-            preview_image,
-            [cv2.IMWRITE_JPEG_QUALITY, settings.jpeg_quality],
-        )
+        return self.publish_preview(frame, result)
+
+    def publish_preview(self, frame, result):
+        preview = bounded_image(frame, settings.fight_preview_max_width)
+        scale = preview.shape[1] / frame.shape[1]
+        display = dict(result)
+        if scale != 1:
+            for key in ("person_boxes", "regions"):
+                display[key] = [[coordinate * scale for coordinate in box] for box in result.get(key, [])]
+            display["actions"] = [
+                {**person, "box": [coordinate * scale for coordinate in person["box"]]}
+                for person in result.get("actions", [])
+            ]
+        image = annotate(preview, display)
+        ok, encoded = cv2.imencode(".jpg", image, [cv2.IMWRITE_JPEG_QUALITY, settings.jpeg_quality])
         if ok:
             with self.condition:
                 self.jpeg = encoded.tobytes()
                 self.revision += 1
                 self.condition.notify_all()
+
 
     def live_preview_result(self, timestamp):
         if self.preview:
@@ -401,6 +418,8 @@ class FightProcessor:
             identifier = uuid.uuid4().hex
             self.active_event = {
                 "id": identifier,
+                "session_id": self.session_id,
+                "backend": getattr(self.runtime, "backend_name", "legacy"),
                 "type": "fighting",
                 "started_at": self.timestamp,
                 "ended_at": None,
