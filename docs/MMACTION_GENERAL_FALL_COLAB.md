@@ -6,6 +6,8 @@ Notebook tải [GMDCSA24 v2.1](https://zenodo.org/records/13354453) (ngã và ho
 
 Quy trình: tải dữ liệu trên Colab → kiểm tra hash ZIP và checkpoint cha → chuẩn bị môi trường MMAction2 → trích đặc trưng AVA, lưu cache lên Drive → fine-tune `InteractionHead` từ v1 → chọn epoch theo development → chọn threshold theo development → đánh giá subject 4 và tập SCFD test → xuất `interaction.pt`, `interaction.json`, `report.json`, `protocol.json` và `mmaction_interaction_fall_wrestle_pilot.zip` vào `MyDrive/SENTINEL/artifacts/mmaction_interaction_fall_wrestle/<RUN_TAG>/`.
 
+**Thời lượng không khớp:** GMDCSA24 có mẫu `Subject 2/ADL/04.mp4` ghi 70 giây nhưng giải mã không khớp. Với clip ADL được gán nhãn bình thường cho toàn bộ clip, cell 7 dùng thời lượng giải mã để chọn các cửa sổ. Với clip ngã có mốc thời gian không khớp, cell 7 bỏ qua và ghi vào `report.json` để tránh nhãn sai. Chạy lại cell 7 sẽ dùng lại các file đặc trưng đã trích từ phiên trainer trước nếu manifest, engine và checkpoint không đổi. Khi lỗi, notebook in phần cuối log ngay trong output.
+
 **Kiểm thử trước khi chạy Colab:** notebook và trainer đã biên dịch; unit test chỉ kiểm tra cấu trúc dữ liệu, split, mốc ngã và checkpoint cha. Chưa chạy notebook, chưa có checkpoint mới hay chỉ số thực nghiệm. Trước khi thay model trên web, đọc báo cáo kiểm thử và xem video đánh nhau, vật nhau, ngã, ôm, ngồi/nằm xuống từ camera mục tiêu.
 
 Các nguồn đã thấy trong lần chuẩn bị bước 2 gồm 544 video AIRTLab/SBU/RLVS. Notebook thử nghiệm này **không đưa 480 nguồn chưa được duyệt thời gian vào train**. Nó vẫn warm-start từ checkpoint v1 nên giữ trọng số ban đầu, rồi bổ sung SCFD và GMDCSA24. Nếu muốn train đủ 544 nguồn ở lần sau, cần xem lại split/nhãn và thêm một manifest riêng.

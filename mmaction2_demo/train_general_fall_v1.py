@@ -24,6 +24,7 @@ from action_engine import ActionEngine, InteractionHead, SOURCE_SHA, SPEC, diges
 
 
 PARENT_SHA = "8c5808db106aacd0f43b72a0e76178b2dec039e0a1766d996bb8374b7e4dddb7"
+PREVIOUS_TRAINER_SHA = "2ecbd75660f4bde6410429f8e1599f993f3c19e78f1916568f1e19b897faa4cb"
 
 
 def write_json(path, value):
@@ -112,23 +113,50 @@ def sampled_clip(frames, fps, anchor):
     return np.stack([frames[index] for index in indexes])
 
 
+def duration_decision(row, decoded_duration):
+    expected = row["publisher_duration"]
+    if expected is None or abs(decoded_duration - expected) <= 1.0:
+        return "use"
+    # ADL is labeled for the whole clip, so its decoded duration is sufficient.
+    # Fall timestamps could point to a different moment: exclude those clips.
+    return "use_decoded" if row["dataset"] == "gmdcsa24" and row["label"] == 0 else "skip"
+
+
+def compatible_cache(previous, current):
+    if previous == current:
+        return True
+    return (previous.get("trainer_sha256") == PREVIOUS_TRAINER_SHA
+            and {k: v for k, v in previous.items() if k != "trainer_sha256"}
+            == {k: v for k, v in current.items() if k != "trainer_sha256"})
+
+
 def features(args, rows, protocol):
     args.cache.mkdir(parents=True, exist_ok=True)
     marker = args.cache / "protocol.json"
-    if marker.exists() and json.loads(marker.read_text(encoding="utf-8")) != protocol:
-        raise ValueError("Feature-cache protocol changed; choose a new cache folder")
+    if marker.exists():
+        previous = json.loads(marker.read_text(encoding="utf-8"))
+        if not compatible_cache(previous, protocol):
+            raise ValueError("Feature-cache protocol changed; choose a new cache folder")
+        if previous != protocol:
+            print("Reusing verified features from previous trainer revision", flush=True)
     write_json(marker, protocol)
     engine = ActionEngine(weights=args.weights, device=args.device)
     index = []
+    skipped = []
     for number, row in enumerate(rows, 1):
         path = Path(row["path"])
         if not path.is_file():
             raise FileNotFoundError(path)
         frames, fps = frames_for_video(path)
         duration = len(frames) / fps
-        expected = row["publisher_duration"]
-        if expected is not None and abs(duration - expected) > 1.0:
-            raise ValueError("Publisher/decoded duration mismatch: " + row["video"])
+        decision = duration_decision(row, duration)
+        if decision == "skip":
+            skipped.append({"video": row["video"], "publisher_duration": row["publisher_duration"],
+                            "decoded_duration": duration, "reason": "unsafe_temporal_labels"})
+            print("SKIP duration mismatch:", row["video"], flush=True)
+            continue
+        if decision == "use_decoded":
+            print("Using decoded duration for ADL:", row["video"], flush=True)
         for anchor in anchors(row, duration):
             key = hashlib.sha256((row["video"] + f"/{anchor:.6f}").encode()).hexdigest()[:24]
             feature_path = args.cache / (key + ".npz")
@@ -144,6 +172,7 @@ def features(args, rows, protocol):
         if number % 10 == 0 or number == len(rows):
             print("FEATURES", number, "/", len(rows), flush=True)
     write_json(args.cache / "index.json", index)
+    write_json(args.cache / "skipped_sources.json", skipped)
 
 
 def load_rows(cache):
@@ -250,6 +279,7 @@ def train(args, protocol):
         "status": "completed", "parent_checkpoint_sha256": PARENT_SHA,
         "head_version": 1, "training_sources": len({r["video"] for r in train_rows}),
         "source_policy": "public SCFD broad fight + GMDCSA24 general fall/ADL",
+        "skipped_sources": json.loads((args.cache / "skipped_sources.json").read_text(encoding="utf-8")),
         "scfd_clip_split_scene_independence_verified": False,
         "wrestle_specific_labels_available": False,
         "wrestle_specific_accuracy_measured": False,
