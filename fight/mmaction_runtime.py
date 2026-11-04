@@ -29,11 +29,15 @@ def person_action_regions(actions, threshold):
 
 
 class MMActionRuntime:
-    def __init__(self, tuned=False, allow_pilot=False):
-        self.backend_name = "mmaction_interaction_v1" if tuned else "mmaction_original"
+    def __init__(self, tuned=False, allow_pilot=False, fall_wrestle=False):
+        if fall_wrestle and not tuned:
+            raise ValueError("Fall/wrestle backend requires a tuned head")
+        self.backend_name = ("mmaction_fall_wrestle" if fall_wrestle else
+                             "mmaction_interaction_v1" if tuned else "mmaction_original")
 
         self.device = "cuda:0"
         self.tuned = tuned
+        self.fall_wrestle = fall_wrestle
         self.config = ClipConfig(
             frames=9, fps=3.75, size=256, stride_seconds=16 / 30, region_mode="full"
         )
@@ -49,7 +53,8 @@ class MMActionRuntime:
             "architecture": "mmaction_interaction_v1" if tuned else "mmaction_slowonly_r101",
             "deployment": {
                 "display_name": (
-                    "MMAction2 · interaction v1"
+                    "MMAction2 · đánh / vật / ngã chung"
+                    if fall_wrestle else "MMAction2 · interaction v1"
                     if tuned
                     else "MMAction2 · checkpoint gốc · RGB chuẩn"
                 )
@@ -63,10 +68,11 @@ class MMActionRuntime:
             ROOT / "results/install_verified.json"
         ).is_file()
         if tuned:
+            checkpoint_name = "interaction_fall_wrestle" if fall_wrestle else "interaction"
             available = (
                 available
-                and (ROOT / "weights/interaction.json").is_file()
-                and (ROOT / "weights/interaction.pt").is_file()
+                and (ROOT / f"weights/{checkpoint_name}.json").is_file()
+                and (ROOT / f"weights/{checkpoint_name}.pt").is_file()
             )
         self.model_ready = available and allow_pilot
         self.message = (
@@ -95,6 +101,7 @@ class MMActionRuntime:
             "event": None,
             "actions": [],
             "message": self.message,
+            "behavior_scope": "fight_wrestle_fall" if self.fall_wrestle else "fight",
             "prediction_timestamp": None,
             "inference_seconds": None,
             "view_quality": None,
@@ -119,6 +126,8 @@ class MMActionRuntime:
         command = [str(ROOT / "env/python.exe"), str(ROOT / "worker.py")]
         if self.tuned:
             command.append("--tuned")
+        if self.fall_wrestle:
+            command.append("--fall-wrestle")
         self.process = subprocess.Popen(
             command,
             stdin=subprocess.PIPE,
@@ -148,6 +157,9 @@ class MMActionRuntime:
                 threshold,
                 threshold * 0.7,
                 confirm_seconds=self.metadata["confirm_seconds"],
+                # The pilot receives a new score about every 0.53 s. Two low
+                # observations now end an alert, instead of about three.
+                release_seconds=0.25 if self.fall_wrestle else 1.0,
             )
         except (queue.Empty, RuntimeError) as error:
             self.close()

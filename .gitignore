@@ -24,6 +24,8 @@ fightwatch_source*.zip
 artifacts/mmaction_indoor_review_v2/
 artifacts/assault_extension_v1/
 artifacts/fall_general_v1/
+artifacts/action_review_v1/
+artifacts/pytest-temp*/
 mmaction2_demo/env/
 mmaction2_demo/repo/
 mmaction2_demo/weights/

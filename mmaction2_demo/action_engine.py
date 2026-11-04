@@ -230,7 +230,8 @@ class TunedRefinementHead(nn.Module):
 
 
 class ActionEngine:
-    def __init__(self, weights=None, device="cuda:0", tuned=False, refined=False, calibrated=False):
+    def __init__(self, weights=None, device="cuda:0", tuned=False, refined=False, calibrated=False,
+                 fall_wrestle=False):
         from mmengine import Config
         from mmaction.utils import register_all_modules
         from mmdet.apis import init_detector
@@ -291,12 +292,16 @@ class ActionEngine:
         if refined and not tuned:
             raise ValueError("A refinement head requires the fine-tuned branch")
 
+        if fall_wrestle and not tuned:
+            raise ValueError("Fall/wrestle checkpoint requires the interaction head")
         if tuned:
-            metadata = json.loads((self.weights / "interaction.json").read_text())
+            checkpoint_name = "interaction_fall_wrestle.pt" if fall_wrestle else "interaction.pt"
+            metadata_name = "interaction_fall_wrestle.json" if fall_wrestle else "interaction.json"
+            metadata = json.loads((self.weights / metadata_name).read_text())
             if (
                 metadata["source_sha256"] != SOURCE_SHA
                 or metadata["spec"] != SPEC
-                or digest(self.weights / "interaction.pt")
+                or digest(self.weights / checkpoint_name)
                 != metadata["checkpoint_sha256"]
             ):
                 raise ValueError(
@@ -305,10 +310,17 @@ class ActionEngine:
             self.head_version = int(metadata.get("head_version", 1))
             if self.head_version != 1:
                 raise ValueError("Only mmaction_interaction_v1 is supported")
+            if fall_wrestle:
+                calibration = json.loads((ROOT / "config/fall_wrestle_calibration.json").read_text())
+                if (calibration["checkpoint_sha256"] != metadata["checkpoint_sha256"]
+                        or not 0 < calibration["threshold"] < 1):
+                    raise ValueError("Fall/wrestle calibration does not match checkpoint")
+                metadata = {**metadata, "threshold": calibration["threshold"],
+                            "calibration": calibration}
             self.head = InteractionHead().to(device)
             self.head.load_state_dict(
                 torch.load(
-                    self.weights / "interaction.pt",
+                    self.weights / checkpoint_name,
                     map_location=device,
                     weights_only=True,
                 ),

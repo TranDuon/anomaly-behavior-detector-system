@@ -11,7 +11,7 @@ import pytest
 import torch
 
 
-def test_web_exposes_only_the_three_supported_backends():
+def test_web_exposes_supported_backends():
     from fastapi.testclient import TestClient
     import api.fight_server as server
 
@@ -20,14 +20,15 @@ def test_web_exposes_only_the_three_supported_backends():
     selector = re.search(r'<select id="model-backend">(.*?)</select>', page.text)
     assert selector is not None
     assert re.findall(r'<option value="([^"]+)"', selector.group(1)) == [
-        "legacy", "mmaction_original", "mmaction_interaction_v1"
+        "legacy", "mmaction_original", "mmaction_interaction_v1", "mmaction_fall_wrestle"
     ]
     assert "FightWatch X3D-S + pose" in selector.group(1)
 
 
 @pytest.mark.parametrize(
     "backend,tuned",
-    [("legacy", None), ("mmaction_original", False), ("mmaction_interaction_v1", True)],
+    [("legacy", None), ("mmaction_original", False), ("mmaction_interaction_v1", True),
+     ("mmaction_fall_wrestle", True)],
 )
 def test_backend_routes_without_replacing_active_session(monkeypatch, backend, tuned):
     import api.fight_server as server
@@ -49,7 +50,10 @@ def test_backend_routes_without_replacing_active_session(monkeypatch, backend, t
     assert processor.runtime is previous
     assert len(calls) == 1
     if tuned is not None:
-        assert calls[0] == {"tuned": tuned, "allow_pilot": False}
+        expected = {"tuned": tuned, "allow_pilot": False}
+        if backend == "mmaction_fall_wrestle":
+            expected["fall_wrestle"] = True
+        assert calls[0] == expected
 
 
 @pytest.mark.parametrize("backend", ["mmaction_tuned", "mmaction_tuned_refined"])

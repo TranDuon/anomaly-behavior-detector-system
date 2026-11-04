@@ -1,0 +1,16 @@
+{
+  "checkpoint_sha256": "ddb09180284c4093189c53b7decbfcc5b51fd2d9b7700536d104524bceb5c344",
+  "threshold": 0.836290717124939,
+  "method": "Maximum F1 on development windows with at least one detected person",
+  "development_windows": 94,
+  "development_positives": 24,
+  "development_precision": 0.8148148148148148,
+  "development_recall": 0.9166666666666666,
+  "development_f1": 0.8627450980392156,
+  "test_windows_with_person": 100,
+  "test_positives_with_person": 34,
+  "test_precision_at_threshold": 0.8076923076923077,
+  "test_recall_at_threshold": 0.6176470588235294,
+  "test_f1_at_threshold": 0.7,
+  "scope": "Pilot threshold for the person-dependent web runtime; not a camera acceptance result"
+}

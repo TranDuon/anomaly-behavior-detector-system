@@ -123,7 +123,10 @@ def annotate(frame, result):
                     1,
                 )
     cv2.rectangle(image, (0, 0), (image.shape[1], 36), (25, 30, 28), -1)
-    label = LABELS.get(result["state"], result["state"])
+    if result.get("behavior_scope") == "fight_wrestle_fall" and result["state"] in {"normal", "fighting"}:
+        label = "ACTION DETECTED" if result["state"] == "fighting" else "NO ACTION CONFIRMED"
+    else:
+        label = LABELS.get(result["state"], result["state"])
     visible = result.get("visible_people")
     if visible is not None and not result.get("score_stale", False):
         label += f" | PERSONS: {visible}"
@@ -163,6 +166,8 @@ class FightProcessor:
         self.recording = None
         self.session_started = None
         self.session_id = None
+        self.trace_path = None
+        self.trace_last_prediction = None
         self.dropped_samples = 0
         self.preview_frame_count = 0
         self.frame_count = self.total_frames = 0
@@ -206,6 +211,7 @@ class FightProcessor:
                 "legacy",
                 "mmaction_original",
                 "mmaction_interaction_v1",
+                "mmaction_fall_wrestle",
             }:
                 raise ValueError("Model không hợp lệ.")
             if backend == "legacy":
@@ -219,8 +225,9 @@ class FightProcessor:
                 from fight.mmaction_runtime import MMActionRuntime
 
                 candidate = MMActionRuntime(
-                    tuned=backend == "mmaction_interaction_v1",
+                    tuned=backend in {"mmaction_interaction_v1", "mmaction_fall_wrestle"},
                     allow_pilot=allow_pilot,
+                    **({"fall_wrestle": True} if backend == "mmaction_fall_wrestle" else {}),
                 )
             if not candidate.model_ready and not preview:
                 raise ValueError(candidate.message)
@@ -244,6 +251,22 @@ class FightProcessor:
             self.preview_frame_count = 0
             self.output = self.jpeg = None
             self.session_id = uuid.uuid4().hex
+            self.trace_last_prediction = None
+            self.trace_path = None
+            if backend == "mmaction_fall_wrestle" and not preview:
+                trace_dir = BASE_DIR / "logs" / "action_traces"
+                trace_dir.mkdir(parents=True, exist_ok=True)
+                self.trace_path = trace_dir / f"{self.session_id}.jsonl"
+                self.trace_path.write_text(
+                    json.dumps({
+                        "kind": "session", "session_id": self.session_id,
+                        "backend": backend, "source": str(source),
+                        "threshold": self.runtime.gate.threshold,
+                        "release_threshold": self.runtime.gate.release_threshold,
+                        "confirm_seconds": self.runtime.gate.confirm_seconds,
+                        "release_seconds": self.runtime.gate.release_seconds,
+                    }, ensure_ascii=False) + "\n", encoding="utf-8"
+                )
             self.events = []
             self.active_event = None
             self.event_frames = []
@@ -337,6 +360,7 @@ class FightProcessor:
             "prediction": prediction,
             "error": self.error,
             "event_count": len(self.events),
+            "prediction_trace": str(self.trace_path) if self.trace_path else None,
             "output": self.output,
             "recording": self.recording.status() if self.recording else None,
         }
@@ -416,7 +440,8 @@ class FightProcessor:
                 "id": identifier,
                 "session_id": self.session_id,
                 "backend": getattr(self.runtime, "backend_name", "legacy"),
-                "type": "fighting",
+                "type": ("fight_wrestle_fall" if getattr(self.runtime, "backend_name", "") == "mmaction_fall_wrestle"
+                         else "fighting"),
                 "started_at": self.timestamp,
                 "ended_at": None,
                 "score": result["score"],
@@ -722,6 +747,20 @@ class FightProcessor:
                             sampled=live_mode,
                         )
                     )
+                    prediction_time = result.get("prediction_timestamp")
+                    if (self.trace_path is not None and prediction_time is not None
+                            and prediction_time != self.trace_last_prediction):
+                        self.trace_last_prediction = prediction_time
+                        with self.trace_path.open("a", encoding="utf-8") as trace:
+                            trace.write(json.dumps({
+                                "kind": "prediction", "timestamp": prediction_time,
+                                "score": result.get("score"), "state": result.get("state"),
+                                "event": result.get("event"), "people": result.get("people"),
+                                "regions": result.get("regions", []),
+                                "person_boxes": result.get("person_boxes", []),
+                                "inference_seconds": result.get("inference_seconds"),
+                                "dropped_samples": self.dropped_samples,
+                            }, ensure_ascii=False) + "\n")
                     if recording:
                         recording.observe(
                             result, time.monotonic() - started, sample_time

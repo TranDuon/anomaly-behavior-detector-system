@@ -1,14 +1,23 @@
 # Model đang được hỗ trợ
 
-Cập nhật ngày 01/11/2026. Giao diện, API và CLI hiện hỗ trợ đúng ba backend:
+Cập nhật ngày 04/11/2026. Giao diện, API và CLI hiện hỗ trợ bốn backend:
 
 | Backend | Model và dữ liệu đầu vào | File cần có |
 |---|---|---|
 | `legacy` | FightWatch X3D-S + pose, chạy CPU; tên backend giữ để tương thích đường chạy mặc định | `models/fight_model.ts`, `models/fight_runtime.json`, `models/yolov8n-pose.pt`, `yolov8n.pt` |
 | `mmaction_original` | SlowOnly ResNet101 + Faster R-CNN ResNet50, RGB, môi trường GPU riêng | `mmaction2_demo/weights/action_slowonly_r101.pth`, `person_faster_rcnn_r50.pth` |
 | `mmaction_interaction_v1` | Backbone và AVA gốc đóng băng, head tương tác v1 riêng | Hai trọng số MMAction2 gốc cùng `mmaction2_demo/weights/interaction.pt` và `interaction.json` |
+| `mmaction_fall_wrestle` | Head fine-tune từ v1, cảnh báo chung đánh / vật / ngã; GPU | Hai trọng số MMAction2 gốc cùng `mmaction2_demo/weights/interaction_fall_wrestle.pt` và `interaction_fall_wrestle.json` |
 
-`yolov8n.pt` và `yolov8n-pose.pt` là thành phần cần thiết của FightWatch, không phải hai lựa chọn model độc lập. Ba lựa chọn đều giữ cổng bật pilot trước khi nhận diện. Không có fallback tự động sang LSTM hoặc ST-GCN.
+`yolov8n.pt` và `yolov8n-pose.pt` là thành phần cần thiết của FightWatch, không phải hai lựa chọn model độc lập. Bốn lựa chọn đều giữ cổng bật pilot trước khi nhận diện. Không có fallback tự động sang LSTM hoặc ST-GCN.
+
+## Checkpoint đánh / vật / ngã chung
+
+- [Run Colab trên Drive](https://drive.google.com/drive/u/1/folders/1CPnlYVWz_xJLWqyQbM6oULojAo0vYTDw): `fall_wrestle_pilot_01`. Checkpoint SHA-256 `ddb09180284c4093189c53b7decbfcc5b51fd2d9b7700536d104524bceb5c344`.
+- Gói ZIP được cài bằng `mmaction2_demo/install_fall_wrestle.py` vào file riêng; v1 và trọng số gốc vẫn có thể chọn để so sánh.
+- Metadata Colab xuất ngưỡng `0.0` do chọn F1 trên cả các cửa sổ không phát hiện được người. Runtime có người dùng ngưỡng `0.83629`, chọn trên 94 cửa sổ development có người; test cùng điều kiện: precision `0.808`, recall `0.618` trên 100 cửa sổ. Cấu hình tại `mmaction2_demo/config/fall_wrestle_calibration.json`.
+- Chưa có nhãn riêng clip vật nhau để đo recall hành vi này. Trên web, các cảnh báo từ model này hiển thị một nhãn chung; cần thử video vật nhau, ngã và các mẫu âm dễ nhầm.
+- Trong đợt review v2, vật thể thao được coi là mẫu âm; chỉ vật/xô xát bạo lực mới là hành vi cần cảnh báo. Xem [quy trình review và Colab](ACTION_TRANSITION_V2.md).
 
 ## Checkpoint interaction v1 từ Drive
 

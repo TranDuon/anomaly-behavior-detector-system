@@ -19,7 +19,7 @@ def main():
     run.add_argument("--allow-pilot", action="store_true")
     run.add_argument(
         "--backend",
-        choices=("legacy", "mmaction_original", "mmaction_interaction_v1"),
+        choices=("legacy", "mmaction_original", "mmaction_interaction_v1", "mmaction_fall_wrestle"),
         default="legacy",
         help="legacy = FightWatch X3D-S + pose",
     )

@@ -21,10 +21,12 @@ def reply(value):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--tuned", action="store_true", help="Use interaction v1")
+    parser.add_argument("--fall-wrestle", action="store_true", help="Use fall/wrestle pilot head")
     args = parser.parse_args()
     torch.set_num_threads(4)
     with contextlib.redirect_stdout(sys.stderr):
-        engine = ActionEngine(tuned=args.tuned)
+        engine = ActionEngine(tuned=args.tuned or args.fall_wrestle,
+                              fall_wrestle=args.fall_wrestle)
 
     reply({"ready": True, "metadata": engine.metadata})
     for line in sys.stdin:
