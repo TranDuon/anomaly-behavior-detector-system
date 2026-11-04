@@ -1,6 +1,6 @@
 # Dữ liệu chuyển xanh sau xô xát trên Colab
 
-Notebook [mmaction_action_transition_v2.ipynb](../colab/mmaction_action_transition_v2.ipynb) tự tải hai ZIP gốc từ [Re-DID của Đại học Trento](https://loki.disi.unitn.it/~ReDID/) vào `/content/action_transition_v2`. Không cần tải dataset về máy cá nhân. Notebook kiểm tra SHA-256 trước khi cắt clip; video gốc và clip tạo ra không được đẩy lên GitHub hay sao chép lên Drive.
+Notebook [mmaction_action_transition_redid_v1.ipynb](../colab/mmaction_action_transition_redid_v1.ipynb) tự tải hai ZIP gốc từ [Re-DID của Đại học Trento](https://loki.disi.unitn.it/~ReDID/) vào `/content/action_transition_v2`. Không cần tải dataset về máy cá nhân. Notebook kiểm tra SHA-256 trước khi cắt clip; video gốc và clip tạo ra không được đẩy lên GitHub hay sao chép lên Drive. Notebook [v2 ban đầu](../colab/mmaction_action_transition_v2.ipynb) được giữ riêng để phiên đang chạy có thể tiếp tục.
 
 `scripts/build_redid_transitions.py` đọc nhãn frame `fight` và `separating`. Nó chỉ tạo nhãn `after_fight` sau khi mọi hành động xô xát/can ngăn đang chồng nhau đã kết thúc, dừng trước hành động được gắn nhãn tiếp theo, bỏ đoạn quá ngắn hoặc mốc mơ hồ. Mỗi clip có một đoạn `fight` dương trước mốc kết thúc và một đoạn `after_fight` âm ngay sau đó. Toàn bộ clip từ cùng video gốc giữ chung một `group` và cùng tập dữ liệu.
 
