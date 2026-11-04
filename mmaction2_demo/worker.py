@@ -22,11 +22,12 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--tuned", action="store_true", help="Use interaction v1")
     parser.add_argument("--fall-wrestle", action="store_true", help="Use fall/wrestle pilot head")
+    parser.add_argument("--transition", action="store_true", help="Use Re-DID transition pilot head")
     args = parser.parse_args()
     torch.set_num_threads(4)
     with contextlib.redirect_stdout(sys.stderr):
-        engine = ActionEngine(tuned=args.tuned or args.fall_wrestle,
-                              fall_wrestle=args.fall_wrestle)
+        engine = ActionEngine(tuned=args.tuned or args.fall_wrestle or args.transition,
+                              fall_wrestle=args.fall_wrestle, transition=args.transition)
 
     reply({"ready": True, "metadata": engine.metadata})
     for line in sys.stdin:

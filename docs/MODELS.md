@@ -1,6 +1,6 @@
 # Model đang được hỗ trợ
 
-Cập nhật ngày 04/11/2026. Giao diện, API và CLI hiện hỗ trợ bốn backend:
+Cập nhật ngày 05/11/2026. Giao diện, API và CLI hiện hỗ trợ năm backend:
 
 | Backend | Model và dữ liệu đầu vào | File cần có |
 |---|---|---|
@@ -8,8 +8,16 @@ Cập nhật ngày 04/11/2026. Giao diện, API và CLI hiện hỗ trợ bốn 
 | `mmaction_original` | SlowOnly ResNet101 + Faster R-CNN ResNet50, RGB, môi trường GPU riêng | `mmaction2_demo/weights/action_slowonly_r101.pth`, `person_faster_rcnn_r50.pth` |
 | `mmaction_interaction_v1` | Backbone và AVA gốc đóng băng, head tương tác v1 riêng | Hai trọng số MMAction2 gốc cùng `mmaction2_demo/weights/interaction.pt` và `interaction.json` |
 | `mmaction_fall_wrestle` | Head fine-tune từ v1, cảnh báo chung đánh / vật / ngã; GPU | Hai trọng số MMAction2 gốc cùng `mmaction2_demo/weights/interaction_fall_wrestle.pt` và `interaction_fall_wrestle.json` |
+| `mmaction_transition_redid` | Head fine-tune từ `mmaction_fall_wrestle` với ngã sớm và Re-DID `after_fight`; GPU, pilot riêng | Hai trọng số MMAction2 gốc cùng `mmaction2_demo/weights/interaction_transition.pt` và `interaction_transition.json` |
 
-`yolov8n.pt` và `yolov8n-pose.pt` là thành phần cần thiết của FightWatch, không phải hai lựa chọn model độc lập. Bốn lựa chọn đều giữ cổng bật pilot trước khi nhận diện. Không có fallback tự động sang LSTM hoặc ST-GCN.
+`yolov8n.pt` và `yolov8n-pose.pt` là thành phần cần thiết của FightWatch, không phải hai lựa chọn model độc lập. Năm lựa chọn đều giữ cổng bật pilot trước khi nhận diện. Không có fallback tự động sang LSTM hoặc ST-GCN.
+
+## Checkpoint ngã sớm và chuyển xanh Re-DID
+
+- [Gói pilot trên Drive](https://drive.google.com/file/d/1hpxB1qwOUluqdN3-BtVp-n06vFPO-HKX/view), SHA-256 ZIP `e6a883467779afeeaa9db48c3cd27c23f79511e46a885e9575405fb88394e656`; checkpoint `a1b120fe7d8898e41dc789d694f5b637de001eb70c090fb3f750b4519153fb23`. Installer `mmaction2_demo/install_action_transition.py` lưu head vào file riêng.
+- Để cài trên máy khác: `.\mmaction2_demo\env\python.exe mmaction2_demo\install_action_transition.py <đường-dẫn-ZIP>`. Máy hiện tại đã cài và xác minh checkpoint; các file nhị phân nằm ngoài Git.
+- Báo cáo Colab: 40 epoch hoàn tất, head tốt nhất từ epoch 16. Trên 269 cửa sổ test, F1 giảm từ `0.498` (cha) xuống `0.482` (mới). Trên 36 cửa sổ `after_fight`, tỷ lệ báo đỏ giảm từ `61.1%` xuống `22.2%`; 9 cửa sổ `fight` giảm tỷ lệ báo đỏ từ `55.6%` xuống `33.3%`. Video vật thể thao vẫn báo đỏ ở `93.2%` của 44 cửa sổ. Đây là thống kê cửa sổ, chưa đo độ trễ chuyển xanh của luồng runtime.
+- Chọn `mmaction_transition_redid` và bật pilot để so sánh bằng video. Giữ `mmaction_fall_wrestle` làm mốc. Checkpoint mới chưa được chấp nhận cho demo/camera thực tế.
 
 ## Checkpoint đánh / vật / ngã chung
 

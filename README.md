@@ -1,6 +1,6 @@
 # FightWatch — Phát hiện đánh nhau trong video và camera
 
-Ứng dụng nhận video tải lên, webcam/iPhone qua DroidCam và RTSP/HTTP. Hiện có bốn lựa chọn model trong giao diện và API:
+Ứng dụng nhận video tải lên, webcam/iPhone qua DroidCam và RTSP/HTTP. Hiện có năm lựa chọn model trong giao diện và API:
 
 | Lựa chọn | Backend API | Trọng số |
 |---|---|---|
@@ -8,8 +8,9 @@
 | MMAction2 gốc · GPU | `mmaction_original` | `action_slowonly_r101.pth`, `person_faster_rcnn_r50.pth` |
 | MMAction2 interaction v1 · GPU | `mmaction_interaction_v1` | Hai trọng số MMAction2 gốc cùng `interaction.pt` và `interaction.json` |
 | MMAction2 đánh / vật / ngã chung · GPU | `mmaction_fall_wrestle` | Hai trọng số MMAction2 gốc cùng `interaction_fall_wrestle.pt` và `interaction_fall_wrestle.json` |
+| MMAction2 ngã sớm + chuyển xanh · Re-DID pilot · GPU | `mmaction_transition_redid` | Hai trọng số MMAction2 gốc cùng `interaction_transition.pt` và `interaction_transition.json` |
 
-Trọng số MMAction2 nằm trong `mmaction2_demo/weights/`. Hai nhánh interaction dùng backbone/AVA gốc đóng băng và head riêng; checkpoint mới cảnh báo chung, chưa phân biệt ba hành vi. Xem [danh mục model và nguồn checkpoint](docs/MODELS.md).
+Trọng số MMAction2 nằm trong `mmaction2_demo/weights/`. Các nhánh interaction dùng backbone/AVA gốc đóng băng và head riêng; checkpoint mới cảnh báo chung, chưa phân biệt ba hành vi. Xem [danh mục model và nguồn checkpoint](docs/MODELS.md).
 
 ## Bắt đầu
 
@@ -19,11 +20,12 @@ Trọng số MMAction2 nằm trong `mmaction2_demo/weights/`. Hai nhánh interac
 
 Mở http://localhost:8000, chọn model trước khi bắt đầu nguồn. Các checkpoint hiện là pilot: bật **Cho phép checkpoint pilot** để thử. Chưa có bằng chứng nghiệm thu camera/điện thoại thực tế. Preview camera vẫn dùng được khi chưa bật pilot.
 
-MMAction2 cần môi trường GPU riêng: xem [hướng dẫn cài và chạy](mmaction2_demo/README_VI.md). CLI cũng cho phép chọn bốn backend:
+MMAction2 cần môi trường GPU riêng: xem [hướng dẫn cài và chạy](mmaction2_demo/README_VI.md). CLI cũng cho phép chọn năm backend:
 
 ```powershell
 .venv\Scripts\python.exe main.py run --source video.mp4 --allow-pilot --backend mmaction_interaction_v1
 .venv\Scripts\python.exe main.py run --source video.mp4 --allow-pilot --backend mmaction_fall_wrestle
+.venv\Scripts\python.exe main.py run --source video.mp4 --allow-pilot --backend mmaction_transition_redid
 ```
 
 ## Cài interaction v1 từ Drive

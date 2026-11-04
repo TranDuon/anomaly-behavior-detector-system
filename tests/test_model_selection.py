@@ -20,7 +20,7 @@ def test_web_exposes_supported_backends():
     selector = re.search(r'<select id="model-backend">(.*?)</select>', page.text)
     assert selector is not None
     assert re.findall(r'<option value="([^"]+)"', selector.group(1)) == [
-        "legacy", "mmaction_original", "mmaction_interaction_v1", "mmaction_fall_wrestle"
+        "legacy", "mmaction_original", "mmaction_interaction_v1", "mmaction_fall_wrestle", "mmaction_transition_redid"
     ]
     assert "FightWatch X3D-S + pose" in selector.group(1)
 
@@ -28,7 +28,7 @@ def test_web_exposes_supported_backends():
 @pytest.mark.parametrize(
     "backend,tuned",
     [("legacy", None), ("mmaction_original", False), ("mmaction_interaction_v1", True),
-     ("mmaction_fall_wrestle", True)],
+     ("mmaction_fall_wrestle", True), ("mmaction_transition_redid", True)],
 )
 def test_backend_routes_without_replacing_active_session(monkeypatch, backend, tuned):
     import api.fight_server as server
@@ -53,6 +53,8 @@ def test_backend_routes_without_replacing_active_session(monkeypatch, backend, t
         expected = {"tuned": tuned, "allow_pilot": False}
         if backend == "mmaction_fall_wrestle":
             expected["fall_wrestle"] = True
+        if backend == "mmaction_transition_redid":
+            expected["transition"] = True
         assert calls[0] == expected
 
 

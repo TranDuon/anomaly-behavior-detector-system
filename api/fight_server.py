@@ -212,6 +212,7 @@ class FightProcessor:
                 "mmaction_original",
                 "mmaction_interaction_v1",
                 "mmaction_fall_wrestle",
+                "mmaction_transition_redid",
             }:
                 raise ValueError("Model không hợp lệ.")
             if backend == "legacy":
@@ -225,9 +226,10 @@ class FightProcessor:
                 from fight.mmaction_runtime import MMActionRuntime
 
                 candidate = MMActionRuntime(
-                    tuned=backend in {"mmaction_interaction_v1", "mmaction_fall_wrestle"},
+                    tuned=backend in {"mmaction_interaction_v1", "mmaction_fall_wrestle", "mmaction_transition_redid"},
                     allow_pilot=allow_pilot,
                     **({"fall_wrestle": True} if backend == "mmaction_fall_wrestle" else {}),
+                    **({"transition": True} if backend == "mmaction_transition_redid" else {}),
                 )
             if not candidate.model_ready and not preview:
                 raise ValueError(candidate.message)
@@ -253,7 +255,7 @@ class FightProcessor:
             self.session_id = uuid.uuid4().hex
             self.trace_last_prediction = None
             self.trace_path = None
-            if backend == "mmaction_fall_wrestle" and not preview:
+            if backend in {"mmaction_fall_wrestle", "mmaction_transition_redid"} and not preview:
                 trace_dir = BASE_DIR / "logs" / "action_traces"
                 trace_dir.mkdir(parents=True, exist_ok=True)
                 self.trace_path = trace_dir / f"{self.session_id}.jsonl"
@@ -440,7 +442,7 @@ class FightProcessor:
                 "id": identifier,
                 "session_id": self.session_id,
                 "backend": getattr(self.runtime, "backend_name", "legacy"),
-                "type": ("fight_wrestle_fall" if getattr(self.runtime, "backend_name", "") == "mmaction_fall_wrestle"
+                "type": ("fight_wrestle_fall" if getattr(self.runtime, "backend_name", "") in {"mmaction_fall_wrestle", "mmaction_transition_redid"}
                          else "fighting"),
                 "started_at": self.timestamp,
                 "ended_at": None,

@@ -1,6 +1,6 @@
 # MMAction2 thử nghiệm độc lập
 
-Ứng dụng web hiện hỗ trợ **MMAction2 gốc** và **MMAction2 interaction v1**, bên cạnh FightWatch X3D-S + pose. Xem [danh mục hiện tại](../docs/MODELS.md). Cài gói interaction v1 bằng `install_branch.cmd`; installer chỉ nhận head v1. Các notebook v2/v3/v4 là thí nghiệm lịch sử, không phải lựa chọn runtime hiện tại.
+Ứng dụng web có MMAction2 gốc, interaction v1, pilot đánh/vật/ngã và pilot ngã sớm + chuyển xanh Re-DID, bên cạnh FightWatch X3D-S + pose. Xem [danh mục hiện tại](../docs/MODELS.md). Pilot Re-DID dùng file `weights/interaction_transition.pt` riêng và cài từ ZIP Colab bằng `install_action_transition.py`; các trọng số cũ được giữ nguyên. Các notebook interaction v2/v3/v4 là thí nghiệm lịch sử, không phải lựa chọn runtime hiện tại.
 
 Tất cả nằm trong thư mục này: `repo/` (mã chính thức), `env/` (Python/GPU riêng), `weights/`, `results/` và hai file chạy. Không thay `.venv`, checkpoint hay server FightWatch cũ. Không training và không tải video riêng lên mạng.
 

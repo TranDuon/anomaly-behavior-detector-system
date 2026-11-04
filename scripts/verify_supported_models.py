@@ -18,12 +18,13 @@ from fight.runtime import FightRuntime
 
 def verify(source, output):
     records = []
-    for backend in ("legacy", "mmaction_original", "mmaction_interaction_v1", "mmaction_fall_wrestle"):
+    for backend in ("legacy", "mmaction_original", "mmaction_interaction_v1", "mmaction_fall_wrestle", "mmaction_transition_redid"):
         runtime = (
             FightRuntime(ROOT / "models", allow_pilot=True, cpu_threads=4, batch_detection=True)
             if backend == "legacy"
-            else MMActionRuntime(tuned=backend in {"mmaction_interaction_v1", "mmaction_fall_wrestle"},
-                                 fall_wrestle=backend == "mmaction_fall_wrestle", allow_pilot=True)
+            else MMActionRuntime(tuned=backend in {"mmaction_interaction_v1", "mmaction_fall_wrestle", "mmaction_transition_redid"},
+                                 fall_wrestle=backend == "mmaction_fall_wrestle",
+                                 transition=backend == "mmaction_transition_redid", allow_pilot=True)
         )
         capture = cv2.VideoCapture(str(source))
         try:

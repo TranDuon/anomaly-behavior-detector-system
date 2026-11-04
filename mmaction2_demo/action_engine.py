@@ -231,7 +231,7 @@ class TunedRefinementHead(nn.Module):
 
 class ActionEngine:
     def __init__(self, weights=None, device="cuda:0", tuned=False, refined=False, calibrated=False,
-                 fall_wrestle=False):
+                 fall_wrestle=False, transition=False):
         from mmengine import Config
         from mmaction.utils import register_all_modules
         from mmdet.apis import init_detector
@@ -292,11 +292,14 @@ class ActionEngine:
         if refined and not tuned:
             raise ValueError("A refinement head requires the fine-tuned branch")
 
-        if fall_wrestle and not tuned:
-            raise ValueError("Fall/wrestle checkpoint requires the interaction head")
+        if (fall_wrestle or transition) and not tuned:
+            raise ValueError("Pilot checkpoint requires the interaction head")
+        if fall_wrestle and transition:
+            raise ValueError("Select one pilot checkpoint")
         if tuned:
-            checkpoint_name = "interaction_fall_wrestle.pt" if fall_wrestle else "interaction.pt"
-            metadata_name = "interaction_fall_wrestle.json" if fall_wrestle else "interaction.json"
+            stem = "interaction_transition" if transition else "interaction_fall_wrestle" if fall_wrestle else "interaction"
+            checkpoint_name = stem + ".pt"
+            metadata_name = stem + ".json"
             metadata = json.loads((self.weights / metadata_name).read_text())
             if (
                 metadata["source_sha256"] != SOURCE_SHA
