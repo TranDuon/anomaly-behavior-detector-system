@@ -17,6 +17,7 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "mmaction2_demo"))
 
 from fight.runtime import EventGate  # noqa: E402
+from fight.mmaction_runtime import prediction_due  # noqa: E402
 from train_action_transition_v2 import anchors, choose_threshold, reviewed_sources  # noqa: E402
 from scripts.evaluate_action_trace import evaluate  # noqa: E402
 
@@ -59,6 +60,12 @@ class TransitionTests(unittest.TestCase):
         self.assertEqual(gate.update(.9, .53)[0], "fighting")
         self.assertEqual(gate.update(.5, 1.06)[0], "fighting")
         self.assertEqual(gate.update(.5, 1.59), ("normal", "ended"))
+
+    def test_near_boundary_video_fps_keeps_two_sample_decisions(self):
+        stride = 16 / 30
+        self.assertFalse(prediction_due(2.1494, 2.4160, stride, fall_wrestle=True))
+        self.assertTrue(prediction_due(2.1494, 2.6826, stride, fall_wrestle=True))
+        self.assertFalse(prediction_due(2.1494, 2.6826, stride, fall_wrestle=False))
 
     def test_trace_report_uses_reviewed_transition(self):
         with tempfile.TemporaryDirectory() as folder:

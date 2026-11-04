@@ -19,6 +19,15 @@ from fight.vision import ClipConfig
 ROOT = Path(__file__).resolve().parents[1] / "mmaction2_demo"
 
 
+def prediction_due(last_prediction, timestamp, stride_seconds, *, fall_wrestle=False):
+    if last_prediction is None:
+        return True
+    # 59.94 fps sources can miss the nominal 0.5333 s boundary by <1 ms.
+    # A 20 ms tolerance keeps the intended two-sample cadence at 3.75 fps.
+    tolerance = 0.02 if fall_wrestle else 1e-6
+    return timestamp - last_prediction >= stride_seconds - tolerance
+
+
 def person_action_regions(actions, threshold):
     return [
         person["box"]
@@ -188,10 +197,9 @@ class MMActionRuntime:
         if (
             len(self.samples) < 9
             or not predict
-            or (
-                self.last_prediction is not None
-                and timestamp - self.last_prediction < self.config.stride_seconds - 1e-6
-            )
+            or not prediction_due(self.last_prediction, timestamp,
+                                  self.config.stride_seconds,
+                                  fall_wrestle=self.fall_wrestle)
         ):
             return dict(self.result)
         self.warmup()

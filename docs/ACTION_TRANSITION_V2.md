@@ -5,6 +5,8 @@
 - Giữ checkpoint `mmaction_fall_wrestle` hiện tại làm mốc so sánh. Colab xuất một ZIP pilot riêng; không tự thay trọng số trong ứng dụng.
 - Mục tiêu chuyển xanh là dưới 1 giây sau khi hệ thống quan sát rõ xô xát đã dừng. Cổng cảnh báo của pilot kết thúc sau hai dự đoán thấp liên tiếp (khoảng 0,53 giây giữa hai dự đoán), nhưng không thể chuyển xanh khi chính model vẫn cho điểm cao.
 - Vật thể thao là mẫu âm. Chỉ xô xát/bạo lực là mẫu dương cho đánh/vật. Ngã được gắn nhãn dương riêng theo thời điểm bắt đầu mất thăng bằng; head hiện tại vẫn xuất một điểm chung.
+- Clip ngã ngắn 4,27 giây đã chạy thử hai lần: không có cảnh báo; dự đoán đầu tiên ở 2,15 giây. Sai khác FPS từng khiến các dự đoán cách nhau 0,8 giây. Sau khi thêm dung sai 20 ms, trace thực tế là 2,149 → 2,683 → 3,216 → 3,749 giây, gần 0,53 giây/lần, nhưng điểm chỉ 0,021–0,086. Cửa sổ khởi động hơn 2 giây vẫn là giới hạn đối với ngã ngay đầu clip và cần nhánh tín hiệu ngắn hơn được train/đánh giá riêng.
+- Clip vật thể thao 88,6 giây đã chạy bằng runtime mới và được người dùng xác nhận là âm: 141/163 dự đoán ở trạng thái đỏ (86,5%), tạo 3 cảnh báo; thời gian suy luận trung bình 0,314 giây/lần, không rơi mẫu. Đây là lỗi phân loại của checkpoint hiện tại, không phải chỉ do cổng giữ cảnh báo. Clip này phải tiếp tục nằm ở test giữ riêng. Cần thêm video vật thể thao khác làm mẫu âm train và video vật bạo lực đã duyệt làm mẫu dương trước khi có thể tuyên bố model phân biệt hai loại.
 
 ## 1. Ghi trace và đo
 
