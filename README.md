@@ -42,6 +42,6 @@ Các module, notebook và báo cáo nghiên cứu trước đây được giữ 
 
 Notebook fine-tune trên Colab: [hướng dẫn và giới hạn](docs/MMACTION_GENERAL_FALL_COLAB.md).
 
-Đợt cải thiện ngã sớm và trả xanh sau xô xát: [quy trình review, trace và Colab v2](docs/ACTION_TRANSITION_V2.md). Vật thể thao là mẫu âm theo phạm vi hiện tại.
+Đợt cải thiện ngã sớm và trả xanh sau xô xát: [quy trình review và trace](docs/ACTION_TRANSITION_V2.md), [mở notebook fine-tune trên Colab](https://colab.research.google.com/github/TranDuon/anomaly-behavior-detector-system/blob/main/colab/mmaction_action_transition_v2.ipynb). Vật thể thao là mẫu âm theo phạm vi hiện tại.
 
 Xem thêm [quy trình FightWatch](docs/FIGHTWATCH_WORKFLOW.md) và [nghiên cứu trước đó](docs/BAO_CAO_HUONG_DI.md).

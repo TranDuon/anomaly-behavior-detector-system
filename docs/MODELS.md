@@ -13,7 +13,7 @@ Cập nhật ngày 04/11/2026. Giao diện, API và CLI hiện hỗ trợ bốn 
 
 ## Checkpoint đánh / vật / ngã chung
 
-- [Run Colab trên Drive](https://drive.google.com/drive/u/1/folders/1CPnlYVWz_xJLWqyQbM6oULojAo0vYTDw): `fall_wrestle_pilot_01`. Checkpoint SHA-256 `ddb09180284c4093189c53b7decbfcc5b51fd2d9b7700536d104524bceb5c344`.
+- [Gói checkpoint cha đã xác minh trên Drive](https://drive.google.com/file/d/13OLbq4X7E25KRhZlQd2whgtuO3kYxZe5/view): `fall_wrestle_pilot_01`. Checkpoint SHA-256 `ddb09180284c4093189c53b7decbfcc5b51fd2d9b7700536d104524bceb5c344`.
 - Gói ZIP được cài bằng `mmaction2_demo/install_fall_wrestle.py` vào file riêng; v1 và trọng số gốc vẫn có thể chọn để so sánh.
 - Metadata Colab xuất ngưỡng `0.0` do chọn F1 trên cả các cửa sổ không phát hiện được người. Runtime có người dùng ngưỡng `0.83629`, chọn trên 94 cửa sổ development có người; test cùng điều kiện: precision `0.808`, recall `0.618` trên 100 cửa sổ. Cấu hình tại `mmaction2_demo/config/fall_wrestle_calibration.json`.
 - Chưa có nhãn riêng clip vật nhau để đo recall hành vi này. Trên web, các cảnh báo từ model này hiển thị một nhãn chung; cần thử video vật nhau, ngã và các mẫu âm dễ nhầm.

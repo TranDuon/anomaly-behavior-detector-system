@@ -132,6 +132,8 @@ Checkpoint mới chỉ là pilot. Báo cáo so sánh checkpoint cha và mới tr
              cell("code", parent), previous["cells"][4], previous["cells"][5],
              previous["cells"][6], cell("code", review), cell("code", train),
              cell("code", result)]
+    for index, item in enumerate(cells):
+        item["id"] = f"action-step-{index:02d}"
     notebook = {"cells": cells, "metadata": previous["metadata"],
                 "nbformat": 4, "nbformat_minor": 5}
     TARGET.write_text(json.dumps(notebook, ensure_ascii=False, indent=1) + "\n",
