@@ -46,4 +46,6 @@ Notebook fine-tune trên Colab: [hướng dẫn và giới hạn](docs/MMACTION_
 
 Đợt cải thiện ngã sớm và trả xanh sau xô xát: [quy trình review và trace](docs/ACTION_TRANSITION_V2.md), [notebook Colab v2 đang dùng](https://colab.research.google.com/github/TranDuon/anomaly-behavior-detector-system/blob/main/colab/mmaction_action_transition_v2.ipynb), [notebook Re-DID mới](https://colab.research.google.com/github/TranDuon/anomaly-behavior-detector-system/blob/main/colab/mmaction_action_transition_redid_v1.ipynb) và [hướng dẫn dữ liệu Re-DID](docs/REDID_TRANSITION_DATA.md). Vật thể thao là mẫu âm theo phạm vi hiện tại.
 
+Fine-tune tiếp từ checkpoint đánh/vật/ngã chung để giữ đỏ khi còn giằng co và nhận ngã sớm: [notebook Colab khoảng cách + ngã v3](https://colab.research.google.com/github/TranDuon/anomaly-behavior-detector-system/blob/main/colab/mmaction_distance_fall_v3.ipynb). Notebook tạo head pilot riêng; bản đang chạy trong web không bị thay.
+
 Xem thêm [quy trình FightWatch](docs/FIGHTWATCH_WORKFLOW.md) và [nghiên cứu trước đó](docs/BAO_CAO_HUONG_DI.md).

@@ -200,6 +200,36 @@ class InteractionHeadV2(nn.Module):
         return self.layers(torch.cat((visual, context), dim=1)).flatten()
 
 
+class InteractionDistanceHead(nn.Module):
+    """V1-compatible head with candidate geometry and motion as extra inputs."""
+
+    def __init__(self):
+        super().__init__()
+        self.register_buffer("mean", torch.zeros(4096))
+        self.register_buffer("std", torch.ones(4096))
+        self.register_buffer("aux_mean", torch.zeros(len(AUX_NAMES)))
+        self.register_buffer("aux_std", torch.ones(len(AUX_NAMES)))
+        self.layers = nn.Sequential(
+            nn.Linear(4096 + len(AUX_NAMES), 128), nn.ReLU(),
+            nn.Dropout(0.3), nn.Linear(128, 1),
+        )
+
+    @torch.no_grad()
+    def warm_start(self, parent):
+        self.mean.copy_(parent.mean)
+        self.std.copy_(parent.std)
+        self.layers[0].weight[:, :4096].copy_(parent.layers[0].weight)
+        self.layers[0].weight[:, 4096:].zero_()
+        self.layers[0].bias.copy_(parent.layers[0].bias)
+        self.layers[3].load_state_dict(parent.layers[3].state_dict())
+        return self
+
+    def forward(self, features, auxiliary):
+        visual = ((features - self.mean) / self.std.clamp_min(0.05)).clamp(-12, 12)
+        geometry = ((auxiliary - self.aux_mean) / self.aux_std.clamp_min(0.01)).clamp(-12, 12)
+        return self.layers(torch.cat((visual, geometry), dim=1)).flatten()
+
+
 class TunedRefinementHead(nn.Module):
     """Calibrate the installed v1/v2 interaction head against indoor hard negatives."""
 
