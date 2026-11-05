@@ -7,7 +7,7 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "colab/mmaction_release_neck_v4.ipynb"
-TARGET = ROOT / "colab/mmaction_neck_supplement_v5.ipynb"
+TARGET = ROOT / "colab/mmaction_neck_supplement_v5_drivefix_20261105.ipynb"
 
 
 def set_source(cell, value):
@@ -36,8 +36,10 @@ import hashlib, json, os, shutil, subprocess, sys, urllib.request, zipfile
 from google.colab import drive, files
 
 RUN_TAG = 'neck_supplement_v5_01'
+CELL1_REVISION = 'drivefix_20261105_alias_probe_v2'
 EPOCHS = 40
 TRAIN_MINUTES = 90
+print('Cell 1 revision:', CELL1_REVISION)
 try:
     drive.mount('/content/drive', timeout_ms=180000)
 except Exception as exc:
