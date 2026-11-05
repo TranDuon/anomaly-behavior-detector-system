@@ -38,22 +38,16 @@ from google.colab import drive, files
 RUN_TAG = 'neck_supplement_v5_01'
 EPOCHS = 40
 TRAIN_MINUTES = 90
-DRIVE_FOLDER_URL = 'https://drive.google.com/drive/folders/1khce9fRYpEF80osVFkOxceIdosJnwFRS'
 try:
     drive.mount('/content/drive', timeout_ms=180000)
 except Exception as exc:
-    raise RuntimeError('Drive mount failed; use the account that opens '+DRIVE_FOLDER_URL) from exc
-drive_candidates = [Path('/content/drive/MyDrive/SENTINEL'),
-                    Path('/content/drive/My Drive/SENTINEL'),
-                    Path('/content/drive/Shareddrives/SENTINEL'),
-                    Path('/content/drive/Shared drives/SENTINEL')]
-old_runs = [root/'artifacts/mmaction_release_neck_v4/release_neck_v4_02'
-            for root in drive_candidates
-            if (root/'artifacts/mmaction_release_neck_v4/release_neck_v4_02').is_dir()]
-if len(old_runs) != 1:
-    raise RuntimeError('Expected exactly one visible v4 Drive run at '+DRIVE_FOLDER_URL)
-RUN = old_runs[0] / RUN_TAG
-RUN.mkdir(exist_ok=True)
+    raise RuntimeError('Drive mount failed; authorize Google Drive and rerun cell 1') from exc
+my_drive_candidates = [Path('/content/drive/MyDrive'), Path('/content/drive/My Drive')]
+mounted_roots = [root for root in my_drive_candidates if root.is_dir()]
+if len(mounted_roots) != 1:
+    raise RuntimeError('Cannot identify one writable MyDrive root: '+str(mounted_roots))
+RUN = mounted_roots[0] / 'SENTINEL/artifacts/mmaction_neck_supplement_v5' / RUN_TAG
+RUN.mkdir(parents=True, exist_ok=True)
 probe = RUN/'colab_write_probe.txt'
 probe.write_text(RUN_TAG+': Drive write preflight OK', encoding='utf-8')
 assert probe.read_text(encoding='utf-8').endswith('Drive write preflight OK')
@@ -93,7 +87,7 @@ print('Pilot ZIP SHA-256:', sha256(package))
 print('Flushing files to Google Drive...')
 drive.flush_and_unmount(timeout_ms=600000)
 DRIVE_FLUSHED = True
-print('Saved and flushed:', DRIVE_FOLDER_URL, RUN_TAG)
+print('Saved and flushed to mounted Drive path:', RUN)
 """)
     notebook["metadata"].setdefault("colab", {})["name"] = TARGET.name
     for cell in cells:
