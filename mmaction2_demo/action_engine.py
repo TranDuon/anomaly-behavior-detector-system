@@ -261,13 +261,16 @@ class TunedRefinementHead(nn.Module):
 
 class ActionEngine:
     def __init__(self, weights=None, device="cuda:0", tuned=False, refined=False, calibrated=False,
-                 fall_wrestle=False, transition=False):
+                 fall_wrestle=False, transition=False, person_threshold=0.9):
         from mmengine import Config
         from mmaction.utils import register_all_modules
         from mmdet.apis import init_detector
 
         register_all_modules()
         self.device = device
+        if not 0 < person_threshold <= 1:
+            raise ValueError("person_threshold must be in (0, 1]")
+        self.person_threshold = person_threshold
         self.weights = Path(weights or ROOT / "weights")
         for name, expected in (
             ("action_slowonly_r101.pth", SOURCE_SHA),
@@ -381,7 +384,7 @@ class ActionEngine:
 
         inputs, shape = rgb_inputs(frames, self.device)
         predictions = inference_detector(self.detector, frames[4]).pred_instances
-        keep = (predictions.labels == 0) & (predictions.scores >= 0.9)
+        keep = (predictions.labels == 0) & (predictions.scores >= self.person_threshold)
         selected = predictions[keep]
         order = selected.scores.argsort(descending=True)[:6]
         boxes = selected.bboxes[order].detach().cpu().numpy()
