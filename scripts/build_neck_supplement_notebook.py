@@ -44,13 +44,24 @@ except Exception as exc:
     raise RuntimeError('Drive mount failed; authorize Google Drive and rerun cell 1') from exc
 my_drive_candidates = [Path('/content/drive/MyDrive'), Path('/content/drive/My Drive')]
 mounted_roots = [root for root in my_drive_candidates if root.is_dir()]
-if len(mounted_roots) != 1:
-    raise RuntimeError('Cannot identify one writable MyDrive root: '+str(mounted_roots))
-RUN = mounted_roots[0] / 'SENTINEL/artifacts/mmaction_neck_supplement_v5' / RUN_TAG
-RUN.mkdir(parents=True, exist_ok=True)
-probe = RUN/'colab_write_probe.txt'
-probe.write_text(RUN_TAG+': Drive write preflight OK', encoding='utf-8')
-assert probe.read_text(encoding='utf-8').endswith('Drive write preflight OK')
+if not mounted_roots:
+    raise RuntimeError('MyDrive is not visible under /content/drive')
+RUN = None
+write_errors = []
+for root in mounted_roots:
+    candidate = root / 'SENTINEL/artifacts/mmaction_neck_supplement_v5' / RUN_TAG
+    try:
+        candidate.mkdir(parents=True, exist_ok=True)
+        probe = candidate/'colab_write_probe.txt'
+        probe.write_text(RUN_TAG+': Drive write preflight OK', encoding='utf-8')
+        if not probe.read_text(encoding='utf-8').endswith('Drive write preflight OK'):
+            raise OSError('Drive write probe did not round-trip')
+        RUN = candidate
+        break
+    except OSError as exc:
+        write_errors.append(str(candidate)+': '+str(exc))
+if RUN is None:
+    raise RuntimeError('No writable Drive path: '+ '; '.join(write_errors))
 subprocess.run(['nvidia-smi'], check=True)
 WORK = Path('/content/neck_supplement_v5'); WORK.mkdir(exist_ok=True)
 CODE = WORK/'code'; CODE.mkdir(exist_ok=True)
