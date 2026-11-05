@@ -92,8 +92,10 @@ print('Held-out test:', json.dumps(result['test'], indent=2))
 print('Pilot ZIP SHA-256:', sha256(package))
 print('Flushing files to Google Drive...')
 drive.flush_and_unmount(timeout_ms=600000)
+DRIVE_FLUSHED = True
 print('Saved and flushed:', DRIVE_FOLDER_URL, RUN_TAG)
 """)
+    notebook["metadata"].setdefault("colab", {})["name"] = TARGET.name
     for cell in cells:
         if cell["cell_type"] == "code":
             cell["execution_count"] = None
