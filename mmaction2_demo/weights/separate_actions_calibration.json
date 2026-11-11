@@ -1,0 +1,57 @@
+{
+  "manifest_sha256": "24c07bf0f1f491059a0fb15446dbe64ae9884d475bc4223cb4963ef81117a5c4",
+  "engine_sha256": "236bb65ef07297e043efa0fdba168d83d9f9600fda86763acaba81d89de0e39e",
+  "grapple_checkpoint_sha256": "d6f4fcdd324b9b4d3214bf7d54c10b3a50a02e881ce1f4231ebfce996850d99a",
+  "source_sha256": "163785949c5178484012a6593d12d6fcf4d36be404fa42b5899b314e91f4703b",
+  "spec": {
+    "sample_fps": 3.75,
+    "buffer_frames": 9,
+    "model_frames": 8,
+    "keyframe_index": 4,
+    "short_side": 256,
+    "decision_stride_seconds": 0.5333333333333333,
+    "color": "RGB",
+    "version": 1
+  },
+  "running_checkpoint_sha256": "69be045878f5b7f32f5d3dec0a8c17585e20ae7927e33d96649f806afa45846b",
+  "thresholds": {
+    "strike": 0.24134795367717743,
+    "grapple": 0.74082350730896,
+    "fall": 0.11682350188493729,
+    "fast_running": 0.16425856947898865
+  },
+  "labels": [
+    "strike",
+    "grapple",
+    "fall",
+    "fast_running"
+  ],
+  "approved_for_demo": false,
+  "scope": "Repeated public AI-reviewed windows; not independent human gold or camera acceptance",
+  "test": {
+    "strike": {
+      "windows": 38,
+      "precision": 1.0,
+      "recall": 0.2857142857142857,
+      "f1": 0.4444444444444445,
+      "ap": 0.8213390619405656,
+      "no_person": 1
+    },
+    "grapple": {
+      "windows": 38,
+      "precision": 0.5,
+      "recall": 0.07142857142857142,
+      "f1": 0.125,
+      "ap": 0.6807422813102775,
+      "no_person": 1
+    },
+    "fall": {
+      "windows": 40,
+      "precision": 0.5,
+      "recall": 0.14285714285714285,
+      "f1": 0.22222222222222224,
+      "ap": 0.573015873015873,
+      "no_person": 1
+    }
+  }
+}

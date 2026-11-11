@@ -1,0 +1,4 @@
+mmaction2_demo/weights/*.pth filter=lfs diff=lfs merge=lfs -text
+mmaction2_demo/weights/*.pt filter=lfs diff=lfs merge=lfs -text
+models/*.pt filter=lfs diff=lfs merge=lfs -text
+models/*.ts filter=lfs diff=lfs merge=lfs -text

@@ -1,0 +1,26 @@
+{
+  "manifest_sha256": "81064990f6c36a165f6716f635313e4402e80554392d7c884131223a5fae5f9e",
+  "engine_sha256": "1c5d25fdaa0e38baac9da8d8f84c46dddd0d3683e9492e9e7d52e507c8a9ae39",
+  "training_code_sha256": "cc7c181a0ec865e3a7c6ba5b7afda2bb9582e22a3258dc6e81a18d91694ccd7c",
+  "source_sha256": "163785949c5178484012a6593d12d6fcf4d36be404fa42b5899b314e91f4703b",
+  "spec": {
+    "sample_fps": 3.75,
+    "buffer_frames": 9,
+    "model_frames": 8,
+    "keyframe_index": 4,
+    "short_side": 256,
+    "decision_stride_seconds": 0.5333333333333333,
+    "color": "RGB",
+    "version": 1
+  },
+  "seed": 42,
+  "training_mode": "Frozen original backbone and AVA head; train a separate multiple-instance interaction head",
+  "private_data_used": false,
+  "checkpoint_sha256": "8c5808db106aacd0f43b72a0e76178b2dec039e0a1766d996bb8374b7e4dddb7",
+  "threshold": 0.3308604210615158,
+  "confirm_seconds": 0.4,
+  "approved_for_demo": false,
+  "real_phone_tested": false,
+  "scope": "Small AI-assisted repeated-public pilot; original AVA head stays frozen; not camera acceptance",
+  "epochs": 16
+}

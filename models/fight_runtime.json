@@ -1,0 +1,1695 @@
+{
+  "threshold": 0.958552896976471,
+  "target": 0.8,
+  "minimum_calibration_score_margin": 0.0013270974159240723,
+  "threshold_candidates": "Midpoints between observed calibration score groups; avoids placing threshold exactly on a GPU score",
+  "all_calibration_cohorts_meet_target": true,
+  "selection": "Maximize worst dataset precision/recall with one global threshold, calibration only",
+  "cohorts": {
+    "airtlab": {
+      "metric_scope": "One central model window per public clip; publisher clip labels, not frame/event or phone accuracy",
+      "auc": 0.8357142857142857,
+      "ap": 0.8831951778380349,
+      "precision": 0.8571428571428571,
+      "recall": 0.8571428571428571,
+      "f1": 0.8571428571428571,
+      "false_positive_rate": 0.2,
+      "in_video_auc": null,
+      "mixed_label_videos": 0,
+      "clips": 24,
+      "accuracy": 0.8333333333333334,
+      "confusion_matrix": {
+        "tp": 12,
+        "tn": 8,
+        "fp": 2,
+        "fn": 2
+      },
+      "precision_wilson95": [
+        0.600580922361363,
+        0.9599069262620787
+      ],
+      "recall_wilson95": [
+        0.600580922361363,
+        0.9599069262620787
+      ]
+    },
+    "rlvs": {
+      "metric_scope": "One central model window per public clip; publisher clip labels, not frame/event or phone accuracy",
+      "auc": 0.9956773749877198,
+      "ap": 0.9971742191500255,
+      "precision": 1.0,
+      "recall": 0.9487179487179487,
+      "f1": 0.9736842105263158,
+      "false_positive_rate": 0.0,
+      "in_video_auc": null,
+      "mixed_label_videos": 0,
+      "clips": 204,
+      "accuracy": 0.9705882352941176,
+      "confusion_matrix": {
+        "tp": 111,
+        "tn": 87,
+        "fp": 0,
+        "fn": 6
+      },
+      "precision_wilson95": [
+        0.9665487070887205,
+        1
+      ],
+      "recall_wilson95": [
+        0.8926181273586138,
+        0.9762879447225237
+      ]
+    }
+  },
+  "development": {
+    "worst_precision_recall": 0.9230769230769231,
+    "macro_ap": 0.9898822159942383,
+    "bce": 0.144873799506197,
+    "cohorts": {
+      "airtlab": {
+        "metric_scope": "One central model window per public clip; publisher clip labels, not frame/event or phone accuracy",
+        "auc": 0.9833333333333334,
+        "ap": 0.9866452991452993,
+        "precision": 0.9230769230769231,
+        "recall": 1.0,
+        "f1": 0.96,
+        "false_positive_rate": 0.1,
+        "in_video_auc": null,
+        "mixed_label_videos": 0,
+        "clips": 22,
+        "accuracy": 0.9545454545454546,
+        "confusion_matrix": {
+          "tp": 12,
+          "tn": 9,
+          "fp": 1,
+          "fn": 0
+        },
+        "precision_wilson95": [
+          0.6668546607175265,
+          0.9862899336203037
+        ],
+        "recall_wilson95": [
+          0.7574992425007574,
+          1
+        ]
+      },
+      "rlvs": {
+        "metric_scope": "One central model window per public clip; publisher clip labels, not frame/event or phone accuracy",
+        "auc": 0.9921049823962446,
+        "ap": 0.9931191328431773,
+        "precision": 0.9619047619047619,
+        "recall": 0.9805825242718447,
+        "f1": 0.9711538461538461,
+        "false_positive_rate": 0.04395604395604396,
+        "in_video_auc": null,
+        "mixed_label_videos": 0,
+        "clips": 194,
+        "accuracy": 0.9690721649484536,
+        "confusion_matrix": {
+          "tp": 101,
+          "tn": 87,
+          "fp": 4,
+          "fn": 2
+        },
+        "precision_wilson95": [
+          0.9061155814676505,
+          0.9850877819522184
+        ],
+        "recall_wilson95": [
+          0.9319464805299941,
+          0.9946588866678016
+        ]
+      }
+    }
+  },
+  "completed_epochs": 9,
+  "stop_reason": "early_stop_or_completed",
+  "use_pose": false,
+  "event_gate": {
+    "confirm_seconds": 0.4
+  },
+  "gate_selection_scope": "Development whole-clip any-alarm labels only; no claim of frame/event start-delay accuracy",
+  "gate_choices": [
+    {
+      "confirm_seconds": 0.0,
+      "worst_precision_recall": 0.6666666666666666,
+      "cohorts": {
+        "rlvs": {
+          "metric_scope": "Development whole-clip any-alarm diagnostic; publisher clip labels, not temporal event ground truth",
+          "auc": 0.875,
+          "ap": 0.828125,
+          "precision": 0.875,
+          "recall": 0.875,
+          "f1": 0.875,
+          "false_positive_rate": 0.125,
+          "in_video_auc": null,
+          "mixed_label_videos": 0,
+          "clips": 16,
+          "accuracy": 0.875,
+          "confusion_matrix": {
+            "tp": 7,
+            "tn": 7,
+            "fp": 1,
+            "fn": 1
+          },
+          "precision_wilson95": [
+            0.5291051942301386,
+            0.9775830911367038
+          ],
+          "recall_wilson95": [
+            0.5291051942301386,
+            0.9775830911367038
+          ]
+        },
+        "airtlab": {
+          "metric_scope": "Development whole-clip any-alarm diagnostic; publisher clip labels, not temporal event ground truth",
+          "auc": 0.75,
+          "ap": 0.6666666666666666,
+          "precision": 0.6666666666666666,
+          "recall": 1.0,
+          "f1": 0.8,
+          "false_positive_rate": 0.5,
+          "in_video_auc": null,
+          "mixed_label_videos": 0,
+          "clips": 16,
+          "accuracy": 0.75,
+          "confusion_matrix": {
+            "tp": 8,
+            "tn": 4,
+            "fp": 4,
+            "fn": 0
+          },
+          "precision_wilson95": [
+            0.3906175873976139,
+            0.8618821601026385
+          ],
+          "recall_wilson95": [
+            0.6755843804891231,
+            1
+          ]
+        }
+      }
+    },
+    {
+      "confirm_seconds": 0.4,
+      "worst_precision_recall": 0.875,
+      "cohorts": {
+        "rlvs": {
+          "metric_scope": "Development whole-clip any-alarm diagnostic; publisher clip labels, not temporal event ground truth",
+          "auc": 0.875,
+          "ap": 0.828125,
+          "precision": 0.875,
+          "recall": 0.875,
+          "f1": 0.875,
+          "false_positive_rate": 0.125,
+          "in_video_auc": null,
+          "mixed_label_videos": 0,
+          "clips": 16,
+          "accuracy": 0.875,
+          "confusion_matrix": {
+            "tp": 7,
+            "tn": 7,
+            "fp": 1,
+            "fn": 1
+          },
+          "precision_wilson95": [
+            0.5291051942301386,
+            0.9775830911367038
+          ],
+          "recall_wilson95": [
+            0.5291051942301386,
+            0.9775830911367038
+          ]
+        },
+        "airtlab": {
+          "metric_scope": "Development whole-clip any-alarm diagnostic; publisher clip labels, not temporal event ground truth",
+          "auc": 1.0,
+          "ap": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "false_positive_rate": 0.0,
+          "in_video_auc": null,
+          "mixed_label_videos": 0,
+          "clips": 16,
+          "accuracy": 1.0,
+          "confusion_matrix": {
+            "tp": 8,
+            "tn": 8,
+            "fp": 0,
+            "fn": 0
+          },
+          "precision_wilson95": [
+            0.6755843804891231,
+            1
+          ],
+          "recall_wilson95": [
+            0.6755843804891231,
+            1
+          ]
+        }
+      }
+    },
+    {
+      "confirm_seconds": 0.8,
+      "worst_precision_recall": 0.75,
+      "cohorts": {
+        "rlvs": {
+          "metric_scope": "Development whole-clip any-alarm diagnostic; publisher clip labels, not temporal event ground truth",
+          "auc": 0.8125,
+          "ap": 0.7678571428571428,
+          "precision": 0.8571428571428571,
+          "recall": 0.75,
+          "f1": 0.8,
+          "false_positive_rate": 0.125,
+          "in_video_auc": null,
+          "mixed_label_videos": 0,
+          "clips": 16,
+          "accuracy": 0.8125,
+          "confusion_matrix": {
+            "tp": 6,
+            "tn": 7,
+            "fp": 1,
+            "fn": 2
+          },
+          "precision_wilson95": [
+            0.48686549668097007,
+            0.9743210440510253
+          ],
+          "recall_wilson95": [
+            0.40926987910258916,
+            0.9285223111419724
+          ]
+        },
+        "airtlab": {
+          "metric_scope": "Development whole-clip any-alarm diagnostic; publisher clip labels, not temporal event ground truth",
+          "auc": 0.9375,
+          "ap": 0.9375,
+          "precision": 1.0,
+          "recall": 0.875,
+          "f1": 0.9333333333333333,
+          "false_positive_rate": 0.0,
+          "in_video_auc": null,
+          "mixed_label_videos": 0,
+          "clips": 16,
+          "accuracy": 0.9375,
+          "confusion_matrix": {
+            "tp": 7,
+            "tn": 8,
+            "fp": 0,
+            "fn": 1
+          },
+          "precision_wilson95": [
+            0.6456611570247934,
+            1
+          ],
+          "recall_wilson95": [
+            0.5291051942301386,
+            0.9775830911367038
+          ]
+        }
+      }
+    }
+  ],
+  "approved_for_demo": false,
+  "real_phone_tested": false,
+  "protected_development_progress": true,
+  "test": {
+    "metric_scope": "One central model window per public clip; publisher clip labels, not frame/event or phone accuracy",
+    "auc": 0.9878395606550947,
+    "ap": 0.9875406079656806,
+    "precision": 0.978021978021978,
+    "recall": 0.898989898989899,
+    "f1": 0.9368421052631579,
+    "false_positive_rate": 0.019417475728155338,
+    "in_video_auc": null,
+    "mixed_label_videos": 0,
+    "clips": 202,
+    "accuracy": 0.9405940594059405,
+    "confusion_matrix": {
+      "tp": 89,
+      "tn": 101,
+      "fp": 2,
+      "fn": 10
+    },
+    "precision_wilson95": [
+      0.9233668616945964,
+      0.9939521206928791
+    ],
+    "recall_wilson95": [
+      0.8239677083435178,
+      0.9442039264813001
+    ]
+  },
+  "test_by_dataset": {
+    "airtlab": {
+      "metric_scope": "One central model window per public clip; publisher clip labels, not frame/event or phone accuracy",
+      "auc": 1.0,
+      "ap": 1.0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "false_positive_rate": 0.0,
+      "in_video_auc": null,
+      "mixed_label_videos": 0,
+      "clips": 20,
+      "accuracy": 1.0,
+      "confusion_matrix": {
+        "tp": 6,
+        "tn": 14,
+        "fp": 0,
+        "fn": 0
+      },
+      "precision_wilson95": [
+        0.6096569663469354,
+        0.9999999999999999
+      ],
+      "recall_wilson95": [
+        0.6096569663469354,
+        0.9999999999999999
+      ]
+    },
+    "rlvs": {
+      "metric_scope": "One central model window per public clip; publisher clip labels, not frame/event or phone accuracy",
+      "auc": 0.9893681285489911,
+      "ap": 0.9894639786214641,
+      "precision": 0.9764705882352941,
+      "recall": 0.8924731182795699,
+      "f1": 0.9325842696629213,
+      "false_positive_rate": 0.02247191011235955,
+      "in_video_auc": null,
+      "mixed_label_videos": 0,
+      "clips": 182,
+      "accuracy": 0.9340659340659341,
+      "confusion_matrix": {
+        "tp": 83,
+        "tn": 87,
+        "fp": 2,
+        "fn": 10
+      },
+      "precision_wilson95": [
+        0.9182114184971183,
+        0.9935236245457805
+      ],
+      "recall_wilson95": [
+        0.8132707103232821,
+        0.9405375704155738
+      ]
+    }
+  },
+  "hard_negative_actions": {
+    "greet": {
+      "clips": 10,
+      "false_positive": 0
+    },
+    "handgestures": {
+      "clips": 4,
+      "false_positive": 0
+    },
+    "highfive": {
+      "clips": 4,
+      "false_positive": 0
+    },
+    "hug": {
+      "clips": 2,
+      "false_positive": 0
+    },
+    "jump": {
+      "clips": 4,
+      "false_positive": 0
+    }
+  },
+  "pku_continuous": [
+    {
+      "video": "pku/0176-L",
+      "label": null,
+      "dataset": "pku",
+      "duration": 75.66666666666667,
+      "predictions": [
+        {
+          "timestamp": 1.2666666666666666,
+          "score": 2.911416049755644e-05,
+          "people": 2
+        },
+        {
+          "timestamp": 1.7666666666666666,
+          "score": 0.0001968926953850314,
+          "people": 2
+        },
+        {
+          "timestamp": 2.2666666666666666,
+          "score": 1.0361208296671975e-05,
+          "people": 2
+        },
+        {
+          "timestamp": 2.7666666666666666,
+          "score": 7.207005546661094e-05,
+          "people": 2
+        },
+        {
+          "timestamp": 3.2666666666666666,
+          "score": 0.00015338561206590384,
+          "people": 2
+        },
+        {
+          "timestamp": 3.7666666666666666,
+          "score": 0.003203511005267501,
+          "people": 2
+        },
+        {
+          "timestamp": 4.266666666666667,
+          "score": 0.00010373196710133925,
+          "people": 2
+        },
+        {
+          "timestamp": 4.766666666666667,
+          "score": 0.00039501654100604355,
+          "people": 2
+        },
+        {
+          "timestamp": 5.266666666666667,
+          "score": 0.0018788010347634554,
+          "people": 2
+        },
+        {
+          "timestamp": 5.766666666666667,
+          "score": 0.002127052051946521,
+          "people": 2
+        },
+        {
+          "timestamp": 6.266666666666667,
+          "score": 0.009644226171076298,
+          "people": 2
+        },
+        {
+          "timestamp": 6.766666666666667,
+          "score": 0.0013451306149363518,
+          "people": 2
+        },
+        {
+          "timestamp": 7.266666666666667,
+          "score": 0.003143853275105357,
+          "people": 2
+        },
+        {
+          "timestamp": 7.766666666666667,
+          "score": 0.004993138834834099,
+          "people": 2
+        },
+        {
+          "timestamp": 8.266666666666667,
+          "score": 0.0012321168323978782,
+          "people": 2
+        },
+        {
+          "timestamp": 8.766666666666667,
+          "score": 0.0014606828335672617,
+          "people": 2
+        },
+        {
+          "timestamp": 9.266666666666667,
+          "score": 0.0007612917106598616,
+          "people": 2
+        },
+        {
+          "timestamp": 9.766666666666667,
+          "score": 0.00015303368854802102,
+          "people": 2
+        },
+        {
+          "timestamp": 10.266666666666667,
+          "score": 0.000371665257262066,
+          "people": 2
+        },
+        {
+          "timestamp": 10.766666666666667,
+          "score": 0.0021553863771259785,
+          "people": 2
+        },
+        {
+          "timestamp": 11.266666666666667,
+          "score": 0.005048193968832493,
+          "people": 2
+        },
+        {
+          "timestamp": 11.766666666666667,
+          "score": 0.009729752317070961,
+          "people": 2
+        },
+        {
+          "timestamp": 12.266666666666667,
+          "score": 0.0006790492916479707,
+          "people": 2
+        },
+        {
+          "timestamp": 12.766666666666667,
+          "score": 0.001634032349102199,
+          "people": 2
+        },
+        {
+          "timestamp": 13.266666666666667,
+          "score": 0.003942121285945177,
+          "people": 2
+        },
+        {
+          "timestamp": 13.766666666666667,
+          "score": 0.04676518216729164,
+          "people": 2
+        },
+        {
+          "timestamp": 14.266666666666667,
+          "score": 0.0033067946787923574,
+          "people": 2
+        },
+        {
+          "timestamp": 14.766666666666667,
+          "score": 0.005071723833680153,
+          "people": 2
+        },
+        {
+          "timestamp": 15.266666666666667,
+          "score": 0.0009164132061414421,
+          "people": 2
+        },
+        {
+          "timestamp": 15.766666666666667,
+          "score": 2.5327937692054547e-05,
+          "people": 2
+        },
+        {
+          "timestamp": 16.266666666666666,
+          "score": 7.569910667371005e-05,
+          "people": 2
+        },
+        {
+          "timestamp": 16.766666666666666,
+          "score": 0.0003930224047508091,
+          "people": 2
+        },
+        {
+          "timestamp": 17.266666666666666,
+          "score": 0.00346126826480031,
+          "people": 2
+        },
+        {
+          "timestamp": 17.766666666666666,
+          "score": 0.0002562623703852296,
+          "people": 2
+        },
+        {
+          "timestamp": 18.266666666666666,
+          "score": 0.0004783049807883799,
+          "people": 2
+        },
+        {
+          "timestamp": 18.766666666666666,
+          "score": 0.0022876944858580828,
+          "people": 2
+        },
+        {
+          "timestamp": 19.266666666666666,
+          "score": 0.0007310246000997722,
+          "people": 2
+        },
+        {
+          "timestamp": 19.766666666666666,
+          "score": 0.00027644768124446273,
+          "people": 2
+        },
+        {
+          "timestamp": 20.266666666666666,
+          "score": 0.000495647662319243,
+          "people": 2
+        },
+        {
+          "timestamp": 20.766666666666666,
+          "score": 0.009823721833527088,
+          "people": 2
+        },
+        {
+          "timestamp": 21.266666666666666,
+          "score": 0.004041269887238741,
+          "people": 2
+        },
+        {
+          "timestamp": 21.766666666666666,
+          "score": 0.0004312187957111746,
+          "people": 2
+        },
+        {
+          "timestamp": 22.266666666666666,
+          "score": 0.0003844201273750514,
+          "people": 2
+        },
+        {
+          "timestamp": 22.766666666666666,
+          "score": 0.003503077430650592,
+          "people": 2
+        },
+        {
+          "timestamp": 23.266666666666666,
+          "score": 0.0004810083191841841,
+          "people": 2
+        },
+        {
+          "timestamp": 23.766666666666666,
+          "score": 6.325868889689445e-05,
+          "people": 2
+        },
+        {
+          "timestamp": 24.266666666666666,
+          "score": 9.921297896653414e-05,
+          "people": 2
+        },
+        {
+          "timestamp": 24.766666666666666,
+          "score": 0.00055080431047827,
+          "people": 2
+        },
+        {
+          "timestamp": 25.266666666666666,
+          "score": 6.430819485103711e-05,
+          "people": 2
+        },
+        {
+          "timestamp": 25.766666666666666,
+          "score": 0.009555562399327755,
+          "people": 2
+        },
+        {
+          "timestamp": 26.266666666666666,
+          "score": 0.046866875141859055,
+          "people": 2
+        },
+        {
+          "timestamp": 26.766666666666666,
+          "score": 0.4774940609931946,
+          "people": 2
+        },
+        {
+          "timestamp": 27.266666666666666,
+          "score": 0.1895345002412796,
+          "people": 2
+        },
+        {
+          "timestamp": 27.766666666666666,
+          "score": 0.050925564020872116,
+          "people": 2
+        },
+        {
+          "timestamp": 28.266666666666666,
+          "score": 0.022820739075541496,
+          "people": 2
+        },
+        {
+          "timestamp": 28.766666666666666,
+          "score": 0.31643661856651306,
+          "people": 2
+        },
+        {
+          "timestamp": 29.266666666666666,
+          "score": 0.09364282339811325,
+          "people": 2
+        },
+        {
+          "timestamp": 29.766666666666666,
+          "score": 0.04940976947546005,
+          "people": 2
+        },
+        {
+          "timestamp": 30.266666666666666,
+          "score": 0.027994465082883835,
+          "people": 2
+        },
+        {
+          "timestamp": 30.766666666666666,
+          "score": 0.0015004111919552088,
+          "people": 2
+        },
+        {
+          "timestamp": 31.266666666666666,
+          "score": 0.0006483549950644374,
+          "people": 2
+        },
+        {
+          "timestamp": 31.766666666666666,
+          "score": 0.00017724213830661029,
+          "people": 2
+        },
+        {
+          "timestamp": 32.266666666666666,
+          "score": 5.342312215361744e-05,
+          "people": 2
+        },
+        {
+          "timestamp": 32.766666666666666,
+          "score": 0.00031022398616187274,
+          "people": 2
+        },
+        {
+          "timestamp": 33.266666666666666,
+          "score": 0.0031328711193054914,
+          "people": 2
+        },
+        {
+          "timestamp": 33.766666666666666,
+          "score": 0.010250363498926163,
+          "people": 2
+        },
+        {
+          "timestamp": 34.266666666666666,
+          "score": 0.002930778544396162,
+          "people": 2
+        },
+        {
+          "timestamp": 34.766666666666666,
+          "score": 0.003416152438148856,
+          "people": 2
+        },
+        {
+          "timestamp": 35.266666666666666,
+          "score": 0.018324481323361397,
+          "people": 2
+        },
+        {
+          "timestamp": 35.766666666666666,
+          "score": 0.3487626612186432,
+          "people": 2
+        },
+        {
+          "timestamp": 36.266666666666666,
+          "score": 0.7855980396270752,
+          "people": 2
+        },
+        {
+          "timestamp": 36.766666666666666,
+          "score": 0.214073047041893,
+          "people": 2
+        },
+        {
+          "timestamp": 37.266666666666666,
+          "score": 0.041140563786029816,
+          "people": 2
+        },
+        {
+          "timestamp": 37.766666666666666,
+          "score": 0.0934365913271904,
+          "people": 2
+        },
+        {
+          "timestamp": 38.266666666666666,
+          "score": 0.7164148688316345,
+          "people": 2
+        },
+        {
+          "timestamp": 38.766666666666666,
+          "score": 0.23735833168029785,
+          "people": 2
+        },
+        {
+          "timestamp": 39.266666666666666,
+          "score": 0.004362756852060556,
+          "people": 2
+        },
+        {
+          "timestamp": 39.766666666666666,
+          "score": 0.0007094675092957914,
+          "people": 2
+        },
+        {
+          "timestamp": 40.266666666666666,
+          "score": 0.0001130149612436071,
+          "people": 2
+        },
+        {
+          "timestamp": 40.766666666666666,
+          "score": 1.722900924505666e-05,
+          "people": 2
+        },
+        {
+          "timestamp": 41.266666666666666,
+          "score": 1.0231898158963304e-05,
+          "people": 2
+        },
+        {
+          "timestamp": 41.766666666666666,
+          "score": 6.1406048189383e-05,
+          "people": 2
+        },
+        {
+          "timestamp": 42.266666666666666,
+          "score": 0.00011061033001169562,
+          "people": 2
+        },
+        {
+          "timestamp": 42.766666666666666,
+          "score": 0.00028283463325351477,
+          "people": 2
+        },
+        {
+          "timestamp": 43.266666666666666,
+          "score": 0.002318673301488161,
+          "people": 2
+        },
+        {
+          "timestamp": 43.766666666666666,
+          "score": 0.00025086107780225575,
+          "people": 2
+        },
+        {
+          "timestamp": 44.266666666666666,
+          "score": 0.00045349294668994844,
+          "people": 2
+        },
+        {
+          "timestamp": 44.766666666666666,
+          "score": 0.008313553407788277,
+          "people": 2
+        },
+        {
+          "timestamp": 45.266666666666666,
+          "score": 0.010333866812288761,
+          "people": 2
+        },
+        {
+          "timestamp": 45.766666666666666,
+          "score": 0.0007494193268939853,
+          "people": 2
+        },
+        {
+          "timestamp": 46.266666666666666,
+          "score": 0.0023805098608136177,
+          "people": 2
+        },
+        {
+          "timestamp": 46.766666666666666,
+          "score": 0.01130993478000164,
+          "people": 2
+        },
+        {
+          "timestamp": 47.266666666666666,
+          "score": 0.007647994440048933,
+          "people": 2
+        },
+        {
+          "timestamp": 47.766666666666666,
+          "score": 0.04530860856175423,
+          "people": 2
+        },
+        {
+          "timestamp": 48.266666666666666,
+          "score": 0.03783911094069481,
+          "people": 2
+        },
+        {
+          "timestamp": 48.766666666666666,
+          "score": 0.03366523236036301,
+          "people": 2
+        },
+        {
+          "timestamp": 49.266666666666666,
+          "score": 0.07637299597263336,
+          "people": 2
+        },
+        {
+          "timestamp": 49.766666666666666,
+          "score": 0.06915296614170074,
+          "people": 2
+        },
+        {
+          "timestamp": 50.266666666666666,
+          "score": 0.043835271149873734,
+          "people": 2
+        },
+        {
+          "timestamp": 50.766666666666666,
+          "score": 0.018712934106588364,
+          "people": 2
+        },
+        {
+          "timestamp": 51.266666666666666,
+          "score": 0.004440039861947298,
+          "people": 2
+        },
+        {
+          "timestamp": 51.766666666666666,
+          "score": 0.0005828700377605855,
+          "people": 2
+        },
+        {
+          "timestamp": 52.266666666666666,
+          "score": 0.0003631383297033608,
+          "people": 2
+        },
+        {
+          "timestamp": 52.766666666666666,
+          "score": 0.0053729829378426075,
+          "people": 2
+        },
+        {
+          "timestamp": 53.266666666666666,
+          "score": 0.05445624887943268,
+          "people": 2
+        },
+        {
+          "timestamp": 53.766666666666666,
+          "score": 0.6008594036102295,
+          "people": 2
+        },
+        {
+          "timestamp": 54.266666666666666,
+          "score": 0.06713961809873581,
+          "people": 2
+        },
+        {
+          "timestamp": 54.766666666666666,
+          "score": 0.003242155071347952,
+          "people": 2
+        },
+        {
+          "timestamp": 55.266666666666666,
+          "score": 0.0040349834598600864,
+          "people": 2
+        },
+        {
+          "timestamp": 55.766666666666666,
+          "score": 0.0029764783103019,
+          "people": 2
+        },
+        {
+          "timestamp": 56.266666666666666,
+          "score": 0.006452564615756273,
+          "people": 2
+        },
+        {
+          "timestamp": 56.766666666666666,
+          "score": 0.0010350991506129503,
+          "people": 2
+        },
+        {
+          "timestamp": 57.266666666666666,
+          "score": 0.00041636047535575926,
+          "people": 2
+        },
+        {
+          "timestamp": 57.766666666666666,
+          "score": 7.339035073528066e-05,
+          "people": 2
+        },
+        {
+          "timestamp": 58.266666666666666,
+          "score": 0.00045836839126423,
+          "people": 2
+        },
+        {
+          "timestamp": 58.766666666666666,
+          "score": 0.0005115781677886844,
+          "people": 2
+        },
+        {
+          "timestamp": 59.266666666666666,
+          "score": 0.9657436609268188,
+          "people": 2
+        },
+        {
+          "timestamp": 59.766666666666666,
+          "score": 0.9992635846138,
+          "people": 2
+        },
+        {
+          "timestamp": 60.266666666666666,
+          "score": 0.9997194409370422,
+          "people": 2
+        },
+        {
+          "timestamp": 60.766666666666666,
+          "score": 0.9497406482696533,
+          "people": 2
+        },
+        {
+          "timestamp": 61.266666666666666,
+          "score": 0.5075615644454956,
+          "people": 2
+        },
+        {
+          "timestamp": 61.766666666666666,
+          "score": 0.18124784529209137,
+          "people": 2
+        },
+        {
+          "timestamp": 62.266666666666666,
+          "score": 0.012048153206706047,
+          "people": 2
+        },
+        {
+          "timestamp": 62.766666666666666,
+          "score": 0.003923099022358656,
+          "people": 2
+        },
+        {
+          "timestamp": 63.266666666666666,
+          "score": 0.009709067642688751,
+          "people": 2
+        },
+        {
+          "timestamp": 63.766666666666666,
+          "score": 0.0047331578098237514,
+          "people": 2
+        },
+        {
+          "timestamp": 64.26666666666667,
+          "score": 0.007993444800376892,
+          "people": 2
+        },
+        {
+          "timestamp": 64.76666666666667,
+          "score": 0.0018218177137896419,
+          "people": 2
+        },
+        {
+          "timestamp": 65.26666666666667,
+          "score": 0.0013638045638799667,
+          "people": 2
+        },
+        {
+          "timestamp": 65.76666666666667,
+          "score": 0.0001353248953819275,
+          "people": 2
+        },
+        {
+          "timestamp": 66.26666666666667,
+          "score": 0.0008588538621552289,
+          "people": 2
+        },
+        {
+          "timestamp": 66.76666666666667,
+          "score": 0.10410827398300171,
+          "people": 2
+        },
+        {
+          "timestamp": 67.26666666666667,
+          "score": 0.055650703608989716,
+          "people": 2
+        },
+        {
+          "timestamp": 67.76666666666667,
+          "score": 0.0012033466482535005,
+          "people": 2
+        },
+        {
+          "timestamp": 68.26666666666667,
+          "score": 0.0014222284080460668,
+          "people": 2
+        },
+        {
+          "timestamp": 68.76666666666667,
+          "score": 0.0006750639295205474,
+          "people": 2
+        },
+        {
+          "timestamp": 69.26666666666667,
+          "score": 0.0023363283835351467,
+          "people": 2
+        },
+        {
+          "timestamp": 69.76666666666667,
+          "score": 0.11607471108436584,
+          "people": 2
+        },
+        {
+          "timestamp": 70.26666666666667,
+          "score": 0.004846085794270039,
+          "people": 2
+        },
+        {
+          "timestamp": 70.76666666666667,
+          "score": 7.630675099790096e-05,
+          "people": 2
+        },
+        {
+          "timestamp": 71.26666666666667,
+          "score": 0.005215843673795462,
+          "people": 2
+        },
+        {
+          "timestamp": 71.76666666666667,
+          "score": 0.05766656622290611,
+          "people": 2
+        },
+        {
+          "timestamp": 72.26666666666667,
+          "score": 0.44394636154174805,
+          "people": 2
+        },
+        {
+          "timestamp": 72.76666666666667,
+          "score": 0.26987987756729126,
+          "people": 2
+        },
+        {
+          "timestamp": 73.26666666666667,
+          "score": 0.010924145579338074,
+          "people": 2
+        },
+        {
+          "timestamp": 73.76666666666667,
+          "score": 0.3991330564022064,
+          "people": 2
+        },
+        {
+          "timestamp": 74.26666666666667,
+          "score": 0.9901931285858154,
+          "people": 2
+        },
+        {
+          "timestamp": 74.76666666666667,
+          "score": 0.7232838869094849,
+          "people": 2
+        },
+        {
+          "timestamp": 75.26666666666667,
+          "score": 0.0010284038726240396,
+          "people": 2
+        }
+      ],
+      "events": [
+        {
+          "start": 59.766666666666666,
+          "end": 62.266666666666666
+        }
+      ],
+      "metrics": {
+        "ground_truth_events": 2,
+        "true_positive": 1,
+        "false_positive": 0,
+        "false_negative": 1,
+        "precision": 1.0,
+        "recall": 0.5,
+        "false_alerts_per_normal_minute": 0.0,
+        "normal_minutes": 1.175,
+        "ignored_events": 0,
+        "start_delays_seconds": [
+          1.2333333333333343
+        ],
+        "end_tolerance_seconds": 1.0,
+        "minimum_iou_with_end_tolerance": 0.1,
+        "scope": "Small source-recording diagnostic; publisher action intervals, one-to-one event matching, not physical-phone acceptance"
+      }
+    },
+    {
+      "video": "pku/0360-R",
+      "label": null,
+      "dataset": "pku",
+      "duration": 44.63333333333333,
+      "predictions": [
+        {
+          "timestamp": 1.2666666666666666,
+          "score": 0.0003070438397116959,
+          "people": 2
+        },
+        {
+          "timestamp": 1.7666666666666666,
+          "score": 0.0008735599694773555,
+          "people": 2
+        },
+        {
+          "timestamp": 2.2666666666666666,
+          "score": 0.0002926057786680758,
+          "people": 2
+        },
+        {
+          "timestamp": 2.7666666666666666,
+          "score": 0.000700875127222389,
+          "people": 2
+        },
+        {
+          "timestamp": 3.2666666666666666,
+          "score": 0.007189314346760511,
+          "people": 2
+        },
+        {
+          "timestamp": 3.7666666666666666,
+          "score": 0.01925009675323963,
+          "people": 2
+        },
+        {
+          "timestamp": 4.266666666666667,
+          "score": 0.29651013016700745,
+          "people": 2
+        },
+        {
+          "timestamp": 4.766666666666667,
+          "score": 0.2113901972770691,
+          "people": 2
+        },
+        {
+          "timestamp": 5.266666666666667,
+          "score": 0.13552890717983246,
+          "people": 2
+        },
+        {
+          "timestamp": 5.766666666666667,
+          "score": 0.21430297195911407,
+          "people": 2
+        },
+        {
+          "timestamp": 6.266666666666667,
+          "score": 0.010062984190881252,
+          "people": 2
+        },
+        {
+          "timestamp": 6.766666666666667,
+          "score": 0.0007258238620124757,
+          "people": 2
+        },
+        {
+          "timestamp": 7.266666666666667,
+          "score": 0.001631412305869162,
+          "people": 2
+        },
+        {
+          "timestamp": 7.766666666666667,
+          "score": 0.0023994685616344213,
+          "people": 2
+        },
+        {
+          "timestamp": 8.266666666666667,
+          "score": 0.0304665919393301,
+          "people": 2
+        },
+        {
+          "timestamp": 8.766666666666667,
+          "score": 0.05225054547190666,
+          "people": 2
+        },
+        {
+          "timestamp": 9.266666666666667,
+          "score": 0.10962983220815659,
+          "people": 2
+        },
+        {
+          "timestamp": 9.766666666666667,
+          "score": 0.42936813831329346,
+          "people": 2
+        },
+        {
+          "timestamp": 10.266666666666667,
+          "score": 0.25490859150886536,
+          "people": 2
+        },
+        {
+          "timestamp": 10.766666666666667,
+          "score": 0.5163012146949768,
+          "people": 2
+        },
+        {
+          "timestamp": 11.266666666666667,
+          "score": 0.19042964279651642,
+          "people": 2
+        },
+        {
+          "timestamp": 11.766666666666667,
+          "score": 0.023487284779548645,
+          "people": 2
+        },
+        {
+          "timestamp": 12.266666666666667,
+          "score": 0.0005982504226267338,
+          "people": 2
+        },
+        {
+          "timestamp": 12.766666666666667,
+          "score": 0.0019083060324192047,
+          "people": 2
+        },
+        {
+          "timestamp": 13.266666666666667,
+          "score": 0.00037528437678702176,
+          "people": 2
+        },
+        {
+          "timestamp": 13.766666666666667,
+          "score": 0.005886446218937635,
+          "people": 2
+        },
+        {
+          "timestamp": 14.266666666666667,
+          "score": 0.0039558676071465015,
+          "people": 2
+        },
+        {
+          "timestamp": 14.766666666666667,
+          "score": 0.008123121224343777,
+          "people": 2
+        },
+        {
+          "timestamp": 15.266666666666667,
+          "score": 0.0006563872448168695,
+          "people": 2
+        },
+        {
+          "timestamp": 15.766666666666667,
+          "score": 0.01676163077354431,
+          "people": 2
+        },
+        {
+          "timestamp": 16.266666666666666,
+          "score": 0.08116642385721207,
+          "people": 2
+        },
+        {
+          "timestamp": 16.766666666666666,
+          "score": 0.10527806729078293,
+          "people": 2
+        },
+        {
+          "timestamp": 17.266666666666666,
+          "score": 0.0025875952560454607,
+          "people": 2
+        },
+        {
+          "timestamp": 17.766666666666666,
+          "score": 0.014832965098321438,
+          "people": 2
+        },
+        {
+          "timestamp": 18.266666666666666,
+          "score": 0.11947062611579895,
+          "people": 2
+        },
+        {
+          "timestamp": 18.766666666666666,
+          "score": 0.005255310330539942,
+          "people": 2
+        },
+        {
+          "timestamp": 19.266666666666666,
+          "score": 0.00033613224513828754,
+          "people": 2
+        },
+        {
+          "timestamp": 19.766666666666666,
+          "score": 0.0004796667490154505,
+          "people": 2
+        },
+        {
+          "timestamp": 20.266666666666666,
+          "score": 0.005250670947134495,
+          "people": 2
+        },
+        {
+          "timestamp": 20.766666666666666,
+          "score": 0.4306511878967285,
+          "people": 2
+        },
+        {
+          "timestamp": 21.266666666666666,
+          "score": 0.8152216672897339,
+          "people": 2
+        },
+        {
+          "timestamp": 21.766666666666666,
+          "score": 0.5506855845451355,
+          "people": 2
+        },
+        {
+          "timestamp": 22.266666666666666,
+          "score": 0.9812154173851013,
+          "people": 2
+        },
+        {
+          "timestamp": 22.766666666666666,
+          "score": 0.6367383599281311,
+          "people": 2
+        },
+        {
+          "timestamp": 23.266666666666666,
+          "score": 0.0010818460723385215,
+          "people": 2
+        },
+        {
+          "timestamp": 23.766666666666666,
+          "score": 3.438417843426578e-05,
+          "people": 2
+        },
+        {
+          "timestamp": 24.266666666666666,
+          "score": 0.00016410656098742038,
+          "people": 2
+        },
+        {
+          "timestamp": 24.766666666666666,
+          "score": 0.00018473961972631514,
+          "people": 2
+        },
+        {
+          "timestamp": 25.266666666666666,
+          "score": 0.004220851697027683,
+          "people": 2
+        },
+        {
+          "timestamp": 25.766666666666666,
+          "score": 0.16677822172641754,
+          "people": 2
+        },
+        {
+          "timestamp": 26.266666666666666,
+          "score": 0.6243847608566284,
+          "people": 2
+        },
+        {
+          "timestamp": 26.766666666666666,
+          "score": 0.07552697509527206,
+          "people": 2
+        },
+        {
+          "timestamp": 27.266666666666666,
+          "score": 0.10646816343069077,
+          "people": 2
+        },
+        {
+          "timestamp": 27.766666666666666,
+          "score": 0.07785367220640182,
+          "people": 2
+        },
+        {
+          "timestamp": 28.266666666666666,
+          "score": 0.016442684456706047,
+          "people": 2
+        },
+        {
+          "timestamp": 28.766666666666666,
+          "score": 0.0007954679895192385,
+          "people": 2
+        },
+        {
+          "timestamp": 29.266666666666666,
+          "score": 0.00013299538113642484,
+          "people": 2
+        },
+        {
+          "timestamp": 29.766666666666666,
+          "score": 0.002918798476457596,
+          "people": 2
+        },
+        {
+          "timestamp": 30.266666666666666,
+          "score": 0.36045485734939575,
+          "people": 2
+        },
+        {
+          "timestamp": 30.766666666666666,
+          "score": 0.9975019097328186,
+          "people": 2
+        },
+        {
+          "timestamp": 31.266666666666666,
+          "score": 0.9913462996482849,
+          "people": 2
+        },
+        {
+          "timestamp": 31.766666666666666,
+          "score": 0.1205572634935379,
+          "people": 2
+        },
+        {
+          "timestamp": 32.266666666666666,
+          "score": 0.014255709946155548,
+          "people": 2
+        },
+        {
+          "timestamp": 32.766666666666666,
+          "score": 0.00017783735529519618,
+          "people": 2
+        },
+        {
+          "timestamp": 33.266666666666666,
+          "score": 1.7860307707451284e-05,
+          "people": 2
+        },
+        {
+          "timestamp": 33.766666666666666,
+          "score": 4.2208153899991885e-05,
+          "people": 2
+        },
+        {
+          "timestamp": 34.266666666666666,
+          "score": 0.00014871591702103615,
+          "people": 2
+        },
+        {
+          "timestamp": 34.766666666666666,
+          "score": 0.009926403872668743,
+          "people": 2
+        },
+        {
+          "timestamp": 35.266666666666666,
+          "score": 0.23154616355895996,
+          "people": 2
+        },
+        {
+          "timestamp": 35.766666666666666,
+          "score": 0.9861116409301758,
+          "people": 2
+        },
+        {
+          "timestamp": 36.266666666666666,
+          "score": 0.9356744885444641,
+          "people": 2
+        },
+        {
+          "timestamp": 36.766666666666666,
+          "score": 0.9796018600463867,
+          "people": 2
+        },
+        {
+          "timestamp": 37.266666666666666,
+          "score": 0.7357291579246521,
+          "people": 2
+        },
+        {
+          "timestamp": 37.766666666666666,
+          "score": 0.006941576488316059,
+          "people": 2
+        },
+        {
+          "timestamp": 38.266666666666666,
+          "score": 0.00040142115904018283,
+          "people": 2
+        },
+        {
+          "timestamp": 38.766666666666666,
+          "score": 6.814852531533688e-05,
+          "people": 2
+        },
+        {
+          "timestamp": 39.266666666666666,
+          "score": 1.720684304018505e-05,
+          "people": 2
+        },
+        {
+          "timestamp": 39.766666666666666,
+          "score": 0.00012061903544235975,
+          "people": 2
+        },
+        {
+          "timestamp": 40.266666666666666,
+          "score": 0.0007987577118910849,
+          "people": 2
+        },
+        {
+          "timestamp": 40.766666666666666,
+          "score": 0.464821994304657,
+          "people": 2
+        },
+        {
+          "timestamp": 41.266666666666666,
+          "score": 0.9896154403686523,
+          "people": 2
+        },
+        {
+          "timestamp": 41.766666666666666,
+          "score": 0.5998114347457886,
+          "people": 2
+        },
+        {
+          "timestamp": 42.266666666666666,
+          "score": 0.43062862753868103,
+          "people": 2
+        },
+        {
+          "timestamp": 42.766666666666666,
+          "score": 0.03419346362352371,
+          "people": 2
+        },
+        {
+          "timestamp": 43.266666666666666,
+          "score": 0.007963531650602818,
+          "people": 2
+        },
+        {
+          "timestamp": 43.766666666666666,
+          "score": 2.6724874260253273e-05,
+          "people": 2
+        },
+        {
+          "timestamp": 44.266666666666666,
+          "score": 3.6322504456620663e-05,
+          "people": 2
+        }
+      ],
+      "events": [
+        {
+          "start": 31.266666666666666,
+          "end": 32.766666666666666
+        }
+      ],
+      "metrics": {
+        "ground_truth_events": 2,
+        "true_positive": 1,
+        "false_positive": 0,
+        "false_negative": 1,
+        "precision": 1.0,
+        "recall": 0.5,
+        "false_alerts_per_normal_minute": 0.0,
+        "normal_minutes": 0.675,
+        "ignored_events": 0,
+        "start_delays_seconds": [
+          1.466666666666665
+        ],
+        "end_tolerance_seconds": 1.0,
+        "minimum_iou_with_end_tolerance": 0.1,
+        "scope": "Small source-recording diagnostic; publisher action intervals, one-to-one event matching, not physical-phone acceptance"
+      }
+    }
+  ],
+  "schema_version": 1,
+  "architecture": "rgb_pose_x3d_s",
+  "input_kind": "rgb_pose",
+  "clip": {
+    "frames": 16,
+    "fps": 12,
+    "size": 182,
+    "stride_seconds": 0.5,
+    "max_regions": 3,
+    "version": 8,
+    "region_mode": "pairs",
+    "trim_black_borders": true
+  },
+  "pose": {
+    "model_name": "yolov8n-pose.pt",
+    "image_size": 320,
+    "confidence": 0.3,
+    "keypoint_confidence": 0.3,
+    "samples": 8,
+    "version": 1
+  },
+  "deployment": {
+    "display_name": "Fusion RGB-aux · pilot v1",
+    "variant": "rgb_aux",
+    "trained_on": "27/10/2026",
+    "training_revision": "37c06874e03a707fef51ceb7bf6ef61612ae2e5d",
+    "bundle_sha256": "4666646a40895008f3fca78355e3f53a8d783c85430fccc3be90c8bc875f6702",
+    "selection": "Development only; not universal best or accepted demo"
+  }
+}

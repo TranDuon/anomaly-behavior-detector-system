@@ -1,0 +1,28 @@
+{
+  "manifest_sha256": "81064990f6c36a165f6716f635313e4402e80554392d7c884131223a5fae5f9e",
+  "engine_sha256": "1c5d25fdaa0e38baac9da8d8f84c46dddd0d3683e9492e9e7d52e507c8a9ae39",
+  "training_code_sha256": "cc7c181a0ec865e3a7c6ba5b7afda2bb9582e22a3258dc6e81a18d91694ccd7c",
+  "source_sha256": "163785949c5178484012a6593d12d6fcf4d36be404fa42b5899b314e91f4703b",
+  "spec": {
+    "sample_fps": 3.75,
+    "buffer_frames": 9,
+    "model_frames": 8,
+    "keyframe_index": 4,
+    "short_side": 256,
+    "decision_stride_seconds": 0.5333333333333333,
+    "color": "RGB",
+    "version": 1
+  },
+  "seed": 42,
+  "training_mode": "Frozen original backbone and AVA head; train a separate multiple-instance interaction head",
+  "private_data_used": false,
+  "checkpoint_sha256": "ddb09180284c4093189c53b7decbfcc5b51fd2d9b7700536d104524bceb5c344",
+  "threshold": 0.0,
+  "confirm_seconds": 0.4,
+  "approved_for_demo": false,
+  "real_phone_tested": false,
+  "scope": "Public fight + fall pilot; wrestling subset not separately verified",
+  "epochs": 16,
+  "parent_checkpoint_sha256": "8c5808db106aacd0f43b72a0e76178b2dec039e0a1766d996bb8374b7e4dddb7",
+  "head_version": 1
+}

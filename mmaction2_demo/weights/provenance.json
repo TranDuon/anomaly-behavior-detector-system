@@ -1,0 +1,12 @@
+{
+  "action_slowonly_r101.pth": {
+    "url": "https://download.openmmlab.com/mmaction/detection/ava/slowonly_omnisource_pretrained_r101_8x8x1_20e_ava_rgb/slowonly_omnisource_pretrained_r101_8x8x1_20e_ava_rgb_20201217-16378594.pth",
+    "sha256": "163785949c5178484012a6593d12d6fcf4d36be404fa42b5899b314e91f4703b",
+    "bytes": 239354712
+  },
+  "person_faster_rcnn_r50.pth": {
+    "url": "https://download.openmmlab.com/mmdetection/v2.0/faster_rcnn/faster_rcnn_r50_fpn_2x_coco/faster_rcnn_r50_fpn_2x_coco_bbox_mAP-0.384_20200504_210434-a5d8aa15.pth",
+    "sha256": "a5d8aa15c75b961b9c73f28a6e92af370835639a2939ff890852b052a5256a5b",
+    "bytes": 167290877
+  }
+}

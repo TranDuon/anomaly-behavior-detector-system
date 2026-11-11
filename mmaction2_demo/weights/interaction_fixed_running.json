@@ -1,0 +1,39 @@
+{
+  "checkpoint_sha256": "69be045878f5b7f32f5d3dec0a8c17585e20ae7927e33d96649f806afa45846b",
+  "parent_checkpoint_sha256": "ddb09180284c4093189c53b7decbfcc5b51fd2d9b7700536d104524bceb5c344",
+  "source_sha256": "163785949c5178484012a6593d12d6fcf4d36be404fa42b5899b314e91f4703b",
+  "spec": {
+    "sample_fps": 3.75,
+    "buffer_frames": 9,
+    "model_frames": 8,
+    "keyframe_index": 4,
+    "short_side": 256,
+    "decision_stride_seconds": 0.5333333333333333,
+    "color": "RGB",
+    "version": 1
+  },
+  "dataset_revision": "6f2be47ef810865c1a15595d976e15169a0df4a1",
+  "person_threshold": 0.8,
+  "architecture": "frozen fight/wrestle/fall head + running head warm-started from parent",
+  "running_head_version": 2,
+  "motion_features": [
+    "base_score",
+    "people_fraction",
+    "is_pair",
+    "motion_mean",
+    "motion_peak",
+    "motion_recent",
+    "motion_change",
+    "pair_center_distance",
+    "pair_iou",
+    "region_motion_mean",
+    "region_motion_peak"
+  ],
+  "labels": [
+    "fight_wrestle_fall",
+    "fast_running"
+  ],
+  "running_threshold": 0.16425856947898865,
+  "parent_threshold": 0.836290717124939,
+  "approved_for_demo": false
+}

@@ -1,0 +1,7 @@
+{
+  "threshold": 6.565648835319481,
+  "method": "validation_mean_plus_3_std",
+  "validation_error_mean": 0.4724161208397587,
+  "validation_error_std": 2.0310775714932405,
+  "validation_error_p99": 4.116812653541565
+}

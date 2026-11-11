@@ -28,7 +28,17 @@ artifacts/action_review_v1/
 artifacts/pytest-temp*/
 mmaction2_demo/env/
 mmaction2_demo/repo/
-mmaction2_demo/weights/
+mmaction2_demo/weights/*
+!mmaction2_demo/weights/*.pth
+!mmaction2_demo/weights/*.pt
+!mmaction2_demo/weights/*.json
 mmaction2_demo/results/
 mmaction2_demo/downloads/
 mmaction2_demo/recover_test_recording.py
+
+# Published runtime models; keep datasets, private videos and environments ignored.
+!models/*.pt
+!models/*.ts
+!models/*.npz
+!models/*.json
+!models/README_RUNTIME.txt
