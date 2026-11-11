@@ -82,7 +82,12 @@ class SessionRecording:
                         key: result.get(key)
                         for key in (
                             "prediction_timestamp",
+                            "box_timestamp",
                             "score",
+                            "running_score",
+                            "active_behaviors",
+                            "fight_state",
+                            "running_state",
                             "state",
                             "event",
                             "people",
@@ -93,6 +98,7 @@ class SessionRecording:
                             "base_score",
                             "fusion_context",
                             "inference_seconds",
+                            "timings",
                             "message",
                         )
                     },

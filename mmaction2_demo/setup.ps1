@@ -40,6 +40,7 @@ foreach ($Wheel in @('torch-2.0.1+cu118-cp310-cp310-win_amd64.whl', 'torchvision
 }
 Run-Checked $Python @('-m', 'pip', 'install', 'mmcv==2.1.0', '--only-binary=mmcv', '-f', 'https://download.openmmlab.com/mmcv/dist/cu118/torch2.0/index.html', 'mmengine==0.10.7', 'mmdet==3.2.0', 'opencv-python==4.8.1.78')
 Run-Checked $Python @('-m', 'pip', 'install', 'decord==0.6.0', 'einops', 'importlib-metadata', 'scikit-learn==1.3.2', 'matplotlib', 'Pillow', 'scipy', 'opencv-contrib-python==4.8.1.78')
+Run-Checked $Python @('-m', 'pip', 'install', '--no-deps', 'ultralytics==8.4.183', 'ultralytics-thop==2.2.5', 'psutil==7.2.2')
 Run-Checked $Python @('-m', 'pip', 'install', '--no-deps', '--no-build-isolation', '-e', $Repo)
 Run-Checked $Python @((Join-Path $Root 'download_weights.py'))
 Run-Checked $Python @((Join-Path $Root 'verify_install.py'))

@@ -50,7 +50,7 @@ class EventGate:
         self.low_since = None
         self.active = False
 
-    def update(self, score, timestamp):
+    def update(self, score, timestamp, *, continue_pending=False):
         if (
             not math.isfinite(score)
             or not 0 <= score <= 1
@@ -70,7 +70,8 @@ class EventGate:
             if was_active:
                 return "insufficient", "ended"
         event = None
-        if score >= self.threshold:
+        if score >= self.threshold or (continue_pending and self.pending_since is not None
+                                       and score >= self.release_threshold):
             self.low_since = None
             if self.pending_since is None:
                 self.pending_since = timestamp

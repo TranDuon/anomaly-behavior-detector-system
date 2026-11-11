@@ -1,6 +1,6 @@
 # Model đang được hỗ trợ
 
-Cập nhật ngày 05/11/2026. Giao diện, API và CLI hiện hỗ trợ năm backend:
+Cập nhật ngày 11/11/2026. Giao diện, API và CLI hiện hỗ trợ tám backend:
 
 | Backend | Model và dữ liệu đầu vào | File cần có |
 |---|---|---|
@@ -9,8 +9,11 @@ Cập nhật ngày 05/11/2026. Giao diện, API và CLI hiện hỗ trợ năm b
 | `mmaction_interaction_v1` | Backbone và AVA gốc đóng băng, head tương tác v1 riêng | Hai trọng số MMAction2 gốc cùng `mmaction2_demo/weights/interaction.pt` và `interaction.json` |
 | `mmaction_fall_wrestle` | Head fine-tune từ v1, cảnh báo chung đánh / vật / ngã; GPU | Hai trọng số MMAction2 gốc cùng `mmaction2_demo/weights/interaction_fall_wrestle.pt` và `interaction_fall_wrestle.json` |
 | `mmaction_transition_redid` | Head fine-tune từ `mmaction_fall_wrestle` với ngã sớm và Re-DID `after_fight`; GPU, pilot riêng | Hai trọng số MMAction2 gốc cùng `mmaction2_demo/weights/interaction_transition.pt` và `interaction_transition.json` |
+| `mmaction_fixed_running` | Giữ tensor đánh/vật/ngã, thêm head chạy UCF-ARG; hai ngưỡng riêng, GPU pilot | Trọng số MMAction2 gốc, `interaction_fall_wrestle.pt`/JSON và `interaction_fixed_running.pt`/JSON; cài bằng `install_fixed_running.py` |
+| `mmaction_three_actions` | Ba head Đánh/Vật/Ngã riêng; kết quả vật/ngã chưa đạt, không thay bản cũ mặc định | MMAction2 gốc và `three_actions.pt`/JSON |
+| `mmaction_separate_actions` | Đánh/Ngã dùng AVA gốc, Vật dùng head pilot, Chạy giữ nguyên; bốn điểm và nhật ký riêng, chỉ đối chứng | Các trọng số gốc, cha, ba head, running và `separate_actions_calibration.json`; xem `SEPARATE_ACTIONS.md` |
 
-`yolov8n.pt` và `yolov8n-pose.pt` là thành phần cần thiết của FightWatch, không phải hai lựa chọn model độc lập. Năm lựa chọn đều giữ cổng bật pilot trước khi nhận diện. Không có fallback tự động sang LSTM hoặc ST-GCN.
+`yolov8n.pt` và `yolov8n-pose.pt` là thành phần cần thiết của FightWatch, không phải hai lựa chọn model độc lập. Các lựa chọn đều giữ cổng bật pilot trước khi nhận diện. Không có fallback tự động sang LSTM hoặc ST-GCN. X3D public toàn cảnh đã được gỡ theo yêu cầu; không phải backend hiện hành.
 
 ## Checkpoint ngã sớm và chuyển xanh Re-DID
 

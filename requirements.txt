@@ -16,6 +16,7 @@ uvicorn[standard]>=0.24.0
 websockets>=11.0.3
 python-multipart>=0.0.6
 aiofiles>=23.2.1
+imageio-ffmpeg==0.6.0
 
 # Data / Utils
 pandas>=2.1.0

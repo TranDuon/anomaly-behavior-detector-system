@@ -259,9 +259,66 @@ class TunedRefinementHead(nn.Module):
         return self.layers(torch.cat((visual, context, prior), dim=1)).flatten()
 
 
+def match_display_people(reference, current_frame, original, current):
+    def histogram(frame, box):
+        height, width = frame.shape[:2]
+        left, top, right, bottom = np.rint(box).astype(int)
+        crop = frame[max(0, top):min(height, bottom), max(0, left):min(width, right)]
+        if not crop.size:
+            return None
+        hsv = cv2.cvtColor(crop, cv2.COLOR_BGR2HSV)
+        values = cv2.calcHist([hsv], [0, 1], None, [16, 8], [0, 180, 0, 256])
+        return cv2.normalize(values, values).flatten()
+
+    old_histograms = [histogram(reference, box) for box in original]
+    new_histograms = [histogram(current_frame, box) for box in current]
+    proposals = []
+    for old_index, old in enumerate(original):
+        old = np.asarray(old)
+        candidates = []
+        for new_index, new in enumerate(current):
+            new = np.asarray(new)
+            if old_histograms[old_index] is None or new_histograms[new_index] is None:
+                continue
+            distance = np.linalg.norm((old[:2] + old[2:] - new[:2] - new[2:]) / 2)
+            scale = max(old[3] - old[1], new[3] - new[1], 1)
+            appearance = cv2.compareHist(old_histograms[old_index], new_histograms[new_index],
+                                         cv2.HISTCMP_BHATTACHARYYA)
+            if distance / scale > 3 or appearance > 0.65:
+                continue
+            candidates.append((appearance + 0.12 * distance / scale, old_index, new_index))
+        candidates.sort()
+        if candidates and (len(candidates) == 1 or candidates[1][0] - candidates[0][0] > 0.1):
+            proposals.append(candidates[0])
+    assignments, used = {}, set()
+    for _, old_index, new_index in sorted(proposals):
+        if new_index not in used:
+            assignments[old_index] = new_index
+            used.add(new_index)
+    return assignments
+
+
+def remap_display_regions(original, current, assignments, regions):
+    mapped = []
+    for region in regions:
+        for count in (1, 2):
+            matched = False
+            for indices in itertools.combinations(range(len(original)), count):
+                boxes = np.asarray([original[index] for index in indices])
+                bounds = np.r_[boxes[:, :2].min(axis=0), boxes[:, 2:].max(axis=0)]
+                if np.allclose(bounds, region, atol=2):
+                    if all(index in assignments for index in indices):
+                        mapped.extend(current[assignments[index]] for index in indices)
+                    matched = True
+                    break
+            if matched:
+                break
+    return mapped
+
+
 class ActionEngine:
     def __init__(self, weights=None, device="cuda:0", tuned=False, refined=False, calibrated=False,
-                 fall_wrestle=False, transition=False, person_threshold=0.9):
+                 fall_wrestle=False, transition=False, person_threshold=0.9, person_recovery=False):
         from mmengine import Config
         from mmaction.utils import register_all_modules
         from mmdet.apis import init_detector
@@ -271,6 +328,7 @@ class ActionEngine:
         if not 0 < person_threshold <= 1:
             raise ValueError("person_threshold must be in (0, 1]")
         self.person_threshold = person_threshold
+        self.person_recovery = person_recovery
         self.weights = Path(weights or ROOT / "weights")
         for name, expected in (
             ("action_slowonly_r101.pth", SOURCE_SHA),
@@ -288,8 +346,11 @@ class ActionEngine:
         self.model = init_detector(
             config, str(self.weights / "action_slowonly_r101.pth"), device=device
         ).eval()
+        detector_config = Config.fromfile(str(ROOT / "repo/demo/demo_configs/faster-rcnn_r50_fpn_2x_coco_infer.py"))
+        if person_recovery:
+            detector_config.model.test_cfg.rcnn.nms.iou_threshold = 0.7
         self.detector = init_detector(
-            str(ROOT / "repo/demo/demo_configs/faster-rcnn_r50_fpn_2x_coco_infer.py"),
+            detector_config,
             str(self.weights / "person_faster_rcnn_r50.pth"),
             device=device,
         ).eval()
@@ -366,6 +427,19 @@ class ActionEngine:
             self.metadata = metadata
 
     @torch.inference_mode()
+    def warmup(self):
+        from mmdet.apis import inference_detector
+
+        frames = np.zeros((9, 360, 640, 3), dtype=np.uint8)
+        inference_detector(self.detector, frames[4])
+        inputs, shape = rgb_inputs(frames, self.device)
+        rois = inputs.new_tensor([[0, 0, 0, shape[1] - 1, shape[0] - 1]])
+        self.model.roi_head._bbox_forward(self.model.extract_feat(inputs), rois,
+                                          [dict(img_shape=shape)])
+        if str(self.device).startswith("cuda"):
+            torch.cuda.synchronize()
+
+    @torch.inference_mode()
     def tuned_scores(self, bag, auxiliary):
         if self.head is None:
             raise ValueError("Fine-tuned interaction head is required")
@@ -379,15 +453,45 @@ class ActionEngine:
         return logits.sigmoid().cpu().numpy()
 
     @torch.inference_mode()
-    def extract_features(self, frames):
+    def detect_people(self, frame):
         from mmdet.apis import inference_detector
 
-        inputs, shape = rgb_inputs(frames, self.device)
-        predictions = inference_detector(self.detector, frames[4]).pred_instances
+        if self.person_recovery:
+            from person_recovery import select_people
+
+            def detect(image):
+                predictions = inference_detector(self.detector, image).pred_instances
+                selected = predictions[predictions.labels == 0]
+                return selected.bboxes.detach().cpu().numpy(), selected.scores.detach().cpu().numpy()
+
+            return select_people(frame, detect)
+
+        predictions = inference_detector(self.detector, frame).pred_instances
         keep = (predictions.labels == 0) & (predictions.scores >= self.person_threshold)
         selected = predictions[keep]
         order = selected.scores.argsort(descending=True)[:6]
-        boxes = selected.bboxes[order].detach().cpu().numpy()
+        return selected.bboxes[order].detach().cpu().numpy()
+
+    @torch.inference_mode()
+    def current_view(self, frames, output):
+        original = output["person_boxes"]
+        current = self.detect_people(frames[-1]).tolist()
+        assignments = match_display_people(frames[4], frames[-1], original, current)
+        actions = [{"box": box, "labels": [], "fight_score": 0.0} for box in current]
+        for old_index, new_index in assignments.items():
+            if old_index < len(output.get("actions", [])):
+                actions[new_index] = {**output["actions"][old_index], "box": current[new_index],
+                                      "action_box": original[old_index]}
+        return {**output, "person_boxes": current, "actions": actions,
+                "regions": remap_display_regions(original, current, assignments, output.get("regions", [])),
+                "running_regions": remap_display_regions(original, current, assignments, output.get("running_regions", [])),
+                "action_person_boxes": original, "box_frame_index": -1,
+                "attribution_uncertain": len(assignments) < min(len(original), len(current))}
+
+    @torch.inference_mode()
+    def extract_features(self, frames):
+        inputs, shape = rgb_inputs(frames, self.device)
+        boxes = self.detect_people(frames[4])
         if not len(boxes):
             return (
                 np.empty((0, 4096), np.float32),
@@ -425,6 +529,11 @@ class ActionEngine:
                     "box": box.tolist(),
                     "labels": sorted(labels, key=lambda item: -item["score"])[:4],
                     "fight_score": float(values[64]),
+                    "ava_running_score": float(values[10]),
+                    "ava_grab_score": float(values[66]),
+                    "ava_fall_score": float(values[5]),
+                    "ava_lying_score": float(values[8]),
+                    "ava_hug_score": float(values[70]),
                 }
             )
         base_score = float(scores[:, 64].max())

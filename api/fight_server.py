@@ -6,6 +6,7 @@ import threading
 import time
 import uuid
 from collections import deque
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 import cv2
@@ -15,6 +16,9 @@ from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
 from core.config import BASE_DIR, settings
 from fight.runtime import FightRuntime
 from fight.session_recording import SessionRecording
+from fight.box_tracking import DisplayBoxTracker
+from fight.live_queue import fresh_live_samples
+from fight.browser_video import finalize_browser_video
 
 UI_PATH = BASE_DIR / "frontend" / "fight.html"
 SERVER_INSTANCE = uuid.uuid4().hex[:12]
@@ -123,7 +127,13 @@ def annotate(frame, result):
                     1,
                 )
     cv2.rectangle(image, (0, 0), (image.shape[1], 36), (25, 30, 28), -1)
-    if result.get("behavior_scope") == "fight_wrestle_fall" and result["state"] in {"normal", "fighting"}:
+    if result.get('behavior_scope') == 'three_actions' and result['state'] in {'normal', 'fighting'}:
+        label = ' + '.join({'strike': 'STRIKE', 'grapple': 'GRAPPLE', 'fall': 'FALL', 'fast_running': 'RUNNING'}[name]
+                           for name in result.get('active_behaviors', [])) or 'NO ACTION CONFIRMED'
+    elif result.get("behavior_scope") == "fight_wrestle_fall_running" and result["state"] in {"normal", "fighting"}:
+        behaviors = result.get("active_behaviors", [])
+        label = " + ".join("RUNNING" if item == "fast_running" else "FIGHT / WRESTLE / FALL" for item in behaviors) or "NO ACTION CONFIRMED"
+    elif result.get("behavior_scope") == "fight_wrestle_fall" and result["state"] in {"normal", "fighting"}:
         label = "ACTION DETECTED" if result["state"] == "fighting" else "NO ACTION CONFIRMED"
     else:
         label = LABELS.get(result["state"], result["state"])
@@ -173,7 +183,9 @@ class FightProcessor:
         self.frame_count = self.total_frames = 0
         self.timestamp = self.latency = 0.0
         self.output = None
+        self.overlay_metrics = {}
         self.active_event = None
+        self.label_recordings = {}
         self.event_frames = []
         self.before = deque(maxlen=24)
         self.evidence_dir = BASE_DIR / "uploads" / "evidence"
@@ -213,9 +225,21 @@ class FightProcessor:
                 "mmaction_interaction_v1",
                 "mmaction_fall_wrestle",
                 "mmaction_transition_redid",
+                "mmaction_fixed_running",
+                "mmaction_three_actions",
+                "mmaction_separate_actions",
             }:
                 raise ValueError("Model không hợp lệ.")
-            if backend == "legacy":
+            reuse_runtime = (
+                not self.is_running() and not preview and allow_pilot
+                and getattr(self.runtime, 'backend_name', None) == backend
+                and getattr(self.runtime, 'model_ready', False)
+                and getattr(self.runtime, 'process', None) is not None
+                and self.runtime.process.poll() is None
+            )
+            if reuse_runtime:
+                candidate = self.runtime
+            elif backend == "legacy":
                 candidate = FightRuntime(
                     settings.models_dir,
                     allow_pilot,
@@ -230,10 +254,16 @@ class FightProcessor:
                     allow_pilot=allow_pilot,
                     **({"fall_wrestle": True} if backend == "mmaction_fall_wrestle" else {}),
                     **({"transition": True} if backend == "mmaction_transition_redid" else {}),
+                    **({"fixed_running": True} if backend == "mmaction_fixed_running" else {}),
+                    **({'three_actions': True} if backend == 'mmaction_three_actions' else {}),
+                    **({'separate_actions': True} if backend == 'mmaction_separate_actions' else {}),
                 )
             if not candidate.model_ready and not preview:
                 raise ValueError(candidate.message)
-            self.stop()
+            if reuse_runtime:
+                candidate.reset()
+            else:
+                self.stop()
             if self.is_running():
                 raise RuntimeError("Nguồn trước chưa dừng; vui lòng thử lại.")
             cv2.setNumThreads(1)
@@ -252,10 +282,11 @@ class FightProcessor:
             self.dropped_samples = 0
             self.preview_frame_count = 0
             self.output = self.jpeg = None
+            self.overlay_metrics = {}
             self.session_id = uuid.uuid4().hex
             self.trace_last_prediction = None
             self.trace_path = None
-            if backend in {"mmaction_fall_wrestle", "mmaction_transition_redid"} and not preview:
+            if backend in {"mmaction_fall_wrestle", "mmaction_transition_redid", "mmaction_fixed_running", "mmaction_three_actions", "mmaction_separate_actions"} and not preview:
                 trace_dir = BASE_DIR / "logs" / "action_traces"
                 trace_dir.mkdir(parents=True, exist_ok=True)
                 self.trace_path = trace_dir / f"{self.session_id}.jsonl"
@@ -263,6 +294,7 @@ class FightProcessor:
                     json.dumps({
                         "kind": "session", "session_id": self.session_id,
                         "backend": backend, "source": str(source),
+                        "fall_policy": self.runtime.metadata.get('fall_policy'),
                         "threshold": self.runtime.gate.threshold,
                         "release_threshold": self.runtime.gate.release_threshold,
                         "confirm_seconds": self.runtime.gate.confirm_seconds,
@@ -271,6 +303,7 @@ class FightProcessor:
                 )
             self.events = []
             self.active_event = None
+            self.label_recordings = {}
             self.event_frames = []
             self.before.clear()
             self.thread = threading.Thread(target=self.run, args=(source,), daemon=True)
@@ -338,6 +371,7 @@ class FightProcessor:
                 "backend": getattr(self.runtime, "backend_name", "legacy"),
                 "device": getattr(self.runtime, "device", "cpu"),
                 "architecture": self.runtime.metadata.get("architecture"),
+                "fall_policy": self.runtime.metadata.get('fall_policy'),
                 "input_kind": self.runtime.input_kind,
                 "cpu_threads": getattr(
                     self.runtime, "cpu_threads", settings.fight_cpu_threads
@@ -360,6 +394,7 @@ class FightProcessor:
                 ),
             },
             "prediction": prediction,
+            "overlay": dict(self.overlay_metrics),
             "error": self.error,
             "event_count": len(self.events),
             "prediction_trace": str(self.trace_path) if self.trace_path else None,
@@ -436,14 +471,35 @@ class FightProcessor:
 
     def record(self, frame, result):
         self.before.append((self.timestamp, frame.copy()))
+        if getattr(self.runtime, 'backend_name', '') == 'mmaction_separate_actions':
+            for label in ('strike', 'grapple', 'fall', 'fast_running'):
+                self.active_event, self.event_frames = self.label_recordings.pop(label, (None, []))
+                active = label in result.get('active_behaviors', [])
+                event = 'started' if active and self.active_event is None else 'ended' if not active and self.active_event is not None else None
+                score = result.get('action_scores', {}).get(label)
+                if score is None:
+                    score = 0.
+                selected = {**result, 'event': event, 'score': score, 'active_behaviors': [label] if active else [],
+                            'regions': result.get('action_regions', {}).get(label, []),
+                            'state': 'fighting' if active else 'normal'}
+                self.record_single(frame, selected)
+                if self.active_event is not None:
+                    self.label_recordings[label] = (self.active_event, self.event_frames)
+            self.active_event, self.event_frames = None, []
+            return
+        self.record_single(frame, result)
+
+    def record_single(self, frame, result):
         if result.get("event") == "started" and self.active_event is None:
             identifier = uuid.uuid4().hex
             self.active_event = {
                 "id": identifier,
                 "session_id": self.session_id,
                 "backend": getattr(self.runtime, "backend_name", "legacy"),
-                "type": ("fight_wrestle_fall" if getattr(self.runtime, "backend_name", "") in {"mmaction_fall_wrestle", "mmaction_transition_redid"}
+                "type": ("action_multi" if getattr(self.runtime, "backend_name", "") in {"mmaction_fixed_running", "mmaction_three_actions", "mmaction_separate_actions"} else "fight_wrestle_fall" if getattr(self.runtime, "backend_name", "") in {"mmaction_fall_wrestle", "mmaction_transition_redid"}
                          else "fighting"),
+                "behaviors": list(result.get("active_behaviors", [])),
+                "running_score": result.get("running_score"),
                 "started_at": self.timestamp,
                 "ended_at": None,
                 "score": result["score"],
@@ -452,12 +508,19 @@ class FightProcessor:
             }
             self.events.append(self.active_event)
             self.event_frames = list(self.before)
-            cv2.imwrite(
-                str(self.evidence_dir / f"{identifier}.jpg"), annotate(frame, result)
-            )
+            snapshot = frame
+            if result.get("box_timestamp") is not None and len(getattr(self.runtime, "samples", [])) == 9:
+                snapshot = self.runtime.samples[-1 if result.get("box_frame_index") == -1 else 4]
+                self.active_event["snapshot_timestamp"] = result["box_timestamp"]
+            cv2.imwrite(str(self.evidence_dir / f"{identifier}.jpg"), annotate(snapshot, result))
         elif self.active_event is not None:
             self.event_frames.append((self.timestamp, frame.copy()))
         if self.active_event is not None:
+            for behavior in result.get("active_behaviors", []):
+                if behavior not in self.active_event.setdefault("behaviors", []):
+                    self.active_event["behaviors"].append(behavior)
+            if result.get("running_score") is not None:
+                self.active_event["running_score"] = max(self.active_event.get("running_score") or 0, result["running_score"])
             self.active_event["score"] = max(
                 self.active_event["score"], result.get("score") or 0
             )
@@ -468,6 +531,12 @@ class FightProcessor:
                 self.finish_event()
 
     def finish_event(self):
+        recordings = getattr(self, 'label_recordings', {})
+        if recordings and self.active_event is None:
+            self.label_recordings = {}
+            for event, frames in recordings.values():
+                self.active_event, self.event_frames = event, frames
+                self.finish_event()
         if self.active_event is None:
             return
         event = self.active_event
@@ -582,7 +651,7 @@ class FightProcessor:
         writer = reader = None
         previewer = None
         fps = None
-        pending = deque(maxlen=self.runtime.config.frames * 2)
+        pending = deque(maxlen=max(2, math.ceil(self.runtime.config.fps * .8)))
         observed_drops = 0
         live_lock = threading.Lock()
         preview_lock = threading.Lock()
@@ -590,6 +659,7 @@ class FightProcessor:
         preview_latest = {"packet": None}
         latest = {"frame": None, "ended": False, "count": 0, "limit_reached": False}
         started = self.session_started or time.monotonic()
+        display_tracker = DisplayBoxTracker()
         try:
             if not capture.isOpened():
                 raise ValueError("Không mở được nguồn hình. Kiểm tra camera hoặc URL.")
@@ -612,6 +682,7 @@ class FightProcessor:
                     recording_fps,
                     {
                         "deployment": self.runtime.metadata.get("deployment", {}),
+                        "fall_policy": self.runtime.metadata.get('fall_policy'),
                         "clip": self.runtime.config.to_dict(),
                         "input_kind": self.runtime.input_kind,
                         "use_pose": self.runtime.metadata.get("use_pose"),
@@ -649,10 +720,14 @@ class FightProcessor:
                         if packet is None:
                             continue
                         preview_frame, preview_timestamp = packet
-                        self.publish_frame(
-                            preview_frame,
-                            self.live_preview_result(preview_timestamp),
-                        )
+                        display_result = display_tracker.align(preview_frame, preview_timestamp,
+                                                               self.live_preview_result(preview_timestamp))
+                        self.publish_frame(preview_frame, display_result)
+                        self.overlay_metrics = {
+                            "mode": "optical_flow", "timestamp": preview_timestamp,
+                            "tracking_ms": round(display_result["box_tracking_seconds"] * 1000, 2),
+                            "visible_people": display_result.get("visible_people"),
+                        }
                         self.preview_frame_count += 1
 
                 def read_live():
@@ -681,7 +756,7 @@ class FightProcessor:
                         if recording:
                             recording.offer(frame, timestamp)
                         with live_lock:
-                            latest.update(frame=frame, count=latest["count"] + 1)
+                            latest.update(frame=frame, count=latest["count"] + 1, timestamp=timestamp)
                             if timestamp + 1e-6 >= next_sample:
                                 if len(pending) == pending.maxlen:
                                     self.dropped_samples += 1
@@ -712,9 +787,11 @@ class FightProcessor:
                     self.frame_count += 1
                 else:
                     with live_lock:
+                        fresh, expired = fresh_live_samples(list(pending), time.monotonic() - started)
+                        self.dropped_samples += expired
                         frame, samples, ended = (
                             latest["frame"],
-                            list(pending),
+                            fresh,
                             latest["ended"],
                         )
                         pending.clear()
@@ -757,10 +834,23 @@ class FightProcessor:
                             trace.write(json.dumps({
                                 "kind": "prediction", "timestamp": prediction_time,
                                 "score": result.get("score"), "state": result.get("state"),
+                                "running_score": result.get("running_score"),
+                                "running_raw_score": result.get("running_raw_score"),
+                                "running_evidence": result.get("running_evidence"),
+                                "action_scores": result.get('action_scores', {}),
+                                "action_states": result.get('action_states', {}),
+                                "action_thresholds": result.get('action_thresholds', {}),
+                                "action_evidence": result.get('action_evidence', {}),
+                                "fall_confirmation": result.get('fall_confirmation'),
+                                "posture_evidence": result.get('posture', {}).get('evidence', []),
+                                "active_behaviors": result.get("active_behaviors", []),
                                 "event": result.get("event"), "people": result.get("people"),
                                 "regions": result.get("regions", []),
                                 "person_boxes": result.get("person_boxes", []),
+                                "box_timestamp": result.get("box_timestamp", prediction_time),
                                 "inference_seconds": result.get("inference_seconds"),
+                                "timings": result.get("timings"),
+                                'rgb_prediction_timestamp': result.get('rgb_prediction_timestamp'),
                                 "dropped_samples": self.dropped_samples,
                             }, ensure_ascii=False) + "\n")
                     if recording:
@@ -784,7 +874,8 @@ class FightProcessor:
                     else 0.0
                 )
                 if not live_mode:
-                    image = annotate(frame, result)
+                    display_result = display_tracker.align(frame, timestamp, result)
+                    image = annotate(frame, display_result)
                     output_image = bounded_image(image, settings.fight_output_max_width)
                     if writer is None:
                         writer = cv2.VideoWriter(
@@ -796,13 +887,20 @@ class FightProcessor:
                         if not writer.isOpened():
                             raise RuntimeError("Không tạo được video kết quả.")
                     writer.write(output_image)
-                    self.publish_frame(frame, result)
-            self.phase = "stopped" if self.stop_event.is_set() else "completed"
-            if is_file and writer is not None:
+                    self.publish_frame(frame, display_result)
+            if is_file and writer is not None and not self.stop_event.is_set():
+                writer.release()
+                writer = None
+                self.phase = 'encoding'
+                finalize_browser_video(output_path, self.stop_event)
                 self.output = f"/api/evidence/{output_path.name}"
+            self.phase = "stopped" if self.stop_event.is_set() else "completed"
+        except InterruptedError:
+            self.phase = 'stopped'
         except Exception as error:
             self.phase, self.error = "error", str(error)
         finally:
+            was_stopped = self.stop_event.is_set()
             self.stop_event.set()
             preview_event.set()
             capture.release()
@@ -810,6 +908,18 @@ class FightProcessor:
                 reader.join(timeout=2)
             if previewer:
                 previewer.join(timeout=2)
+            if (is_file and live_mode and getattr(self.runtime, "backend_name", "").startswith("mmaction")
+                    and self.phase == "completed" and latest["frame"] is not None
+                    and (previewer is None or not previewer.is_alive())):
+                final_timestamp = latest["timestamp"]
+                final_result = display_tracker.align(latest["frame"], final_timestamp,
+                                                     self.live_preview_result(final_timestamp))
+                self.publish_frame(latest["frame"], final_result)
+                self.overlay_metrics = {
+                    "mode": "optical_flow", "timestamp": final_timestamp,
+                    "tracking_ms": round(final_result["box_tracking_seconds"] * 1000, 2),
+                    "visible_people": final_result.get("visible_people"),
+                }
             if writer:
                 writer.release()
             self.finish_event()
@@ -829,13 +939,23 @@ class FightProcessor:
                         "source_seconds": self.timestamp,
                     }
                 )
-            if hasattr(self.runtime, "close"):
+            if (hasattr(self.runtime, "close") and
+                    (self.phase != 'completed' or was_stopped
+                     or not getattr(self.runtime, 'backend_name', '').startswith('mmaction_'))):
                 self.runtime.close()
             with self.condition:
                 self.condition.notify_all()
 
 
-app = FastAPI(title="FightWatch", version="2.0.0")
+@asynccontextmanager
+async def lifespan(application):
+    try:
+        yield
+    finally:
+        processor.stop()
+
+
+app = FastAPI(title="FightWatch", version="2.0.0", lifespan=lifespan)
 processor = FightProcessor()
 
 
