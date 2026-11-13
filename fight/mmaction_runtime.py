@@ -39,7 +39,24 @@ def person_action_regions(actions, threshold):
 
 
 class MMActionRuntime:
+    @property
+    def result(self):
+        context = getattr(self, '_result_context', None)
+        if context is not None and hasattr(context, 'draft'):
+            return context.draft
+        return self._published_result
+
+    @result.setter
+    def result(self, value):
+        context = getattr(self, '_result_context', None)
+        if context is not None and hasattr(context, 'draft'):
+            context.draft = value
+        else:
+            self._published_result = value
+
     def __init__(self, tuned=False, allow_pilot=False, fall_wrestle=False, transition=False, fixed_running=False, three_actions=False, separate_actions=False):
+        self._result_context = threading.local()
+        self._published_result = {}
         if separate_actions and (tuned or fall_wrestle or transition or fixed_running or three_actions):
             raise ValueError('Select one independent backend')
         self.separate_actions = separate_actions
@@ -148,6 +165,11 @@ class MMActionRuntime:
         self.posture_recovery_boxes = []
         self.posture_recovery_time = None
         self.rgb_result = None
+        self._last_confirmed_running_time = None
+        self.display_detection = None
+        self.display_detection_requested = threading.Event()
+        from fight.running_confirmation import RunningConfirmation
+        self.running_confirmation = RunningConfirmation()
         from fight.box_tracking import DisplayBoxTracker
         self.rgb_box_tracker = DisplayBoxTracker(maximum_age=.8, maximum_gap=.4)
         self.gate = self.gate.fresh()
@@ -233,9 +255,9 @@ class MMActionRuntime:
             self.metadata.update(response["metadata"])
             self.pose_on_worker = self.metadata.get('posture_device') == 'cuda:0'
             if self.separate_actions:
-                self.metadata['fall_policy'] = {'version': 4, 'definition': 'lying_or_transition_to_lying',
+                self.metadata['fall_policy'] = {'version': 5, 'definition': 'lying_or_transition_to_lying',
                                                 'source': 'current_frame_coco_pose_geometry',
-                                                'confirmation': 'two_observations_same_horizontal_person',
+                                                'confirmation': 'two_observations_same_lying_person',
                                                 'accident_inference': False, 'score_kind': 'binary_rule_not_probability'}
             if self.three_actions:
                 self.action_gates = {name: EventGate(value, value * .7, confirm_seconds=.8 if name == 'fast_running' else .4,
@@ -261,9 +283,25 @@ class MMActionRuntime:
             ) from error
 
     def push(self, frame, timestamp, predict=True, *, sampled=False):
-        pipeline_started = time.perf_counter()
         if not self.separate_actions or not self.model_ready or not predict:
             return self.push_actions(frame, timestamp, predict, sampled=sampled)
+        self._result_context.draft = dict(self._published_result)
+        try:
+            output = self.push_separate(frame, timestamp, predict, sampled=sampled)
+        finally:
+            del self._result_context.draft
+        if output.get('state') == 'fighting' and 'fast_running' in output.get('active_behaviors', []):
+            confirmed_at = output.get('rgb_prediction_timestamp')
+            if confirmed_at is None:
+                confirmed_at = output.get('prediction_timestamp')
+            if confirmed_at is not None:
+                self._last_confirmed_running_time = confirmed_at
+        output['last_confirmed_running_at'] = self._last_confirmed_running_time
+        self._published_result = output
+        return dict(output)
+
+    def push_separate(self, frame, timestamp, predict=True, *, sampled=False):
+        pipeline_started = time.perf_counter()
         due = self.next_sample is None or sampled or timestamp + 1e-6 >= self.next_sample
         displayed = self.result
         if self.rgb_result is not None:
@@ -312,15 +350,64 @@ class MMActionRuntime:
                       message='Ngã = tư thế nằm từ khớp cơ thể hiện tại; xác nhận hai mẫu, không kết luận tai nạn.')
         output['prediction_timestamp'] = timestamp
         output['rgb_prediction_timestamp'] = self.rgb_result.get('prediction_timestamp')
+        output['display_geometry'] = None
+        display_started = time.perf_counter()
+        from fight.display_geometry import needs_small_person_display
+        if needs_small_person_display(self.rgb_result, posture, frame.shape, output['action_states']):
+            self.prepare_display_geometry(frame, timestamp, output)
         output['timings'] = {**output.get('timings', {}), **self.posture_timings,
+                             'display_detection_seconds': time.perf_counter() - display_started,
                              'rgb_inference_ran': self.last_prediction == timestamp,
                              'pipeline_seconds': time.perf_counter() - pipeline_started,
                              'pose_device': 'cuda:0' if self.pose_on_worker else 'cpu'}
         output['score'] = max(scores.values(), default=0.)
         output['action_thresholds'] = {**output.get('action_thresholds', {}), 'fall': .5}
         output['action_evidence'] = {**output.get('action_evidence', {}), 'fall': 'current_frame_pose'}
+        output['display_policy'] = 'running_confirmed_geometry_v1'
         self.result = output
         return dict(output)
+
+    def request_display_detection(self):
+        self.display_detection_requested.set()
+
+    def prepare_display_geometry(self, frame, timestamp, output):
+        raw = self.rgb_result
+        anchor = raw.get('box_timestamp')
+        if anchor is None or not self.samples:
+            return
+        reference_time, reference = min(zip(self.sample_times, self.samples), key=lambda item: abs(item[0] - anchor))
+        if abs(reference_time - anchor) > .05:
+            return
+        observed = {'person_boxes': raw.get('person_boxes', []), 'timestamp': anchor, 'frame': reference}
+        if self.display_detection is not None and self.display_detection['timestamp'] > anchor:
+            observed = self.display_detection
+        requested = self.display_detection_requested.is_set()
+        if (timestamp - observed['timestamp'] >= .24 and (raw.get('person_boxes') or requested or len(self.samples) < self.config.frames)
+                and self.pose_on_worker):
+            observed = self.detect_display(frame, timestamp)
+            self.display_detection = observed
+        self.display_detection_requested.clear()
+        from fight.display_geometry import display_geometry
+        output['display_geometry'] = display_geometry(raw, observed, reference, observed['frame'],
+                                                     output['active_behaviors'], output['action_states'])
+
+    def detect_display(self, frame, timestamp):
+        path = ROOT / 'results/ipc' / (uuid.uuid4().hex + '.npz')
+        try:
+            if os.name == 'nt':
+                request = self.frame_buffer.write([frame] * self.config.frames)
+            else:
+                np.savez(path, frames=np.stack([frame] * self.config.frames))
+                request = {'frames': str(path), 'transport': 'file'}
+            self.process.stdin.write(json.dumps({**request, 'op': 'display_detect', 'timestamp': timestamp}) + '\n')
+            self.process.stdin.flush()
+            response = self.replies.get(timeout=15)
+            if 'error' in response:
+                raise RuntimeError(response['error'])
+            return {'person_boxes': response['result']['person_boxes'], 'timestamp': timestamp, 'frame': frame.copy()}
+        finally:
+            if os.name != 'nt':
+                path.unlink(missing_ok=True)
 
     def accept_worker_posture(self, response, timestamp):
         if self.pose_on_worker:
@@ -464,6 +551,8 @@ class MMActionRuntime:
             previous = self.alarm_active
             states, regions, behaviors = {}, [], []
             if not output['people']:
+                if self.separate_actions:
+                    self.running_confirmation.update([], timestamp, self.action_gates['fast_running'].threshold)
                 self.lying_support_boxes = []
                 self.lying_previous_observation = None
                 self.action_gates = {name: gate.fresh() for name, gate in self.action_gates.items()}
@@ -471,6 +560,18 @@ class MMActionRuntime:
                 output.update(active_behaviors=[], regions=[], action_states={})
                 return 'insufficient', 'ended' if previous else None
             for name, gate in self.action_gates.items():
+                if self.separate_actions and name == 'fast_running':
+                    running_state, running_regions, diagnostics = self.running_confirmation.update(
+                        output.get('actions', []), timestamp, gate.threshold)
+                    states[name] = running_state
+                    output['action_regions'][name] = running_regions
+                    output['running_confirmation'] = diagnostics
+                    output.setdefault('action_evidence', {})[name] = f"per_person_running_v{self.metadata.get('running_policy', {}).get('version', 3)}"
+                    if running_state in {'fighting', 'verifying'}:
+                        regions.extend(running_regions)
+                    if running_state == 'fighting':
+                        behaviors.append(name)
+                    continue
                 if self.separate_actions and name == 'grapple':
                     self.action_gates[name] = gate.fresh()
                     states[name] = 'normal'

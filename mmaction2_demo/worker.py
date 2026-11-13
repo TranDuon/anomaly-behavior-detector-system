@@ -88,7 +88,7 @@ def main():
                         raise ValueError('Pose is not enabled for this worker')
                     result = {}
                     inferred = time.perf_counter()
-                elif request.get('op') == 'detect':
+                elif request.get('op') in {'detect', 'display_detect'}:
                     boxes = engine.detect_people(frames[-1]).tolist()
                     result = {'person_boxes': boxes, 'people': len(boxes),
                               'actions': [{'box': box, 'labels': [], 'fight_score': 0.} for box in boxes]}
@@ -99,7 +99,7 @@ def main():
                     result = engine.current_view(frames, result)
                 viewed = time.perf_counter()
                 observed = None
-                if posture is not None:
+                if posture is not None and request.get('op') != 'display_detect':
                     posture.detector.cache.clear()
                     observed = posture.observe(frames[-1], request['timestamp'],
                                                recovery_boxes=request.get('recovery_boxes', result.get('person_boxes', [])))

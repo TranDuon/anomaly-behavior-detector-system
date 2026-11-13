@@ -35,7 +35,38 @@ def lying_posture(points):
                 and leg_length >= 2.2 * torso_length and aligned >= .8
                 and abs(body[0]) >= .85 * abs(body[1])):
             return True, 'foreshortened_reclined_torso_and_extended_leg'
+    if foreshortened_lying(points):
+        return True, 'depth_aligned_compressed_torso_and_extended_leg'
     return False, 'insufficient_or_nonlying_pose'
+
+
+def foreshortened_lying(points):
+    upper = points[[5, 6, 11, 12]]
+    if upper[:, 2].min() < .5:
+        return False
+    shoulder_width = np.linalg.norm(upper[0, :2] - upper[1, :2])
+    shoulders = upper[:2, :2].mean(axis=0)
+    hips = upper[2:, :2].mean(axis=0)
+    torso = hips - shoulders
+    torso_length = np.linalg.norm(torso)
+    if shoulder_width < 12 or not 8 <= torso_length <= .7 * shoulder_width:
+        return False
+    for hip, knee, ankle in ((11, 13, 15), (12, 14, 16)):
+        joints = points[[hip, knee, ankle]]
+        if joints[:, 2].min() < .5:
+            continue
+        thigh = joints[1, :2] - joints[0, :2]
+        shin = joints[2, :2] - joints[1, :2]
+        leg = joints[2, :2] - joints[0, :2]
+        lengths = np.linalg.norm(thigh) * np.linalg.norm(shin)
+        leg_length = np.linalg.norm(leg)
+        if lengths < 64 or leg_length < 1.25 * torso_length:
+            continue
+        extension = np.dot(thigh, shin) / lengths
+        alignment = np.dot(torso, leg) / (torso_length * leg_length)
+        if extension >= .34 and alignment >= .75:
+            return True
+    return False
 
 
 class LyingPosture:

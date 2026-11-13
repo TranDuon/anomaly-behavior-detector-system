@@ -67,3 +67,49 @@ def test_border_phantom_without_visible_shoulders_is_filtered():
     points = pose((1278, 210), (1267, 293), (1254, 355), (1222, 418))
     points[[5, 6], 2] = .2
     assert not reliable_person(points)
+
+
+def frontal_pose():
+    points = np.zeros((17, 3), np.float32)
+    points[[5, 6, 11, 12, 13, 14, 15, 16]] = [
+        [583.52, 404.89, .99], [443.74, 422.60, .98],
+        [578.05, 479.37, .99], [481.22, 483.07, .99],
+        [561.45, 516.26, .99], [415.72, 497.39, .99],
+        [623.14, 592.17, .97], [511.44, 546.28, .97],
+    ]
+    return points
+
+
+def test_depth_aligned_lying_accepts_mirrored_scaled_and_oblique_views():
+    for angle in (-25, 0, 25, 180):
+        radians = np.deg2rad(angle)
+        rotation = np.array([[np.cos(radians), -np.sin(radians)],
+                             [np.sin(radians), np.cos(radians)]])
+        for scale in (.5, 1., 2.):
+            for mirror in (-1, 1):
+                points = frontal_pose()
+                points[:, :2] = (points[:, :2] * [mirror, 1]) @ rotation.T * scale + 30
+                assert lying_posture(points)[0]
+
+
+def test_front_sitting_missing_joints_and_folded_legs_are_not_lying():
+    points = frontal_pose()
+    points[[5, 6], :2] = [[565.22, 331.02], [444.44, 357.42]]
+    assert not lying_posture(points)[0]
+    points = frontal_pose()
+    points[6, 2] = .1
+    assert not lying_posture(points)[0]
+    points = frontal_pose()
+    points[[15, 16], :2] = points[[11, 12], :2] + [0, 5]
+    assert not lying_posture(points)[0]
+
+
+def test_frontal_lying_confirms_same_person_and_clears_after_sitting_up():
+    policy = LyingPosture.__new__(LyingPosture)
+    record = {'box': np.array([400., 380., 660., 620.]), 'points': frontal_pose()}
+    policy.detector = type('Detector', (), {'poses': lambda self, frame: [record]})()
+    policy.reset()
+    assert policy.observe(None, 0.)['candidates']
+    assert policy.observe(None, .267)['confirmed']
+    record['points'][[5, 6], :2] = [[565.22, 331.02], [444.44, 357.42]]
+    assert not policy.observe(None, .534)['confirmed']

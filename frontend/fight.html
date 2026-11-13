@@ -115,6 +115,7 @@ async function poll(){
     const prediction=status.prediction;
     renderSeparate(prediction,status.model.backend==='mmaction_separate_actions');
     if(prediction.action_evidence?.grapple==='diagnostic_only_unvalidated_grapple_pilot')separatePanel.querySelector('tbody').rows[1].cells[2].textContent='Chỉ chẩn đoán · tắt cảnh báo';
+    if(status.model.running_policy?.version>=3)separatePanel.querySelector('tbody').rows[3].cells[0].textContent=`Chạy · xác nhận theo người v${status.model.running_policy.version}`;
     if(status.model.backend==='mmaction_separate_actions')separatePanel.querySelector('tbody').rows[2].cells[0].textContent='Ngã · tư thế khớp cơ thể';
     if(status.model.backend==='mmaction_separate_actions'&&prediction.fall_confirmation?.continuation){
       separatePanel.querySelector('tbody').rows[2].cells[2].textContent+=' · giữ xác nhận đúng người, điểm ≥ '+prediction.fall_confirmation.off_threshold.toFixed(2);

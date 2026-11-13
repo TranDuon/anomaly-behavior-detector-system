@@ -19,6 +19,7 @@ from fight.session_recording import SessionRecording
 from fight.box_tracking import DisplayBoxTracker
 from fight.live_queue import fresh_live_samples
 from fight.browser_video import finalize_browser_video
+from fight.display_alerts import RecentRunningAlert
 
 UI_PATH = BASE_DIR / "frontend" / "fight.html"
 SERVER_INSTANCE = uuid.uuid4().hex[:12]
@@ -140,6 +141,12 @@ def annotate(frame, result):
     visible = result.get("visible_people")
     if visible is not None and not result.get("score_stale", False):
         label += f" | PERSONS: {visible}"
+    if result.get('geometry_status') == 'running_track_unavailable':
+        label += ' | BOX UNAVAILABLE'
+    if result.get('recent_running_alert'):
+        observed = result['recent_running_alert']['confirmed_at']
+        label = f'RECENT RUNNING CONFIRMED AT {observed:.2f}s'
+        color = (50, 65, 235)
     cv2.putText(
         image,
         label,
@@ -372,6 +379,7 @@ class FightProcessor:
                 "device": getattr(self.runtime, "device", "cpu"),
                 "architecture": self.runtime.metadata.get("architecture"),
                 "fall_policy": self.runtime.metadata.get('fall_policy'),
+                'running_policy': self.runtime.metadata.get('running_policy'),
                 "input_kind": self.runtime.input_kind,
                 "cpu_threads": getattr(
                     self.runtime, "cpu_threads", settings.fight_cpu_threads
@@ -660,6 +668,7 @@ class FightProcessor:
         latest = {"frame": None, "ended": False, "count": 0, "limit_reached": False}
         started = self.session_started or time.monotonic()
         display_tracker = DisplayBoxTracker()
+        running_alert = RecentRunningAlert()
         try:
             if not capture.isOpened():
                 raise ValueError("Không mở được nguồn hình. Kiểm tra camera hoặc URL.")
@@ -722,9 +731,12 @@ class FightProcessor:
                         preview_frame, preview_timestamp = packet
                         display_result = display_tracker.align(preview_frame, preview_timestamp,
                                                                self.live_preview_result(preview_timestamp))
+                        display_result = running_alert.apply(display_result, preview_timestamp)
+                        if display_result.get('tracking_needs_detection') and hasattr(self.runtime, 'request_display_detection'):
+                            self.runtime.request_display_detection()
                         self.publish_frame(preview_frame, display_result)
                         self.overlay_metrics = {
-                            "mode": "optical_flow", "timestamp": preview_timestamp,
+                            "mode": display_result.get('box_tracking', 'optical_flow'), "timestamp": preview_timestamp,
                             "tracking_ms": round(display_result["box_tracking_seconds"] * 1000, 2),
                             "visible_people": display_result.get("visible_people"),
                         }
@@ -837,6 +849,7 @@ class FightProcessor:
                                 "running_score": result.get("running_score"),
                                 "running_raw_score": result.get("running_raw_score"),
                                 "running_evidence": result.get("running_evidence"),
+                                'running_confirmation': result.get('running_confirmation'),
                                 "action_scores": result.get('action_scores', {}),
                                 "action_states": result.get('action_states', {}),
                                 "action_thresholds": result.get('action_thresholds', {}),
@@ -914,9 +927,10 @@ class FightProcessor:
                 final_timestamp = latest["timestamp"]
                 final_result = display_tracker.align(latest["frame"], final_timestamp,
                                                      self.live_preview_result(final_timestamp))
+                final_result = running_alert.apply(final_result, final_timestamp)
                 self.publish_frame(latest["frame"], final_result)
                 self.overlay_metrics = {
-                    "mode": "optical_flow", "timestamp": final_timestamp,
+                    "mode": final_result.get('box_tracking', 'optical_flow'), "timestamp": final_timestamp,
                     "tracking_ms": round(final_result["box_tracking_seconds"] * 1000, 2),
                     "visible_people": final_result.get("visible_people"),
                 }

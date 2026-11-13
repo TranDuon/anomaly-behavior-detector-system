@@ -56,6 +56,12 @@ These are repeated reviewed windows, not camera accuracy or independent acceptan
 
 ## Startup and warm reuse
 
+### Depth-aligned lying geometry (2026-11-12)
+
+Fall policy v5 adds a separate high-confidence COCO-joint rule for front/back depth-aligned lying. It requires a torso compressed relative to shoulder width, an extended leg aligned with the torso, and visible bilateral shoulders/hips. This complements the existing horizontal and oblique rules; it does not classify lying from a wide detector box alone. Two observations of the same person remain required. Strike, grapple, running weights and decision thresholds are unchanged.
+
+The local frontal-bed regression previously produced no lying evidence; v5 confirms lying from 2.13 seconds through 7.47 seconds and does not confirm the later seated/standing interval. This is a development regression, not independent accuracy validation. Occluded joints, sharply bent legs, camera roll and extreme perspective remain limitations; 2D pose cannot reliably resolve every lying-versus-sitting ambiguity. No training or new checkpoint is involved.
+
 ### Strike regression repair (2026-11-11)
 
 The separate backend had used a strike threshold of .24135, unlike the earlier original-public threshold .02952. It now explicitly reuses the legacy original-public strike calibration, validating the original checkpoint SHA and clip SPEC and retaining the calibration provenance. This is not a fresh validation of the changed person detector, nor a camera accuracy claim. Original weights and running thresholds remain unchanged.

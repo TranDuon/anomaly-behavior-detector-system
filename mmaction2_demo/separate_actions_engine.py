@@ -57,6 +57,13 @@ class SeparateActionsEngine(FixedRunningEngine):
                                        'continuation_min_iou': .35, 'continuation_min_aspect': 1.5}
         self.metadata['archived_calibration_test'] = calibration.get('test', {})
         self.metadata['test'] = {}
+        self.metadata['running_policy'] = {'version': 4, 'scope': 'separate_backend_only',
+                                           'strong_head_min': .85, 'strong_ava_min': .25,
+                                           'clipped_ava_min': .6, 'fast_confirm_seconds': .4,
+                                           'normal_confirm_seconds': .8, 'threshold_calibrated': False,
+                                           'match_recovery': 'intermediate_detector_chain_running_only',
+                                           'depth_head_min': .75, 'depth_ava_min': .3,
+                                           'depth_log_scale_min': .3}
 
     @torch.inference_mode()
     def infer(self, frames):
@@ -83,7 +90,7 @@ class SeparateActionsEngine(FixedRunningEngine):
 
     @torch.inference_mode()
     def current_view(self, frames, output):
-        from running_evidence import verified_running_evidence
+        from running_evidence import adaptive_running_evidence, running_appearance, restore_running_fields
         display = ActionEngine.current_view(self, frames, output)
         display['action_scores'] = dict(output['action_scores'])
         original, current = output['person_boxes'], display['person_boxes']
@@ -97,11 +104,18 @@ class SeparateActionsEngine(FixedRunningEngine):
         display['action_scores']['fall'], display['action_regions']['fall'] = lying_evidence(display['actions'])
         display['action_evidence']['fall'] = ('ava_lie_sleep' if display['action_regions']['fall'] else 'no_lying_support')
         display['fall_policy'] = self.metadata['fall_policy']
+        restore_running_fields(frames, original, output['actions'], display, assignments,
+                               self.detect_people, match_display_people)
         supported = []
         for person in display['actions']:
-            valid, reason = verified_running_evidence(person, display['actions'], frames[-1].shape)
+            valid, reason, strong = adaptive_running_evidence(person, display['actions'], frames[-1].shape)
             value = person.get('running_score', 0.) if valid else 0.
             person['running_evidence'] = reason
+            person['running_supported'] = valid
+            person['running_fast_support'] = strong
+            person['running_raw_score'] = person.get('running_score', 0.)
+            person['running_effective_score'] = value
+            person['running_appearance'] = running_appearance(frames[-1], person['box'])
             supported.append(value)
             if value >= self.metadata['thresholds']['fast_running']:
                 display['action_regions']['fast_running'].append(person['box'])
