@@ -1,0 +1,111 @@
+{
+ "description": "Sources usable without registration for the vandalism extension (V0 audit 2026-11-16). Tar index = line number in mmaction2_demo/repo/tools/data/kinetics/label_map_k700.txt. SHA-256 of each archive is recorded in protocol.json on first download.",
+ "kinetics700_2020": {
+  "url": "https://s3.amazonaws.com/kinetics/700_2020/{split}/k700_{split}_{index:03d}.tar.gz",
+  "annotations": "https://s3.amazonaws.com/kinetics/700_2020/annotations/{split}.csv",
+  "license": "annotations CC BY 4.0; videos remain owned by their YouTube uploaders (research use)",
+  "positive": {
+   "smashing": 557,
+   "breaking glass": 57
+  },
+  "hard_negative": {
+   "breaking boards": 56,
+   "punching bag": 459,
+   "chopping wood": 102,
+   "kicking soccer ball": 280,
+   "throwing ball (not baseball or American football)": 621,
+   "bouncing ball (not juggling)": 49,
+   "moving furniture": 340,
+   "opening door": 347,
+   "closing door": 115,
+   "sweeping floor": 593,
+   "mopping floor": 334,
+   "vacuuming floor": 663,
+   "unboxing": 646,
+   "folding clothes": 214,
+   "punching person (boxing)": 460,
+   "slapping": 553,
+   "wrestling": 695
+  },
+  "excluded": {
+   "throwing tantrum": 625,
+   "using a sledge hammer": 652,
+   "tagging graffiti": 606,
+   "spray painting": 573
+  },
+  "decision": "2026-11-16: positives only smashing + breaking glass; graffiti/spray painting out of scope; tantrum and sledge hammer dropped"
+ },
+ "ava_v2_2": {
+  "annotations": "https://s3.amazonaws.com/ava-dataset/annotations/ava_v2.2.zip",
+  "videos": "https://s3.amazonaws.com/ava-dataset/trainval/{video_id}",
+  "license": "annotations CC BY 4.0",
+  "role": "V1 zero-shot baseline only",
+  "labels": {
+   "hit (an object)": 34,
+   "push (an object)": 46,
+   "throw": 58
+  }
+ },
+ "ashen_vandalism": {
+  "repo": "dead4556/ASHEN-Dataset",
+  "license": "CC BY-NC 4.0",
+  "enabled": true,
+  "decision": "2026-11-16: enabled as the only no-registration source with real kicking/tipping-over vandalism",
+  "splits": "splits_v2_native/{train,test}_anomaly_Vandalism.txt (+ train_normal.txt / test_normal.txt); list entries end in .npy -> use the .mp4 of the same stem",
+  "temporal_annotation": "splits_v2_native/Temporal_Anomaly_Annotation_for_Testing_Videos.txt (video label start1 end1 start2 end2, frame indices, -1 = absent)",
+  "positive": {
+   "path": "anomaly/Vandalism",
+   "train_videos": 82,
+   "test_videos": 18,
+   "bytes": 1620000000,
+   "train_labels": "video-level only -> multiple-instance (top-k windows), lower weight than Kinetics",
+   "test_labels": "frame intervals -> event-level evaluation"
+  },
+  "negative": {
+   "path": "normal/train",
+   "sample_videos": 80,
+   "approx_bytes": 8000000000,
+   "reason": "same CCTV domain as the positives, so the model cannot learn 'CCTV look = vandalism'"
+  },
+  "hard_negative_optional": {
+   "path": "anomaly/Fighting",
+   "train_videos": 81,
+   "reason": "fights must stay strike, not vandalism"
+  },
+  "test_negative": {
+   "path": "normal/test",
+   "videos": 150,
+   "bytes": 4740000000
+  }
+ },
+ "charades": {
+  "videos": "https://ai2-public-datasets.s3-us-west-2.amazonaws.com/charades/Charades_v1_480.zip",
+  "annotations": "https://ai2-public-datasets.s3-us-west-2.amazonaws.com/charades/Charades.zip",
+  "license": "non-commercial (Charades/license.txt)",
+  "enabled": true,
+  "role": "in-room hard negatives: ordinary throwing / handling objects at home",
+  "access": "16.3 GB zip on S3; fetch only the needed members with HTTP range requests (remotezip), est. 3-4 GB",
+  "hard_negative_classes": {
+   "c003": "Throwing clothes somewhere",
+   "c024": "Throwing a bag somewhere",
+   "c031": "Throwing a book somewhere",
+   "c036": "Throwing a towel/s somewhere",
+   "c045": "Throwing a box somewhere",
+   "c058": "Throwing shoes somewhere",
+   "c064": "Throwing food somewhere",
+   "c074": "Throwing a blanket somewhere",
+   "c080": "Throwing a pillow somewhere",
+   "c101": "Throwing a broom somewhere",
+   "c126": "Throwing something on the floor"
+  },
+  "throwing_segments": 1847,
+  "extra": "plus a random sample of other indoor segments (tidying, sitting, walking) as plain negatives"
+ },
+ "not_used": {
+  "xd_violence_riot": "crowd riots outdoors, video-level labels",
+  "ntu_rgbd_120": "registration",
+  "msad": "registration",
+  "something_something_v2": "registration, hand close-ups",
+  "moments_in_time": "registration"
+ }
+}
