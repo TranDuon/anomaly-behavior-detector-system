@@ -1,0 +1,11 @@
+# Extension worker environment (extensions/env). Never install these into .venv
+# or mmaction2_demo/env: the core worker stays on torch 2.0.1 + mmcv 2.1.
+# Installed by extensions/setup.ps1. Torch comes from the official CUDA 12.4 index.
+--extra-index-url https://download.pytorch.org/whl/cu124
+torch==2.6.0+cu124
+torchvision==0.21.0+cu124
+numpy==2.2.6
+opencv-python-headless==4.11.0.86
+# Added at the step that needs them, after checking versions/licences:
+#   V3 vandalism   : transformers (V-JEPA 2 / VideoMAE V2)
+#   S4 sharp object: rfdetr

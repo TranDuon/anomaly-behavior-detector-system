@@ -1,0 +1,1949 @@
+{
+ "frames": 327,
+ "fps": 30.0,
+ "predictions": [
+  {
+   "timestamp": 0.0,
+   "state": "warming_up",
+   "event": null,
+   "people": 3,
+   "active_behaviors": [],
+   "action_states": {
+    "fall": "normal",
+    "fast_running": "normal",
+    "grapple": "normal",
+    "strike": "normal"
+   },
+   "action_scores": {
+    "fall": 0.0
+   },
+   "action_regions": {},
+   "person_boxes": [
+    [
+     1370.5,
+     317.0,
+     1684.4,
+     860.7
+    ],
+    [
+     1093.3,
+     220.9,
+     1315.1,
+     695.1
+    ],
+    [
+     413.0,
+     155.5,
+     634.1,
+     526.4
+    ]
+   ]
+  },
+  {
+   "timestamp": 0.266667,
+   "state": "warming_up",
+   "event": null,
+   "people": 3,
+   "active_behaviors": [],
+   "action_states": {
+    "fall": "normal",
+    "fast_running": "normal",
+    "grapple": "normal",
+    "strike": "normal"
+   },
+   "action_scores": {
+    "fall": 0.0
+   },
+   "action_regions": {},
+   "person_boxes": [
+    [
+     1370.1,
+     315.0,
+     1683.8,
+     860.8
+    ],
+    [
+     1086.6,
+     223.9,
+     1281.1,
+     700.5
+    ],
+    [
+     413.4,
+     157.8,
+     630.6,
+     525.9
+    ]
+   ]
+  },
+  {
+   "timestamp": 0.533333,
+   "state": "warming_up",
+   "event": null,
+   "people": 3,
+   "active_behaviors": [],
+   "action_states": {
+    "fall": "normal",
+    "fast_running": "normal",
+    "grapple": "normal",
+    "strike": "normal"
+   },
+   "action_scores": {
+    "fall": 0.0
+   },
+   "action_regions": {},
+   "person_boxes": [
+    [
+     1370.3,
+     307.0,
+     1659.3,
+     860.7
+    ],
+    [
+     413.0,
+     158.2,
+     625.9,
+     526.6
+    ],
+    [
+     1044.9,
+     236.8,
+     1244.2,
+     776.6
+    ]
+   ]
+  },
+  {
+   "timestamp": 0.8,
+   "state": "warming_up",
+   "event": null,
+   "people": 3,
+   "active_behaviors": [],
+   "action_states": {
+    "fall": "normal",
+    "fast_running": "normal",
+    "grapple": "normal",
+    "strike": "normal"
+   },
+   "action_scores": {
+    "fall": 0.0
+   },
+   "action_regions": {},
+   "person_boxes": [
+    [
+     1338.2,
+     298.5,
+     1602.7,
+     861.5
+    ],
+    [
+     414.3,
+     156.6,
+     634.9,
+     526.1
+    ],
+    [
+     1010.7,
+     262.1,
+     1209.4,
+     804.1
+    ]
+   ]
+  },
+  {
+   "timestamp": 1.066667,
+   "state": "warming_up",
+   "event": null,
+   "people": 3,
+   "active_behaviors": [],
+   "action_states": {
+    "fall": "normal",
+    "fast_running": "normal",
+    "grapple": "normal",
+    "strike": "normal"
+   },
+   "action_scores": {
+    "fall": 0.0
+   },
+   "action_regions": {},
+   "person_boxes": [
+    [
+     969.8,
+     280.6,
+     1172.1,
+     798.8
+    ],
+    [
+     1259.2,
+     280.3,
+     1497.9,
+     823.8
+    ],
+    [
+     415.5,
+     154.4,
+     634.7,
+     528.8
+    ]
+   ]
+  },
+  {
+   "timestamp": 1.333333,
+   "state": "warming_up",
+   "event": null,
+   "people": 2,
+   "active_behaviors": [],
+   "action_states": {
+    "fall": "normal",
+    "fast_running": "normal",
+    "grapple": "normal",
+    "strike": "normal"
+   },
+   "action_scores": {
+    "fall": 0.0
+   },
+   "action_regions": {},
+   "person_boxes": [
+    [
+     899.9,
+     301.8,
+     1123.4,
+     832.5
+    ],
+    [
+     414.6,
+     155.0,
+     635.0,
+     528.7
+    ]
+   ]
+  },
+  {
+   "timestamp": 1.6,
+   "state": "warming_up",
+   "event": null,
+   "people": 3,
+   "active_behaviors": [],
+   "action_states": {
+    "fall": "normal",
+    "fast_running": "normal",
+    "grapple": "normal",
+    "strike": "normal"
+   },
+   "action_scores": {
+    "fall": 0.0
+   },
+   "action_regions": {},
+   "person_boxes": [
+    [
+     892.7,
+     293.3,
+     1110.7,
+     873.8
+    ],
+    [
+     416.0,
+     154.6,
+     634.9,
+     526.9
+    ],
+    [
+     1028.4,
+     234.2,
+     1203.4,
+     853.4
+    ]
+   ]
+  },
+  {
+   "timestamp": 1.866667,
+   "state": "warming_up",
+   "event": null,
+   "people": 2,
+   "active_behaviors": [],
+   "action_states": {
+    "fall": "normal",
+    "fast_running": "normal",
+    "grapple": "normal",
+    "strike": "normal"
+   },
+   "action_scores": {
+    "fall": 0.0
+   },
+   "action_regions": {},
+   "person_boxes": [
+    [
+     415.6,
+     154.9,
+     633.2,
+     526.6
+    ],
+    [
+     850.6,
+     289.4,
+     1100.3,
+     902.3
+    ]
+   ]
+  },
+  {
+   "timestamp": 2.133333,
+   "state": "normal",
+   "event": null,
+   "people": 2,
+   "active_behaviors": [],
+   "action_states": {
+    "fall": "normal",
+    "fast_running": "normal",
+    "grapple": "normal",
+    "strike": "normal"
+   },
+   "action_scores": {
+    "fall": 0.0,
+    "fast_running": 0.0,
+    "grapple": 0.1061,
+    "strike": 0.0051
+   },
+   "action_regions": {},
+   "person_boxes": [
+    [
+     416.8,
+     154.1,
+     635.2,
+     524.4
+    ],
+    [
+     811.1,
+     323.8,
+     1090.1,
+     1013.7
+    ]
+   ]
+  },
+  {
+   "timestamp": 2.4,
+   "state": "normal",
+   "event": null,
+   "people": 1,
+   "active_behaviors": [],
+   "action_states": {
+    "fall": "normal",
+    "fast_running": "normal",
+    "grapple": "normal",
+    "strike": "normal"
+   },
+   "action_scores": {
+    "fall": 0.0,
+    "fast_running": 0.0,
+    "grapple": 0.1061,
+    "strike": 0.0051
+   },
+   "action_regions": {},
+   "person_boxes": [
+    [
+     415.5,
+     152.4,
+     633.9,
+     524.3
+    ]
+   ]
+  },
+  {
+   "timestamp": 2.666667,
+   "state": "normal",
+   "event": null,
+   "people": 2,
+   "active_behaviors": [],
+   "action_states": {
+    "fall": "normal",
+    "fast_running": "normal",
+    "grapple": "normal",
+    "strike": "normal"
+   },
+   "action_scores": {
+    "fall": 0.0,
+    "fast_running": 0.0,
+    "grapple": 0.3284,
+    "strike": 0.0086
+   },
+   "action_regions": {},
+   "person_boxes": [
+    [
+     415.2,
+     152.5,
+     635.0,
+     525.5
+    ],
+    [
+     886.5,
+     315.5,
+     1120.9,
+     982.9
+    ]
+   ]
+  },
+  {
+   "timestamp": 2.933333,
+   "state": "normal",
+   "event": null,
+   "people": 1,
+   "active_behaviors": [],
+   "action_states": {
+    "fall": "normal",
+    "fast_running": "normal",
+    "grapple": "normal",
+    "strike": "normal"
+   },
+   "action_scores": {
+    "fall": 0.0,
+    "fast_running": 0.0,
+    "grapple": 0.3284,
+    "strike": 0.0086
+   },
+   "action_regions": {},
+   "person_boxes": [
+    [
+     415.0,
+     151.8,
+     635.3,
+     525.6
+    ]
+   ]
+  },
+  {
+   "timestamp": 3.2,
+   "state": "normal",
+   "event": null,
+   "people": 2,
+   "active_behaviors": [],
+   "action_states": {
+    "fall": "normal",
+    "fast_running": "normal",
+    "grapple": "normal",
+    "strike": "normal"
+   },
+   "action_scores": {
+    "fall": 0.0,
+    "fast_running": 0.0,
+    "grapple": 0.2172,
+    "strike": 0.015
+   },
+   "action_regions": {
+    "grapple": [
+     [
+      415.3,
+      152.1,
+      634.8,
+      527.9
+     ],
+     [
+      876.2,
+      289.5,
+      1246.9,
+      1023.4
+     ]
+    ]
+   },
+   "person_boxes": [
+    [
+     415.3,
+     152.1,
+     634.8,
+     527.9
+    ],
+    [
+     876.2,
+     289.5,
+     1246.9,
+     1023.4
+    ]
+   ]
+  },
+  {
+   "timestamp": 3.466667,
+   "state": "normal",
+   "event": null,
+   "people": 1,
+   "active_behaviors": [],
+   "action_states": {
+    "fall": "normal",
+    "fast_running": "normal",
+    "grapple": "normal",
+    "strike": "normal"
+   },
+   "action_scores": {
+    "fall": 0.0,
+    "fast_running": 0.0,
+    "grapple": 0.2172,
+    "strike": 0.015
+   },
+   "action_regions": {
+    "grapple": [
+     [
+      414.9,
+      152.1,
+      635.0,
+      527.4
+     ]
+    ]
+   },
+   "person_boxes": [
+    [
+     414.9,
+     152.1,
+     635.0,
+     527.4
+    ]
+   ]
+  },
+  {
+   "timestamp": 3.733333,
+   "state": "verifying",
+   "event": null,
+   "people": 2,
+   "active_behaviors": [],
+   "action_states": {
+    "fall": "normal",
+    "fast_running": "normal",
+    "grapple": "normal",
+    "strike": "verifying"
+   },
+   "action_scores": {
+    "fall": 0.0,
+    "fast_running": 0.0,
+    "grapple": 0.3525,
+    "strike": 0.0444
+   },
+   "action_regions": {
+    "strike": [
+     [
+      943.9,
+      345.4,
+      1412.5,
+      1028.7
+     ]
+    ],
+    "grapple": [
+     [
+      943.9,
+      345.4,
+      1412.5,
+      1028.7
+     ]
+    ]
+   },
+   "person_boxes": [
+    [
+     415.7,
+     152.2,
+     635.2,
+     526.7
+    ],
+    [
+     943.9,
+     345.4,
+     1412.5,
+     1028.7
+    ]
+   ]
+  },
+  {
+   "timestamp": 4.0,
+   "state": "verifying",
+   "event": null,
+   "people": 2,
+   "active_behaviors": [],
+   "action_states": {
+    "fall": "normal",
+    "fast_running": "normal",
+    "grapple": "normal",
+    "strike": "verifying"
+   },
+   "action_scores": {
+    "fall": 0.0,
+    "fast_running": 0.0,
+    "grapple": 0.3525,
+    "strike": 0.0444
+   },
+   "action_regions": {
+    "strike": [
+     [
+      1019.7,
+      349.1,
+      1376.5,
+      1042.7
+     ]
+    ],
+    "grapple": [
+     [
+      1019.7,
+      349.1,
+      1376.5,
+      1042.7
+     ]
+    ]
+   },
+   "person_boxes": [
+    [
+     413.8,
+     154.3,
+     635.5,
+     527.2
+    ],
+    [
+     1019.7,
+     349.1,
+     1376.5,
+     1042.7
+    ]
+   ]
+  },
+  {
+   "timestamp": 4.266667,
+   "state": "fighting",
+   "event": "started",
+   "people": 2,
+   "active_behaviors": [
+    "strike"
+   ],
+   "action_states": {
+    "fall": "normal",
+    "fast_running": "normal",
+    "grapple": "normal",
+    "strike": "fighting"
+   },
+   "action_scores": {
+    "fall": 0.0,
+    "fast_running": 0.0,
+    "grapple": 0.236,
+    "strike": 0.0791
+   },
+   "action_regions": {
+    "strike": [
+     [
+      1020.3,
+      305.4,
+      1374.5,
+      1052.7
+     ]
+    ],
+    "grapple": [
+     [
+      414.0,
+      154.5,
+      635.1,
+      527.1
+     ],
+     [
+      1020.3,
+      305.4,
+      1374.5,
+      1052.7
+     ]
+    ]
+   },
+   "person_boxes": [
+    [
+     414.0,
+     154.5,
+     635.1,
+     527.1
+    ],
+    [
+     1020.3,
+     305.4,
+     1374.5,
+     1052.7
+    ]
+   ]
+  },
+  {
+   "timestamp": 4.533333,
+   "state": "fighting",
+   "event": null,
+   "people": 2,
+   "active_behaviors": [
+    "strike"
+   ],
+   "action_states": {
+    "fall": "normal",
+    "fast_running": "normal",
+    "grapple": "normal",
+    "strike": "fighting"
+   },
+   "action_scores": {
+    "fall": 0.0,
+    "fast_running": 0.0,
+    "grapple": 0.236,
+    "strike": 0.0791
+   },
+   "action_regions": {
+    "strike": [
+     [
+      929.9,
+      283.2,
+      1365.0,
+      1049.5
+     ]
+    ],
+    "grapple": [
+     [
+      415.0,
+      152.6,
+      633.6,
+      526.1
+     ],
+     [
+      929.9,
+      283.2,
+      1365.0,
+      1049.5
+     ]
+    ]
+   },
+   "person_boxes": [
+    [
+     415.0,
+     152.6,
+     633.6,
+     526.1
+    ],
+    [
+     929.9,
+     283.2,
+     1365.0,
+     1049.5
+    ]
+   ]
+  },
+  {
+   "timestamp": 4.8,
+   "state": "fighting",
+   "event": null,
+   "people": 2,
+   "active_behaviors": [
+    "strike"
+   ],
+   "action_states": {
+    "fall": "normal",
+    "fast_running": "normal",
+    "grapple": "normal",
+    "strike": "fighting"
+   },
+   "action_scores": {
+    "fall": 0.0,
+    "fast_running": 0.0,
+    "grapple": 0.2291,
+    "strike": 0.0855
+   },
+   "action_regions": {
+    "strike": [
+     [
+      1005.5,
+      287.9,
+      1302.4,
+      1018.9
+     ]
+    ],
+    "grapple": [
+     [
+      415.4,
+      153.9,
+      633.4,
+      525.9
+     ],
+     [
+      1005.5,
+      287.9,
+      1302.4,
+      1018.9
+     ]
+    ]
+   },
+   "person_boxes": [
+    [
+     415.4,
+     153.9,
+     633.4,
+     525.9
+    ],
+    [
+     1005.5,
+     287.9,
+     1302.4,
+     1018.9
+    ]
+   ]
+  },
+  {
+   "timestamp": 5.066667,
+   "state": "normal",
+   "event": null,
+   "people": 2,
+   "active_behaviors": [],
+   "action_states": {
+    "fall": "normal",
+    "fast_running": "normal",
+    "grapple": "normal",
+    "strike": "normal"
+   },
+   "action_scores": {
+    "fall": 0.0,
+    "fast_running": 0.0,
+    "grapple": 0.2291,
+    "strike": 0.0855
+   },
+   "action_regions": {
+    "grapple": [
+     [
+      414.5,
+      152.6,
+      635.1,
+      526.0
+     ]
+    ]
+   },
+   "person_boxes": [
+    [
+     414.5,
+     152.6,
+     635.1,
+     526.0
+    ],
+    [
+     1026.5,
+     259.8,
+     1239.6,
+     784.0
+    ]
+   ]
+  },
+  {
+   "timestamp": 5.333333,
+   "state": "fighting",
+   "event": null,
+   "people": 2,
+   "active_behaviors": [
+    "strike"
+   ],
+   "action_states": {
+    "fall": "normal",
+    "fast_running": "normal",
+    "grapple": "normal",
+    "strike": "fighting"
+   },
+   "action_scores": {
+    "fall": 0.0,
+    "fast_running": 0.0,
+    "grapple": 0.1863,
+    "strike": 0.0921
+   },
+   "action_regions": {
+    "strike": [
+     [
+      996.8,
+      290.1,
+      1260.5,
+      891.2
+     ]
+    ]
+   },
+   "person_boxes": [
+    [
+     996.8,
+     290.1,
+     1260.5,
+     891.2
+    ],
+    [
+     413.5,
+     152.3,
+     635.0,
+     524.4
+    ]
+   ]
+  },
+  {
+   "timestamp": 5.6,
+   "state": "fighting",
+   "event": null,
+   "people": 2,
+   "active_behaviors": [
+    "strike"
+   ],
+   "action_states": {
+    "fall": "normal",
+    "fast_running": "normal",
+    "grapple": "normal",
+    "strike": "fighting"
+   },
+   "action_scores": {
+    "fall": 0.0,
+    "fast_running": 0.0,
+    "grapple": 0.1863,
+    "strike": 0.0921
+   },
+   "action_regions": {
+    "strike": [
+     [
+      1036.1,
+      359.8,
+      1274.7,
+      854.3
+     ]
+    ]
+   },
+   "person_boxes": [
+    [
+     1036.1,
+     359.8,
+     1274.7,
+     854.3
+    ],
+    [
+     415.3,
+     151.3,
+     635.8,
+     526.6
+    ]
+   ]
+  },
+  {
+   "timestamp": 5.866667,
+   "state": "fighting",
+   "event": null,
+   "people": 2,
+   "active_behaviors": [
+    "strike"
+   ],
+   "action_states": {
+    "fall": "normal",
+    "fast_running": "normal",
+    "grapple": "normal",
+    "strike": "fighting"
+   },
+   "action_scores": {
+    "fall": 0.0,
+    "fast_running": 0.0,
+    "grapple": 0.1129,
+    "strike": 0.056
+   },
+   "action_regions": {
+    "strike": [
+     [
+      1020.9,
+      429.4,
+      1267.8,
+      844.6
+     ]
+    ],
+    "grapple": [
+     [
+      415.7,
+      151.6,
+      635.5,
+      526.0
+     ],
+     [
+      1020.9,
+      429.4,
+      1267.8,
+      844.6
+     ]
+    ]
+   },
+   "person_boxes": [
+    [
+     415.7,
+     151.6,
+     635.5,
+     526.0
+    ],
+    [
+     1020.9,
+     429.4,
+     1267.8,
+     844.6
+    ]
+   ]
+  },
+  {
+   "timestamp": 6.133333,
+   "state": "fighting",
+   "event": null,
+   "people": 2,
+   "active_behaviors": [
+    "strike"
+   ],
+   "action_states": {
+    "fall": "normal",
+    "fast_running": "normal",
+    "grapple": "normal",
+    "strike": "fighting"
+   },
+   "action_scores": {
+    "fall": 0.0,
+    "fast_running": 0.0,
+    "grapple": 0.1129,
+    "strike": 0.056
+   },
+   "action_regions": {
+    "strike": [
+     [
+      1020.1,
+      489.3,
+      1251.8,
+      864.3
+     ]
+    ],
+    "grapple": [
+     [
+      414.4,
+      153.3,
+      633.6,
+      525.5
+     ],
+     [
+      1020.1,
+      489.3,
+      1251.8,
+      864.3
+     ]
+    ]
+   },
+   "person_boxes": [
+    [
+     414.4,
+     153.3,
+     633.6,
+     525.5
+    ],
+    [
+     1020.1,
+     489.3,
+     1251.8,
+     864.3
+    ]
+   ]
+  },
+  {
+   "timestamp": 6.4,
+   "state": "fighting",
+   "event": null,
+   "people": 2,
+   "active_behaviors": [
+    "strike"
+   ],
+   "action_states": {
+    "fall": "normal",
+    "fast_running": "normal",
+    "grapple": "normal",
+    "strike": "fighting"
+   },
+   "action_scores": {
+    "fall": 0.0,
+    "fast_running": 0.0,
+    "grapple": 0.0414,
+    "strike": 0.0525
+   },
+   "action_regions": {
+    "strike": [
+     [
+      1028.1,
+      474.6,
+      1247.9,
+      894.2
+     ]
+    ],
+    "grapple": [
+     [
+      413.9,
+      153.6,
+      635.7,
+      525.4
+     ],
+     [
+      1028.1,
+      474.6,
+      1247.9,
+      894.2
+     ]
+    ]
+   },
+   "person_boxes": [
+    [
+     413.9,
+     153.6,
+     635.7,
+     525.4
+    ],
+    [
+     1028.1,
+     474.6,
+     1247.9,
+     894.2
+    ]
+   ]
+  },
+  {
+   "timestamp": 6.666667,
+   "state": "fighting",
+   "event": null,
+   "people": 2,
+   "active_behaviors": [
+    "strike"
+   ],
+   "action_states": {
+    "fall": "normal",
+    "fast_running": "normal",
+    "grapple": "normal",
+    "strike": "fighting"
+   },
+   "action_scores": {
+    "fall": 0.0,
+    "fast_running": 0.0,
+    "grapple": 0.0414,
+    "strike": 0.0525
+   },
+   "action_regions": {
+    "strike": [
+     [
+      1021.5,
+      430.6,
+      1260.8,
+      952.6
+     ]
+    ],
+    "grapple": [
+     [
+      415.9,
+      153.2,
+      633.9,
+      524.4
+     ],
+     [
+      1021.5,
+      430.6,
+      1260.8,
+      952.6
+     ]
+    ]
+   },
+   "person_boxes": [
+    [
+     415.9,
+     153.2,
+     633.9,
+     524.4
+    ],
+    [
+     1021.5,
+     430.6,
+     1260.8,
+     952.6
+    ]
+   ]
+  },
+  {
+   "timestamp": 6.933333,
+   "state": "fighting",
+   "event": null,
+   "people": 2,
+   "active_behaviors": [
+    "strike"
+   ],
+   "action_states": {
+    "fall": "normal",
+    "fast_running": "normal",
+    "grapple": "normal",
+    "strike": "fighting"
+   },
+   "action_scores": {
+    "fall": 0.0,
+    "fast_running": 0.0,
+    "grapple": 0.0182,
+    "strike": 0.0333
+   },
+   "action_regions": {
+    "strike": [
+     [
+      1025.9,
+      474.4,
+      1288.3,
+      953.4
+     ]
+    ],
+    "grapple": [
+     [
+      414.3,
+      153.2,
+      634.2,
+      525.5
+     ],
+     [
+      1025.9,
+      474.4,
+      1288.3,
+      953.4
+     ]
+    ]
+   },
+   "person_boxes": [
+    [
+     414.3,
+     153.2,
+     634.2,
+     525.5
+    ],
+    [
+     1025.9,
+     474.4,
+     1288.3,
+     953.4
+    ]
+   ]
+  },
+  {
+   "timestamp": 7.2,
+   "state": "fighting",
+   "event": null,
+   "people": 2,
+   "active_behaviors": [
+    "strike"
+   ],
+   "action_states": {
+    "fall": "normal",
+    "fast_running": "normal",
+    "grapple": "normal",
+    "strike": "fighting"
+   },
+   "action_scores": {
+    "fall": 0.0,
+    "fast_running": 0.0,
+    "grapple": 0.0182,
+    "strike": 0.0333
+   },
+   "action_regions": {
+    "strike": [
+     [
+      1032.5,
+      487.5,
+      1292.4,
+      944.8
+     ]
+    ],
+    "grapple": [
+     [
+      416.0,
+      152.3,
+      633.1,
+      526.5
+     ],
+     [
+      1032.5,
+      487.5,
+      1292.4,
+      944.8
+     ]
+    ]
+   },
+   "person_boxes": [
+    [
+     416.0,
+     152.3,
+     633.1,
+     526.5
+    ],
+    [
+     1032.5,
+     487.5,
+     1292.4,
+     944.8
+    ]
+   ]
+  },
+  {
+   "timestamp": 7.466667,
+   "state": "normal",
+   "event": null,
+   "people": 2,
+   "active_behaviors": [],
+   "action_states": {
+    "fall": "normal",
+    "fast_running": "normal",
+    "grapple": "normal",
+    "strike": "normal"
+   },
+   "action_scores": {
+    "fall": 0.0,
+    "fast_running": 0.0,
+    "grapple": 0.0094,
+    "strike": 0.0122
+   },
+   "action_regions": {
+    "grapple": [
+     [
+      415.3,
+      153.7,
+      628.0,
+      525.5
+     ],
+     [
+      1032.1,
+      471.6,
+      1285.7,
+      949.6
+     ]
+    ]
+   },
+   "person_boxes": [
+    [
+     415.3,
+     153.7,
+     628.0,
+     525.5
+    ],
+    [
+     1032.1,
+     471.6,
+     1285.7,
+     949.6
+    ]
+   ]
+  },
+  {
+   "timestamp": 7.733333,
+   "state": "normal",
+   "event": null,
+   "people": 2,
+   "active_behaviors": [],
+   "action_states": {
+    "fall": "normal",
+    "fast_running": "normal",
+    "grapple": "normal",
+    "strike": "normal"
+   },
+   "action_scores": {
+    "fall": 0.0,
+    "fast_running": 0.0,
+    "grapple": 0.0094,
+    "strike": 0.0122
+   },
+   "action_regions": {
+    "grapple": [
+     [
+      415.0,
+      152.1,
+      633.4,
+      526.6
+     ],
+     [
+      1032.4,
+      502.2,
+      1286.6,
+      936.2
+     ]
+    ]
+   },
+   "person_boxes": [
+    [
+     415.0,
+     152.1,
+     633.4,
+     526.6
+    ],
+    [
+     1032.4,
+     502.2,
+     1286.6,
+     936.2
+    ]
+   ]
+  },
+  {
+   "timestamp": 8.0,
+   "state": "normal",
+   "event": "ended",
+   "people": 2,
+   "active_behaviors": [],
+   "action_states": {
+    "fall": "normal",
+    "fast_running": "normal",
+    "grapple": "normal",
+    "strike": "normal"
+   },
+   "action_scores": {
+    "fall": 0.0,
+    "fast_running": 0.0,
+    "grapple": 0.0066,
+    "strike": 0.0033
+   },
+   "action_regions": {
+    "grapple": [
+     [
+      415.0,
+      152.2,
+      634.1,
+      527.0
+     ],
+     [
+      1018.4,
+      409.9,
+      1286.8,
+      940.8
+     ]
+    ]
+   },
+   "person_boxes": [
+    [
+     415.0,
+     152.2,
+     634.1,
+     527.0
+    ],
+    [
+     1018.4,
+     409.9,
+     1286.8,
+     940.8
+    ]
+   ]
+  },
+  {
+   "timestamp": 8.266667,
+   "state": "normal",
+   "event": null,
+   "people": 2,
+   "active_behaviors": [],
+   "action_states": {
+    "fall": "normal",
+    "fast_running": "normal",
+    "grapple": "normal",
+    "strike": "normal"
+   },
+   "action_scores": {
+    "fall": 0.0,
+    "fast_running": 0.0,
+    "grapple": 0.0066,
+    "strike": 0.0033
+   },
+   "action_regions": {
+    "grapple": [
+     [
+      414.8,
+      152.1,
+      634.6,
+      527.3
+     ],
+     [
+      1032.8,
+      499.3,
+      1283.8,
+      939.5
+     ]
+    ]
+   },
+   "person_boxes": [
+    [
+     414.8,
+     152.1,
+     634.6,
+     527.3
+    ],
+    [
+     1032.8,
+     499.3,
+     1283.8,
+     939.5
+    ]
+   ]
+  },
+  {
+   "timestamp": 8.533333,
+   "state": "normal",
+   "event": null,
+   "people": 3,
+   "active_behaviors": [],
+   "action_states": {
+    "fall": "normal",
+    "fast_running": "normal",
+    "grapple": "normal",
+    "strike": "normal"
+   },
+   "action_scores": {
+    "fall": 0.0,
+    "fast_running": 0.0,
+    "grapple": 0.0139,
+    "strike": 0.009
+   },
+   "action_regions": {
+    "grapple": [
+     [
+      413.8,
+      152.6,
+      632.8,
+      527.4
+     ],
+     [
+      1032.9,
+      420.2,
+      1285.6,
+      944.0
+     ]
+    ]
+   },
+   "person_boxes": [
+    [
+     413.8,
+     152.6,
+     632.8,
+     527.4
+    ],
+    [
+     1032.9,
+     420.2,
+     1285.6,
+     944.0
+    ],
+    [
+     962.9,
+     364.6,
+     1232.3,
+     634.0
+    ]
+   ]
+  },
+  {
+   "timestamp": 8.8,
+   "state": "normal",
+   "event": null,
+   "people": 2,
+   "active_behaviors": [],
+   "action_states": {
+    "fall": "normal",
+    "fast_running": "normal",
+    "grapple": "normal",
+    "strike": "normal"
+   },
+   "action_scores": {
+    "fall": 0.0,
+    "fast_running": 0.0,
+    "grapple": 0.0139,
+    "strike": 0.009
+   },
+   "action_regions": {
+    "grapple": [
+     [
+      413.8,
+      152.1,
+      633.3,
+      527.9
+     ]
+    ]
+   },
+   "person_boxes": [
+    [
+     413.8,
+     152.1,
+     633.3,
+     527.9
+    ],
+    [
+     945.8,
+     362.7,
+     1220.3,
+     615.1
+    ]
+   ]
+  },
+  {
+   "timestamp": 9.066667,
+   "state": "normal",
+   "event": null,
+   "people": 3,
+   "active_behaviors": [],
+   "action_states": {
+    "fall": "normal",
+    "fast_running": "normal",
+    "grapple": "normal",
+    "strike": "normal"
+   },
+   "action_scores": {
+    "fall": 0.0,
+    "fast_running": 0.0,
+    "grapple": 0.0147,
+    "strike": 0.0133
+   },
+   "action_regions": {
+    "grapple": [
+     [
+      414.5,
+      154.4,
+      631.9,
+      528.8
+     ],
+     [
+      1064.1,
+      553.7,
+      1290.1,
+      942.3
+     ]
+    ]
+   },
+   "person_boxes": [
+    [
+     414.5,
+     154.4,
+     631.9,
+     528.8
+    ],
+    [
+     916.5,
+     363.7,
+     1190.5,
+     613.0
+    ],
+    [
+     1064.1,
+     553.7,
+     1290.1,
+     942.3
+    ]
+   ]
+  },
+  {
+   "timestamp": 9.333333,
+   "state": "normal",
+   "event": null,
+   "people": 3,
+   "active_behaviors": [],
+   "action_states": {
+    "fall": "normal",
+    "fast_running": "normal",
+    "grapple": "normal",
+    "strike": "normal"
+   },
+   "action_scores": {
+    "fall": 0.0,
+    "fast_running": 0.0,
+    "grapple": 0.0147,
+    "strike": 0.0133
+   },
+   "action_regions": {
+    "grapple": [
+     [
+      414.5,
+      154.3,
+      631.2,
+      528.3
+     ],
+     [
+      1061.6,
+      553.0,
+      1291.2,
+      945.7
+     ]
+    ]
+   },
+   "person_boxes": [
+    [
+     414.5,
+     154.3,
+     631.2,
+     528.3
+    ],
+    [
+     910.9,
+     351.5,
+     1176.4,
+     615.9
+    ],
+    [
+     1061.6,
+     553.0,
+     1291.2,
+     945.7
+    ]
+   ]
+  },
+  {
+   "timestamp": 9.6,
+   "state": "normal",
+   "event": null,
+   "people": 3,
+   "active_behaviors": [],
+   "action_states": {
+    "fall": "normal",
+    "fast_running": "normal",
+    "grapple": "normal",
+    "strike": "normal"
+   },
+   "action_scores": {
+    "fall": 0.0,
+    "fast_running": 0.0,
+    "grapple": 0.0211,
+    "strike": 0.0254
+   },
+   "action_regions": {
+    "grapple": [
+     [
+      898.8,
+      328.0,
+      1166.5,
+      628.4
+     ],
+     [
+      1054.9,
+      506.2,
+      1293.8,
+      945.1
+     ]
+    ]
+   },
+   "person_boxes": [
+    [
+     415.5,
+     153.7,
+     633.5,
+     527.3
+    ],
+    [
+     898.8,
+     328.0,
+     1166.5,
+     628.4
+    ],
+    [
+     1054.9,
+     506.2,
+     1293.8,
+     945.1
+    ]
+   ]
+  },
+  {
+   "timestamp": 9.866667,
+   "state": "normal",
+   "event": null,
+   "people": 3,
+   "active_behaviors": [],
+   "action_states": {
+    "fall": "normal",
+    "fast_running": "normal",
+    "grapple": "normal",
+    "strike": "normal"
+   },
+   "action_scores": {
+    "fall": 0.0,
+    "fast_running": 0.0,
+    "grapple": 0.0211,
+    "strike": 0.0254
+   },
+   "action_regions": {
+    "grapple": [
+     [
+      891.0,
+      326.2,
+      1160.7,
+      621.1
+     ],
+     [
+      1062.5,
+      542.6,
+      1287.3,
+      944.1
+     ]
+    ]
+   },
+   "person_boxes": [
+    [
+     414.3,
+     153.9,
+     631.6,
+     527.8
+    ],
+    [
+     891.0,
+     326.2,
+     1160.7,
+     621.1
+    ],
+    [
+     1062.5,
+     542.6,
+     1287.3,
+     944.1
+    ]
+   ]
+  },
+  {
+   "timestamp": 10.133333,
+   "state": "normal",
+   "event": null,
+   "people": 3,
+   "active_behaviors": [],
+   "action_states": {
+    "fall": "normal",
+    "fast_running": "normal",
+    "grapple": "normal",
+    "strike": "normal"
+   },
+   "action_scores": {
+    "fall": 0.0,
+    "fast_running": 0.0,
+    "grapple": 0.0167,
+    "strike": 0.0196
+   },
+   "action_regions": {
+    "grapple": [
+     [
+      889.7,
+      326.6,
+      1160.0,
+      626.1
+     ],
+     [
+      1058.5,
+      550.2,
+      1285.1,
+      944.7
+     ]
+    ]
+   },
+   "person_boxes": [
+    [
+     414.3,
+     154.5,
+     632.1,
+     526.2
+    ],
+    [
+     889.7,
+     326.6,
+     1160.0,
+     626.1
+    ],
+    [
+     1058.5,
+     550.2,
+     1285.1,
+     944.7
+    ]
+   ]
+  },
+  {
+   "timestamp": 10.4,
+   "state": "normal",
+   "event": null,
+   "people": 3,
+   "active_behaviors": [],
+   "action_states": {
+    "fall": "normal",
+    "fast_running": "normal",
+    "grapple": "normal",
+    "strike": "normal"
+   },
+   "action_scores": {
+    "fall": 0.0,
+    "fast_running": 0.0,
+    "grapple": 0.0167,
+    "strike": 0.0196
+   },
+   "action_regions": {
+    "grapple": [
+     [
+      888.0,
+      336.1,
+      1166.1,
+      626.4
+     ],
+     [
+      1049.1,
+      525.9,
+      1289.3,
+      949.0
+     ]
+    ]
+   },
+   "person_boxes": [
+    [
+     415.2,
+     153.9,
+     633.6,
+     526.7
+    ],
+    [
+     888.0,
+     336.1,
+     1166.1,
+     626.4
+    ],
+    [
+     1049.1,
+     525.9,
+     1289.3,
+     949.0
+    ]
+   ]
+  },
+  {
+   "timestamp": 10.666667,
+   "state": "normal",
+   "event": null,
+   "people": 3,
+   "active_behaviors": [],
+   "action_states": {
+    "fall": "normal",
+    "fast_running": "normal",
+    "grapple": "normal",
+    "strike": "normal"
+   },
+   "action_scores": {
+    "fall": 0.0,
+    "fast_running": 0.0,
+    "grapple": 0.0134,
+    "strike": 0.0231
+   },
+   "action_regions": {
+    "grapple": [
+     [
+      892.6,
+      346.8,
+      1168.1,
+      628.7
+     ],
+     [
+      1050.5,
+      458.2,
+      1289.5,
+      946.8
+     ]
+    ]
+   },
+   "person_boxes": [
+    [
+     415.3,
+     155.7,
+     630.0,
+     527.1
+    ],
+    [
+     892.6,
+     346.8,
+     1168.1,
+     628.7
+    ],
+    [
+     1050.5,
+     458.2,
+     1289.5,
+     946.8
+    ]
+   ]
+  }
+ ],
+ "source": "uploads/807e56d34aec4d97965d222208f76a9f.mp4",
+ "sha256": "a8893c380048907d7be5902a97c620667bdc310f0d50719950d2b964324f7324",
+ "backend": "mmaction_separate_actions",
+ "recorded_at": "2026-11-16T11:03:28"
+}

@@ -13,11 +13,19 @@ import uuid
 
 import numpy as np
 
+from fight import behaviors as behavior_registry
 from fight.runtime import EventGate
 from fight.vision import ClipConfig
 from mmaction2_demo.frame_transport import SharedFrameBuffer
 
 ROOT = Path(__file__).resolve().parents[1] / "mmaction2_demo"
+# Extensions enabled by the "_ext" backend. Empty until a real extension is installed
+# (V5 adds "vandalism", S5 adds "sharp_object"); tests pass extension_names explicitly.
+EXTENSION_NAMES = ()
+# Submit one extension step every N core samples; slower when the core step is slow.
+EXTENSION_CADENCE = 2
+EXTENSION_SLOW_CADENCE = 4
+SLOW_CORE_STEP_SECONDS = 0.45
 
 
 def prediction_due(last_prediction, timestamp, stride_seconds, *, fall_wrestle=False):
@@ -54,12 +62,25 @@ class MMActionRuntime:
         else:
             self._published_result = value
 
-    def __init__(self, tuned=False, allow_pilot=False, fall_wrestle=False, transition=False, fixed_running=False, three_actions=False, separate_actions=False):
+    def __init__(self, tuned=False, allow_pilot=False, fall_wrestle=False, transition=False, fixed_running=False, three_actions=False, separate_actions=False,
+                 extensions=False, extension_names=None, extension_python=None):
         self._result_context = threading.local()
         self._published_result = {}
         if separate_actions and (tuned or fall_wrestle or transition or fixed_running or three_actions):
             raise ValueError('Select one independent backend')
+        if extensions and not separate_actions:
+            raise ValueError('Extensions run only beside the separate-actions backend')
         self.separate_actions = separate_actions
+        # Extension behaviours (phase 0+): separate process, additive output only.
+        self.extensions_enabled = extensions
+        self.extension_names = tuple(extension_names if extension_names is not None else EXTENSION_NAMES) if extensions else ()
+        self.extension_python = extension_python
+        self.extension_client = None
+        self.extension_specs = {}
+        self.extension_gates = {}
+        self.extension_seen = {}
+        self.extension_step = 0
+        self.extension_cadence = EXTENSION_CADENCE
         three_actions = three_actions or separate_actions
         if three_actions and (tuned or fall_wrestle or transition or fixed_running):
             raise ValueError('Select one pilot backend')
@@ -71,7 +92,7 @@ class MMActionRuntime:
             raise ValueError("Pilot backend requires a tuned head")
         if fall_wrestle and transition:
             raise ValueError("Select one pilot backend")
-        self.backend_name = ("mmaction_separate_actions" if separate_actions else "mmaction_three_actions" if three_actions else "mmaction_fixed_running" if fixed_running else
+        self.backend_name = ("mmaction_separate_actions_ext" if extensions else "mmaction_separate_actions" if separate_actions else "mmaction_three_actions" if three_actions else "mmaction_fixed_running" if fixed_running else
                              "mmaction_transition_redid" if transition else
                              "mmaction_fall_wrestle" if fall_wrestle else
                              "mmaction_interaction_v1" if tuned else "mmaction_original")
@@ -176,6 +197,8 @@ class MMActionRuntime:
         self.action_gates = {name: gate.fresh() for name, gate in self.action_gates.items()}
         if self.running_gate is not None:
             self.running_gate = self.running_gate.fresh()
+        if getattr(self, 'extensions_enabled', False):
+            self.reset_extensions()
         self.alarm_active = False
         self.result = {
             "state": "warming_up" if self.model_ready else "unavailable",
@@ -260,8 +283,8 @@ class MMActionRuntime:
                                                 'confirmation': 'two_observations_same_lying_person',
                                                 'accident_inference': False, 'score_kind': 'binary_rule_not_probability'}
             if self.three_actions:
-                self.action_gates = {name: EventGate(value, value * .7, confirm_seconds=.8 if name == 'fast_running' else .4,
-                                                     release_seconds=.25)
+                self.action_gates = {name: EventGate(value, value * .7, confirm_seconds=behavior_registry.gate_timing(name)[0],
+                                                     release_seconds=behavior_registry.gate_timing(name)[1])
                                      for name, value in self.metadata['thresholds'].items()}
             threshold = self.metadata["threshold"]
             self.gate = EventGate(
@@ -281,6 +304,101 @@ class MMActionRuntime:
             raise RuntimeError(
                 "Không nạp được MMAction2; xem mmaction2_demo/results/web_worker_*.log"
             ) from error
+        if self.extensions_enabled:
+            self.start_extensions()
+
+    # ------------------------------------------------------------ extensions
+    @property
+    def behavior_names(self):
+        return behavior_registry.CORE_NAMES + tuple(self.extension_specs)
+
+    def start_extensions(self):
+        """Start the extension worker. Failure only disables extensions."""
+        if self.extension_client is not None or not self.extension_names:
+            return
+        from fight.extension_client import ExtensionClient
+
+        client = ExtensionClient(self.extension_names, python=self.extension_python)
+        self.extension_client = client
+        if not client.start():
+            return
+        for name, spec in client.specs.items():
+            if name in behavior_registry.CORE_NAMES:
+                continue
+            try:
+                gate = EventGate(spec['threshold'], spec['threshold'] * .7,
+                                 confirm_seconds=spec['confirm_seconds'], release_seconds=spec['release_seconds'])
+            except (KeyError, TypeError, ValueError):
+                continue
+            behavior_registry.register(behavior_registry.BehaviorSpec(
+                name, spec.get('display_label') or name.upper(), confirm_seconds=spec['confirm_seconds'],
+                release_seconds=spec['release_seconds'], alarm_enabled=bool(spec.get('alarm_enabled', True)),
+                kind='extension', reset_without_region=False, blocks_small_person_display=False))
+            self.extension_specs[name] = spec
+            self.extension_gates[name] = gate
+
+    def extension_status(self):
+        if not self.extensions_enabled:
+            return None
+        client = self.extension_client.status() if self.extension_client is not None else {'enabled': False}
+        return {**client, 'requested': list(self.extension_names), 'active': list(self.extension_specs),
+                'cadence': self.extension_cadence}
+
+    def apply_extensions(self, output, timestamp):
+        """Add extension labels next to the core ones; core keys are never changed."""
+        names = tuple(self.extension_specs)
+        client = self.extension_client
+        if client is not None and client.enabled and output.get('prediction_timestamp') == timestamp \
+                and len(self.samples) == self.config.frames:
+            self.extension_step += 1
+            slow = (output.get('timings') or {}).get('pipeline_seconds', 0) > SLOW_CORE_STEP_SECONDS
+            self.extension_cadence = EXTENSION_SLOW_CADENCE if slow else EXTENSION_CADENCE
+            if self.extension_step % self.extension_cadence == 0:
+                client.submit(self.samples, self.sample_times[-1],
+                              {'person_boxes': output.get('person_boxes', []),
+                               'posture_boxes': (output.get('posture') or {}).get('boxes', [])})
+        reply = client.latest(timestamp) if client is not None else None
+        results = (reply or {}).get('extensions', {})
+        active = [name for name in output.get('active_behaviors', []) if name not in names]
+        states = {k: v for k, v in output.get('action_states', {}).items() if k not in names}
+        scores = {k: v for k, v in output.get('action_scores', {}).items() if k not in names}
+        regions = {k: v for k, v in output.get('action_regions', {}).items() if k not in names}
+        details = {}
+        for name in names:
+            gate = self.extension_gates[name]
+            data = results.get(name)
+            seen = self.extension_seen.get(name)
+            if data is not None and 'error' not in data and (seen is None or reply['timestamp'] > seen['timestamp']):
+                try:
+                    gate.update(data['score'], reply['timestamp'])
+                    seen = {'timestamp': reply['timestamp'], 'score': data['score'], 'boxes': data['boxes']}
+                except ValueError:
+                    self.extension_gates[name] = gate = gate.fresh()
+                    seen = None
+                self.extension_seen[name] = seen
+            elif gate.last_observation is not None and timestamp - gate.last_observation > gate.max_observation_gap:
+                self.extension_gates[name] = gate = gate.fresh()
+                self.extension_seen[name] = seen = None
+            state = 'fighting' if gate.active else 'verifying' if gate.pending_since is not None else 'normal'
+            states[name] = state
+            scores[name] = seen['score'] if seen else 0.
+            regions[name] = seen['boxes'] if seen and state != 'normal' else []
+            if state == 'fighting' and self.extension_specs[name].get('alarm_enabled', True):
+                active.append(name)
+            details[name] = {'state': state, 'score': scores[name],
+                             'observed_at': seen['timestamp'] if seen else None,
+                             'error': data.get('error') if isinstance(data, dict) else None}
+        output.update(active_behaviors=active, action_states=states, action_scores=scores, action_regions=regions)
+        output['extensions'] = {'behaviors': details,
+                                'enabled': bool(client is not None and client.enabled),
+                                'error': client.error if client is not None else None}
+
+    def reset_extensions(self):
+        self.extension_gates = {name: gate.fresh() for name, gate in self.extension_gates.items()}
+        self.extension_seen = {}
+        self.extension_step = 0
+        if self.extension_client is not None:
+            self.extension_client.reset()
 
     def push(self, frame, timestamp, predict=True, *, sampled=False):
         if not self.separate_actions or not self.model_ready or not predict:
@@ -290,6 +408,12 @@ class MMActionRuntime:
             output = self.push_separate(frame, timestamp, predict, sampled=sampled)
         finally:
             del self._result_context.draft
+        if self.extensions_enabled:
+            try:
+                self.apply_extensions(output, timestamp)
+            except Exception as error:  # an extension problem must never stop the core
+                if self.extension_client is not None:
+                    self.extension_client.error = f'Extension merge failed: {error}'
         if output.get('state') == 'fighting' and 'fast_running' in output.get('active_behaviors', []):
             confirmed_at = output.get('rgb_prediction_timestamp')
             if confirmed_at is None:
@@ -336,7 +460,7 @@ class MMActionRuntime:
         from fight.posture_display import canonical_posture_view
         boxes, actions, action_regions = canonical_posture_view(output, posture, timestamp)
         active = [name for name in active if action_regions.get(name)]
-        for name in ('strike', 'grapple', 'fast_running'):
+        for name in behavior_registry.reset_without_region_names():
             if not action_regions.get(name):
                 states[name] = 'normal'
         regions = [region for name, values in action_regions.items() if name in active or states.get(name) == 'verifying' for region in values]
@@ -670,3 +794,9 @@ class MMActionRuntime:
             self.log.close()
             self.log = None
         self.frame_buffer.close()
+        if getattr(self, 'extension_client', None) is not None:
+            self.extension_client.close()
+            self.extension_client = None
+            for name in self.extension_specs:
+                behavior_registry.unregister(name)
+            self.extension_specs, self.extension_gates, self.extension_seen = {}, {}, {}

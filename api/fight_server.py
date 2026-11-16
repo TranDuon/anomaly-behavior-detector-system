@@ -14,6 +14,7 @@ from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
 
 from core.config import BASE_DIR, settings
+from fight import behaviors as behavior_registry
 from fight.runtime import FightRuntime
 from fight.session_recording import SessionRecording
 from fight.box_tracking import DisplayBoxTracker
@@ -40,6 +41,9 @@ def server_identity():
         "ui_revision": ui_revision(),
     }
 
+
+EXTENSION_BACKEND = "mmaction_separate_actions_ext"
+SEPARATE_BACKENDS = ("mmaction_separate_actions", EXTENSION_BACKEND)
 
 LABELS = {
     "normal": "NO FIGHT CONFIRMED",
@@ -129,7 +133,7 @@ def annotate(frame, result):
                 )
     cv2.rectangle(image, (0, 0), (image.shape[1], 36), (25, 30, 28), -1)
     if result.get('behavior_scope') == 'three_actions' and result['state'] in {'normal', 'fighting'}:
-        label = ' + '.join({'strike': 'STRIKE', 'grapple': 'GRAPPLE', 'fall': 'FALL', 'fast_running': 'RUNNING'}[name]
+        label = ' + '.join(behavior_registry.display_label(name)
                            for name in result.get('active_behaviors', [])) or 'NO ACTION CONFIRMED'
     elif result.get("behavior_scope") == "fight_wrestle_fall_running" and result["state"] in {"normal", "fighting"}:
         behaviors = result.get("active_behaviors", [])
@@ -234,7 +238,7 @@ class FightProcessor:
                 "mmaction_transition_redid",
                 "mmaction_fixed_running",
                 "mmaction_three_actions",
-                "mmaction_separate_actions",
+                *SEPARATE_BACKENDS,
             }:
                 raise ValueError("Model không hợp lệ.")
             reuse_runtime = (
@@ -263,7 +267,8 @@ class FightProcessor:
                     **({"transition": True} if backend == "mmaction_transition_redid" else {}),
                     **({"fixed_running": True} if backend == "mmaction_fixed_running" else {}),
                     **({'three_actions': True} if backend == 'mmaction_three_actions' else {}),
-                    **({'separate_actions': True} if backend == 'mmaction_separate_actions' else {}),
+                    **({'separate_actions': True} if backend in SEPARATE_BACKENDS else {}),
+                    **({'extensions': True} if backend == EXTENSION_BACKEND else {}),
                 )
             if not candidate.model_ready and not preview:
                 raise ValueError(candidate.message)
@@ -293,7 +298,7 @@ class FightProcessor:
             self.session_id = uuid.uuid4().hex
             self.trace_last_prediction = None
             self.trace_path = None
-            if backend in {"mmaction_fall_wrestle", "mmaction_transition_redid", "mmaction_fixed_running", "mmaction_three_actions", "mmaction_separate_actions"} and not preview:
+            if backend in {"mmaction_fall_wrestle", "mmaction_transition_redid", "mmaction_fixed_running", "mmaction_three_actions", *SEPARATE_BACKENDS} and not preview:
                 trace_dir = BASE_DIR / "logs" / "action_traces"
                 trace_dir.mkdir(parents=True, exist_ok=True)
                 self.trace_path = trace_dir / f"{self.session_id}.jsonl"
@@ -380,6 +385,10 @@ class FightProcessor:
                 "architecture": self.runtime.metadata.get("architecture"),
                 "fall_policy": self.runtime.metadata.get('fall_policy'),
                 'running_policy': self.runtime.metadata.get('running_policy'),
+                "behaviors": [spec for spec in behavior_registry.describe()
+                              if spec["name"] in getattr(self.runtime, "behavior_names", behavior_registry.CORE_NAMES)],
+                "extensions": (self.runtime.extension_status()
+                               if hasattr(self.runtime, "extension_status") else None),
                 "input_kind": self.runtime.input_kind,
                 "cpu_threads": getattr(
                     self.runtime, "cpu_threads", settings.fight_cpu_threads
@@ -479,8 +488,8 @@ class FightProcessor:
 
     def record(self, frame, result):
         self.before.append((self.timestamp, frame.copy()))
-        if getattr(self.runtime, 'backend_name', '') == 'mmaction_separate_actions':
-            for label in ('strike', 'grapple', 'fall', 'fast_running'):
+        if getattr(self.runtime, 'backend_name', '') in SEPARATE_BACKENDS:
+            for label in getattr(self.runtime, 'behavior_names', behavior_registry.CORE_NAMES):
                 self.active_event, self.event_frames = self.label_recordings.pop(label, (None, []))
                 active = label in result.get('active_behaviors', [])
                 event = 'started' if active and self.active_event is None else 'ended' if not active and self.active_event is not None else None
@@ -504,7 +513,7 @@ class FightProcessor:
                 "id": identifier,
                 "session_id": self.session_id,
                 "backend": getattr(self.runtime, "backend_name", "legacy"),
-                "type": ("action_multi" if getattr(self.runtime, "backend_name", "") in {"mmaction_fixed_running", "mmaction_three_actions", "mmaction_separate_actions"} else "fight_wrestle_fall" if getattr(self.runtime, "backend_name", "") in {"mmaction_fall_wrestle", "mmaction_transition_redid"}
+                "type": ("action_multi" if getattr(self.runtime, "backend_name", "") in {"mmaction_fixed_running", "mmaction_three_actions", *SEPARATE_BACKENDS} else "fight_wrestle_fall" if getattr(self.runtime, "backend_name", "") in {"mmaction_fall_wrestle", "mmaction_transition_redid"}
                          else "fighting"),
                 "behaviors": list(result.get("active_behaviors", [])),
                 "running_score": result.get("running_score"),

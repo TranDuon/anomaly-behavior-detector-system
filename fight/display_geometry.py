@@ -1,11 +1,12 @@
 """Build render-only geometry from observations with authentic source times."""
 
+from fight.behaviors import small_person_blocking_names
 from mmaction2_demo.action_engine import match_display_people, remap_display_regions
 from mmaction2_demo.running_evidence import running_appearance
 
 
 def needs_small_person_display(raw, posture, shape, states):
-    if posture['boxes'] or any(states.get(name) in {'fighting', 'verifying'} for name in ('strike', 'grapple', 'fall')):
+    if posture['boxes'] or any(states.get(name) in {'fighting', 'verifying'} for name in small_person_blocking_names()):
         return False
     boxes = raw.get('person_boxes', [])
     height, width = shape[:2]

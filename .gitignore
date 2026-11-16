@@ -42,3 +42,12 @@ mmaction2_demo/recover_test_recording.py
 !models/*.npz
 !models/*.json
 !models/README_RUNTIME.txt
+
+# Golden reference video copies (Phase 0 safety net)
+tests/golden/videos/
+
+# Extension worker environment and extension datasets (never commit raw media)
+extensions/env/
+datasets/**/raw/
+datasets/**/images/
+datasets/**/frames/

@@ -1,0 +1,18 @@
+# Tests failing before the extension work began (baseline at commit 36d5c73, 2026-11-16).
+# Run: .venv\Scripts\python.exe -m pytest tests -q -p no:cacheprovider
+# Baseline result: 12 failed, 400 passed, 3 skipped.
+# Cause: legacy FightWatch tests need pytorchvideo / browser tooling not installed in .venv.
+# Any failure NOT listed here is a regression.
+# test_fight_large ...[0.32] is timing-dependent (paced replay); it sometimes passes.
+tests/test_browser_sync.py::test_browser_state_helpers_without_network_or_camera
+tests/test_fight_fusion.py::test_residual_fusion_starts_at_rgb_baseline_and_has_finite_missing_pose
+tests/test_fight_fusion.py::test_real_fusion_exports_two_input_cpu_model_with_dynamic_region_count
+tests/test_fight_fusion.py::test_rgb_aux_explicitly_disabled_pose_is_output_invariant_and_skips_temporal_extraction
+tests/test_fight_fusion.py::test_decoder_thread_limit_falls_back_without_breaking_native_camera
+tests/test_fight_large.py::test_processor_uploaded_file_and_paced_camera_replay[0.32]
+tests/test_fight_pairs.py::test_real_x3d_supports_native_temporal_input
+tests/test_pair_motion.py::test_pair_model_is_slot_invariant_and_starts_at_rgb_baseline
+tests/test_pair_motion.py::test_three_input_export_accepts_dynamic_region_count
+tests/test_refinement.py::test_refinement_preserves_complete_classifier_not_just_rgb_head
+tests/test_refinement.py::test_refined_model_exports_dynamic_three_input_batch[False]
+tests/test_refinement.py::test_refined_model_exports_dynamic_three_input_batch[True]

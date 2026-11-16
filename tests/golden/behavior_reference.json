@@ -1,0 +1,72 @@
+{
+ "description": "Reference videos for the core-branch golden traces (strike, grapple, fast_running, fall). Labels describe what the default backend showed on them, not ground truth. Copies are kept in tests/golden/videos (git-ignored).",
+ "backend": "mmaction_separate_actions",
+ "baseline_commit": "36d5c73",
+ "videos": [
+  {
+   "label": "strike",
+   "source": "uploads/d94914fd90cc4f6c82e1f620ea98f847.mp4",
+   "sha256": "b782ad0c267ec23def43addcd1b915215b02f4cc3b7a07e4dcbfdd3d4a29621a"
+  },
+  {
+   "label": "strike_fall",
+   "source": "uploads/2daf79e6e0f744b7b32bcde0f2086d65.mp4",
+   "sha256": "64dc193bdc8ea47530a9103b0c70b80a0483c36a1ec396e985a1d1d24679d80a"
+  },
+  {
+   "label": "running",
+   "source": "uploads/f40a73ebd3f24d22b085cf121e7c28cb.mp4",
+   "sha256": "56d5dc3112117b3af7e1063ee6f47d022e91e94556156cf0ba28f8cab140ae15"
+  },
+  {
+   "label": "running_short",
+   "source": "uploads/748b3eb36a1b48869c938fcc53bcb5e1.mp4",
+   "sha256": "4e0ade42cf36648dd64de0395219830dd70e1e1a93c27881295822f3ed7b40c8"
+  },
+  {
+   "label": "fall",
+   "source": "uploads/1c802b3ea81c45b4ad85bd719bf66063.mp4",
+   "sha256": "be235fef9bda633f5f63ccbc28c1dbb6c0138728c5b1696d86f7a6e0c66f4516"
+  },
+  {
+   "label": "fall",
+   "source": "uploads/6275ac3e520d48abb7f2ddba445672e3.mp4",
+   "sha256": "7c57683db153b4a05b362763e69f9ebc86c3cc9833c88d789a33bccc3b5cb2bf"
+  },
+  {
+   "label": "fall",
+   "source": "uploads/2fb06da7a9b948faa40c9dee883ce28f.mp4",
+   "sha256": "79c23c12b642d919dc66bda2160e1d91b47ff81de2f7a9865b2cdf3c5591c20f"
+  },
+  {
+   "label": "fall",
+   "source": "uploads/a632cdaea02f49ddafd1f384eed29857.mp4",
+   "sha256": "70d7e2f8c5cafff1c809b305bd2afc50f4bfddf8067637fa37c94434dacfeb97"
+  },
+  {
+   "label": "fall",
+   "source": "uploads/c68d93b91f964172890c77821771b11c.mp4",
+   "sha256": "9880c8d3f7133cc5f6a196fa4ea0e3e5dbbcc8fc97c69d90e7fc5bb84ef6a66c"
+  },
+  {
+   "label": "fall",
+   "source": "uploads/22da9f8b25454dcdbc21a05f7e67e18a.mp4",
+   "sha256": "77c23cfb593924a1d348f6dad0d87410d25d51dbfda989decb7fdd26f0b97d50"
+  },
+  {
+   "label": "no_action",
+   "source": "uploads/c00dad4114cb403697920a2c8b52cc5b.mp4",
+   "sha256": "49528ab5dc0613f0a5e9a97fad1b6c1291755729cc8ef9e61b6bc56e20edb67d"
+  },
+  {
+   "label": "running_brief",
+   "source": "uploads/525b364161e74ea8840fbc1ca84eb9f0.mp4",
+   "sha256": "2fe369131c68d44ebb9064caa6eaa9d20d8b0bbd9f10702b31b3b8897440ea2f"
+  },
+  {
+   "label": "strike_1080p",
+   "source": "uploads/807e56d34aec4d97965d222208f76a9f.mp4",
+   "sha256": "a8893c380048907d7be5902a97c620667bdc310f0d50719950d2b964324f7324"
+  }
+ ]
+}
