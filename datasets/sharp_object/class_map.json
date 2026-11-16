@@ -1,0 +1,58 @@
+{
+ "description": "Detector classes for the sharp-object extension. Every class raises the same alert 'CAM VAT SAC NHON'; weapon_class is kept in the event for review. Source labels are mapped here; unmapped labels are dropped.",
+ "classes": [
+  "dao_phong_lon",
+  "ma_tau",
+  "dao_ngan",
+  "kiem",
+  "liem",
+  "riu",
+  "vat_sac_khac"
+ ],
+ "alert": "sharp_object",
+ "map": {
+  "zenodo_dangerous_items": {
+   "knife": "dao_ngan",
+   "machete": "ma_tau"
+  },
+  "zenodo_negative_only": [
+   "baseball bat",
+   "baseball_bat",
+   "bat"
+  ],
+  "granada_knife": {
+   "knife": "dao_ngan",
+   "Knife": "dao_ngan"
+  },
+  "openimages": {
+   "Knife": "dao_ngan",
+   "Kitchen knife": "dao_ngan",
+   "Dagger": "dao_ngan",
+   "Sword": "kiem",
+   "Axe": "riu"
+  },
+  "coco": {
+   "knife": "dao_ngan"
+  },
+  "simuletic": {
+   "knife": "dao_ngan"
+  },
+  "grounding_dino": {
+   "blade on a long pole": "dao_phong_lon",
+   "long pole": "dao_phong_lon",
+   "spear": "dao_phong_lon",
+   "machete": "ma_tau",
+   "sickle": "ma_tau",
+   "sword": "kiem",
+   "axe": "riu",
+   "knife": "dao_ngan"
+  }
+ },
+ "hard_negative_labels": [
+  "Baseball bat",
+  "Umbrella",
+  "Mobile phone",
+  "Bottle"
+ ],
+ "prelabel_rules": "sickle->ma_tau (Vietnamese news show curved 'rua' machetes, not sickles); a box at least 5x longer than wide and spanning >=35% of the image becomes dao_phong_lon; cross-class NMS IoU 0.5; drop boxes >50% or <0.05% of the image"
+}
