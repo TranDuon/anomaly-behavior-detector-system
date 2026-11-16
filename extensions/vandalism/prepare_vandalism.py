@@ -4,7 +4,8 @@ Runs inside the Colab session (or locally with small limits). Everything comes
 from sources usable without registration (datasets/vandalism/sources.json):
 
   positives : Kinetics-700 smashing + breaking glass, ASHEN Vandalism (weak, video-level)
-  negatives : 17 Kinetics hard-negative classes, Charades indoor throwing + daily
+  negatives : 17 Kinetics hard-negative classes (+ swing-and-hit look-alikes with
+              --focus-per-class), Charades indoor throwing + daily
               activities, ASHEN normal CCTV (same domain as the ASHEN positives)
   test      : Kinetics val, Charades test split, ASHEN test (frame intervals)
 
@@ -42,12 +43,16 @@ def kinetics(args, records):
         for item in data.fetch_kinetics_class("val", label, index, args.root, seed=args.seed):
             records.append(assign(item, "test", 1))
         print(f"kinetics + {label}", flush=True)
-    for label, index in meta["hard_negative"].items():
-        for item in data.fetch_kinetics_class("train", label, index, args.root, limit=args.neg_per_class, seed=args.seed):
-            records.append(assign(item, "dev" if dev_bucket(item["group"], args.dev_fraction) else "train", 0))
+    focus = meta.get("hard_negative_focus", {}) if args.focus_per_class > 0 else {}
+    negatives = {**meta["hard_negative"], **focus}
+    for label, index in negatives.items():
+        limit, weight = (args.focus_per_class, args.focus_weight) if label in focus else (args.neg_per_class, 1.0)
+        for item in data.fetch_kinetics_class("train", label, index, args.root, limit=limit, seed=args.seed):
+            records.append(assign(item, "dev" if dev_bucket(item["group"], args.dev_fraction) else "train", 0,
+                                  weight=weight, focus=label in focus))
         for item in data.fetch_kinetics_class("val", label, index, args.root, limit=args.neg_test_per_class, seed=args.seed):
-            records.append(assign(item, "test", 0))
-        print(f"kinetics - {label}", flush=True)
+            records.append(assign(item, "test", 0, focus=label in focus))
+        print(f"kinetics - {label}" + (" (focus)" if label in focus else ""), flush=True)
 
 
 def ashen(args, records, rng):
@@ -120,6 +125,9 @@ def main():
     parser.add_argument("--pos-per-class", type=int, default=None, help="cap positives per Kinetics class (default all)")
     parser.add_argument("--neg-per-class", type=int, default=150)
     parser.add_argument("--neg-test-per-class", type=int, default=30)
+    parser.add_argument("--focus-per-class", type=int, default=0,
+                        help="clips per hard_negative_focus class (swing-and-hit look-alikes); 0 = off (probe_01 data)")
+    parser.add_argument("--focus-weight", type=float, default=2.0, help="loss weight of focus negatives")
     parser.add_argument("--ashen-weight", type=float, default=0.5, help="0 disables ASHEN")
     parser.add_argument("--ashen-normal-train", type=int, default=60)
     parser.add_argument("--ashen-normal-test", type=int, default=60)

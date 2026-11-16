@@ -7,7 +7,10 @@ half of a 16:9 frame).
 
 Backbone: V-JEPA 2 ViT-L (frozen). Its 4x16x16 = 1024 output tokens are
 average-pooled to a 4x4x4 grid (64 tokens x 1024), cached, and scored by a
-small attentive probe. Only the probe is trained.
+small attentive probe. probe_01 trains only the probe; the fine-tuned variant
+also retrains the last few encoder blocks (+ final LayerNorm), shipped as a
+separate "tail" state dict that Backbone(tail_state=...) loads over the
+pretrained weights. Same compute at runtime, only the weights differ.
 """
 
 import math
@@ -51,15 +54,60 @@ def pool_tokens(hidden):
     return pooled.flatten(2).transpose(1, 2).contiguous()
 
 
-class Backbone:
-    """Frozen V-JEPA 2 encoder producing pooled tokens."""
+def tail_keys(model, tail_blocks):
+    """State-dict key prefixes of the last ``tail_blocks`` encoder blocks + final LayerNorm."""
+    count = len(model.encoder.layer)
+    if not 0 < tail_blocks <= count:
+        raise ValueError(f"tail_blocks must be in 1..{count}")
+    return tuple(f"encoder.layer.{i}." for i in range(count - tail_blocks, count)) + ("encoder.layernorm.",)
 
-    def __init__(self, device="cuda", dtype=torch.float16, model_id=HF_MODEL, revision=HF_REVISION):
+
+def tail_state_dict(model, tail_blocks):
+    prefixes = tail_keys(model, tail_blocks)
+    return {k: v.detach().float().cpu().clone() for k, v in model.state_dict().items() if k.startswith(prefixes)}
+
+
+def load_tail(model, state):
+    """Overwrite the encoder tail with fine-tuned weights; every key must exist with the same shape."""
+    own = model.state_dict()
+    wrong = [k for k, v in state.items() if k not in own or own[k].shape != v.shape]
+    if wrong or not state:
+        raise ValueError(f"tail state does not fit the backbone: {wrong[:5]}")
+    blocks = {int(k.split(".")[2]) for k in state if k.startswith("encoder.layer.")}
+    expected = set(tail_keys(model, len(blocks)))
+    if {k for k in own if k.startswith(tuple(expected))} != set(state):
+        raise ValueError("tail state must hold complete last blocks + encoder.layernorm")
+    model.load_state_dict(state, strict=False)
+
+
+def encode_head(model, clips, stop):
+    """Embeddings + encoder blocks [0, stop) -> hidden states (B, 1024 tokens, D)."""
+    hidden = model.encoder.embeddings(clips)
+    for layer in model.encoder.layer[:stop]:
+        hidden = layer(hidden, None, None, False)[0]
+    return hidden
+
+
+def encode_tail(layers, layernorm, hidden):
+    """Remaining blocks + final LayerNorm, then pooling -> (B, 64, D)."""
+    for layer in layers:
+        hidden = layer(hidden, None, None, False)[0]
+    return pool_tokens(layernorm(hidden))
+
+
+class Backbone:
+    """V-JEPA 2 encoder (frozen at inference) producing pooled tokens.
+
+    ``tail_state``: optional fine-tuned last blocks (see load_tail)."""
+
+    def __init__(self, device="cuda", dtype=torch.float16, model_id=HF_MODEL, revision=HF_REVISION, tail_state=None):
         from transformers import AutoModel
 
         self.device = torch.device(device)
         self.dtype = dtype if self.device.type == "cuda" else torch.float32
         self.model = AutoModel.from_pretrained(model_id, revision=revision, dtype=self.dtype)
+        if tail_state is not None:
+            load_tail(self.model, tail_state)
         self.model.to(self.device).eval().requires_grad_(False)
 
     @torch.inference_mode()

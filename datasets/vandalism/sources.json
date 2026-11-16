@@ -33,7 +33,21 @@
    "tagging graffiti": 606,
    "spray painting": 573
   },
-  "decision": "2026-11-16: positives only smashing + breaking glass; graffiti/spray painting out of scope; tantrum and sledge hammer dropped"
+  "decision": "2026-11-16: positives only smashing + breaking glass; graffiti/spray painting out of scope; tantrum and sledge hammer dropped",
+  "hard_negative_focus": {
+   "chopping wood": 102,
+   "breaking boards": 56,
+   "chopping meat": 101,
+   "sawing wood": 505,
+   "digging": 156,
+   "swinging baseball bat": 601,
+   "hitting baseball": 246,
+   "throwing axe": 620,
+   "punching bag": 459,
+   "high kick": 244,
+   "side kick": 536
+  },
+  "focus_decision": "2026-11-17: V-JEPA probe_01 alarmed on 8/12 chopping-wood test clips; swing-and-hit actions on legitimate objects get more clips, a higher loss weight and a per-class false-alarm cap when picking the threshold"
  },
  "ava_v2_2": {
   "annotations": "https://s3.amazonaws.com/ava-dataset/annotations/ava_v2.2.zip",

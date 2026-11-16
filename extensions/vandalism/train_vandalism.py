@@ -89,10 +89,12 @@ def cache_key(item):
     return f"{item['source']}__{stem}" + (f"__{segment[0]:.1f}_{segment[1]:.1f}" if segment else "")
 
 
-def stage_features(args):
-    items = load_manifest(args.data)
+def stage_features(args, backbone=None, items=None):
+    """Pooled tokens of every window -> <cache>/<key>.npz. ``backbone``/``items`` let the
+    fine-tune script re-encode dev/test with its fine-tuned encoder tail."""
+    items = load_manifest(args.data) if items is None else items
     args.cache.mkdir(parents=True, exist_ok=True)
-    backbone = Backbone(device="cuda" if torch.cuda.is_available() else "cpu")
+    backbone = backbone or Backbone(device="cuda" if torch.cuda.is_available() else "cpu")
     started, done = time.perf_counter(), 0
     for number, item in enumerate(items, 1):
         target = args.cache / f"{cache_key(item)}.npz"
@@ -247,6 +249,35 @@ def evaluate(probe, bags, device, threshold=None, k=3):
     return report, all_labels, all_scores
 
 
+def cap_focus_false_alarms(bags, scores, threshold, rule, cap):
+    """Raise the threshold until every focus negative class (swing-and-hit look-alikes such as
+    chopping wood) alarms on at most ``cap`` of its dev clips. ``scores`` come from evaluate(),
+    which orders bags grouped by source. No-op when cap <= 0 or there are no focus bags."""
+    if cap <= 0:
+        return threshold, rule
+    by_source = {}
+    for bag in bags:
+        by_source.setdefault(bag["item"]["source"], []).append(bag)
+    ordered = [bag for group in by_source.values() for bag in group]
+    assert len(ordered) == len(scores)
+    per_class = {}
+    for bag, score in zip(ordered, scores):
+        if bag["item"].get("focus") and bag["item"]["binary"] == 0:
+            per_class.setdefault(bag["item"]["label"], []).append(score)
+    if not per_class:
+        return threshold, rule
+    needed = threshold
+    for label, values in per_class.items():
+        values = np.sort(np.asarray(values))[::-1]
+        allowed = int(math.floor(cap * len(values)))  # clips of this class allowed above threshold
+        if allowed < len(values):
+            needed = max(needed, float(values[allowed]) + 1e-6)
+    if needed > threshold:
+        print(f"threshold {threshold:.4f} -> {needed:.4f} to keep focus false alarms <= {cap:.0%}", flush=True)
+        return needed, f"{rule}; raised to cap focus-class false alarms at {cap}"
+    return threshold, rule
+
+
 def stage_train(args):
     seed_everything(args.seed)
     items = load_manifest(args.data)
@@ -299,12 +330,13 @@ def stage_train(args):
     probe.load_state_dict(best_state)
     _, dev_labels, dev_scores = evaluate(probe, splits["dev"], device, k=args.top_k)
     threshold, rule = best_threshold(dev_labels, dev_scores, args.min_precision)
+    threshold, rule = cap_focus_false_alarms(splits["dev"], dev_scores, threshold, rule, args.max_focus_false_alarm)
     dev_report, _, _ = evaluate(probe, splits["dev"], device, threshold, k=args.top_k)
     test_report, _, _ = evaluate(probe, splits["test"], device, threshold, k=args.top_k)
     export(args, probe, threshold, rule, history, dev_report, test_report, items)
 
 
-def export(args, probe, threshold, rule, history, dev_report, test_report, items):
+def export(args, probe, threshold, rule, history, dev_report, test_report, items, extra_spec=None, extra_files=()):
     try:
         import transformers
         transformers_version = transformers.__version__
@@ -319,7 +351,7 @@ def export(args, probe, threshold, rule, history, dev_report, test_report, items
             "pooled_grid": list(GRID), "probe": "AttentiveProbe(width=1024, heads=16, queries=4, hidden=512)",
             "bag_pooling": f"top{args.top_k}_mean", "threshold": round(float(threshold), 4), "threshold_rule": rule,
             "min_precision": args.min_precision, "confirm_seconds": 0.8, "release_seconds": 1.0,
-            "approved_for_demo": False, "run_tag": args.run_tag}
+            "approved_for_demo": False, "run_tag": args.run_tag, **(extra_spec or {})}
     (out / f"{NAME}.json").write_text(json.dumps(spec, indent=1), encoding="utf-8")
     report = {"spec": spec, "history": history, "dev": dev_report, "test": test_report}
     (out / "report.json").write_text(json.dumps(report, indent=1), encoding="utf-8")
@@ -334,7 +366,7 @@ def export(args, probe, threshold, rule, history, dev_report, test_report, items
     (out / "protocol.json").write_text(json.dumps(protocol, indent=1), encoding="utf-8")
     archive = out / f"{NAME}_{args.run_tag}.zip"
     with zipfile.ZipFile(archive.with_suffix(".partial.zip"), "w", zipfile.ZIP_DEFLATED) as bundle:
-        for name in (f"{NAME}.pt", f"{NAME}.json", "report.json", "protocol.json"):
+        for name in (f"{NAME}.pt", f"{NAME}.json", "report.json", "protocol.json", *extra_files):
             bundle.write(out / name, name)
     archive.with_suffix(".partial.zip").replace(archive)
     print(json.dumps({"threshold": spec["threshold"], "rule": rule, "dev": dev_report["all_bags"],
@@ -376,6 +408,8 @@ def main():
     parser.add_argument("--weight-decay", type=float, default=0.05)
     parser.add_argument("--top-k", type=int, default=3)
     parser.add_argument("--min-precision", type=float, default=0.9)
+    parser.add_argument("--max-focus-false-alarm", type=float, default=0.0,
+                        help="per focus-class dev false-alarm cap used to raise the threshold (0 = off)")
     parser.add_argument("--seed", type=int, default=3407)
     args = parser.parse_args()
     if args.stage == "features":
