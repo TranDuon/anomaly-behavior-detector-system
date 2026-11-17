@@ -1,8 +1,14 @@
 """S3: train / evaluate / export the sharp-object detector (Ultralytics YOLO).
 
-  train     fine-tune a COCO-pretrained YOLO on the merged dataset (build_dataset.py). Weights are
-            written to --output/train/weights every epoch, so a run on Drive survives a disconnect;
-            calling train again resumes from last.pt.
+  train     stage 1: fine-tune a COCO-pretrained YOLO on the merged dataset (build_dataset.py). Weights
+            are written to --output/train/weights every epoch; calling train again resumes from last.pt.
+            --single-cls trains one "sharp object" class (fine labels stay in the dataset for review).
+  finetune_vn
+            stage 2: start from the stage-1 weights (--init), freeze the first --freeze layers and train
+            with a low lr on the Vietnamese train images (repeated --vn-repeat times) mixed with a
+            --replay share of the public train images, so the model adapts to Vietnamese weapons
+            (dao phong lon...) without forgetting the public data. Without Vietnamese train images the
+            stage-1 weights are copied as the result.
   evaluate  box mAP (per class and class-agnostic) on val/test and on the Vietnamese subsets, then the
             image-level alert used at runtime: an image alerts when any box >= threshold. The threshold
             is the lowest one whose false-alarm rate on val negatives is <= --max-false-alarm; recall and
@@ -29,24 +35,72 @@ def weights_dir(output):
 
 
 # ------------------------------------------------------------------ train
-def train(args):
+def run_training(args, data_yaml, start, **extra):
+    """Train into --output/train, or resume it from last.pt after a disconnect."""
     from ultralytics import YOLO
 
     last = weights_dir(args.output) / "last.pt"
-    if last.is_file() and not (Path(args.output) / "train" / "TRAIN_DONE").is_file():
+    done = Path(args.output) / "train" / "TRAIN_DONE"
+    if last.is_file() and not done.is_file():
         print(f"resuming from {last}", flush=True)
         try:
             YOLO(str(last)).train(resume=True)
         except AssertionError as error:  # Ultralytics refuses to resume a run that already finished
             print(f"resume not possible ({error}); keeping the finished run", flush=True)
     elif not last.is_file():
-        model = YOLO(args.model)
-        model.train(data=str(Path(args.data) / "data.yaml"), imgsz=args.imgsz, epochs=args.epochs, batch=args.batch,
+        model = YOLO(str(start))
+        model.train(data=str(data_yaml), imgsz=args.imgsz, epochs=args.epochs, batch=args.batch,
                     patience=args.patience, project=str(args.output), name="train", exist_ok=True,
                     workers=args.workers, seed=3407, deterministic=False, cos_lr=True, close_mosaic=args.close_mosaic,
                     optimizer="AdamW", lr0=args.lr0, cache=args.cache, plots=True, amp=True,
-                    fraction=args.fraction, device=args.device)
-    (Path(args.output) / "train" / "TRAIN_DONE").write_text(time.strftime("%Y-%m-%d %H:%M:%S"), encoding="utf-8")
+                    fraction=args.fraction, device=args.device, single_cls=args.single_cls, **extra)
+    done.write_text(time.strftime("%Y-%m-%d %H:%M:%S"), encoding="utf-8")
+
+
+def train(args):
+    run_training(args, Path(args.data) / "data.yaml", args.model)
+
+
+def stage2_lists(data, output, vn_repeat, replay, seed=3407):
+    """Stage-2 train list: Vietnamese train images x vn_repeat + a replay share of public train images."""
+    import csv
+    import random
+
+    with (Path(data) / "manifest.csv").open(encoding="utf-8") as stream:
+        rows = list(csv.DictReader(stream))
+    vn = sorted(str((Path(data) / r["image"]).resolve()) for r in rows if r["split"] == "train" and r["source"] == "vn")
+    public = sorted(str((Path(data) / r["image"]).resolve()) for r in rows
+                    if r["split"] == "train" and r["source"] != "vn")
+    picked = random.Random(seed).sample(public, int(round(replay * len(public))))
+    lines = vn * vn_repeat + picked
+    random.Random(seed).shuffle(lines)
+    output.mkdir(parents=True, exist_ok=True)
+    train_list = output / "stage2_train.txt"
+    train_list.write_text("".join(line + "\n" for line in lines), encoding="utf-8")
+    names = "".join(f"  {i}: {n}\n" for i, n in enumerate(CLASSES))
+    yaml = output / "data_stage2.yaml"
+    yaml.write_text(f"path: {Path(data).resolve().as_posix()}\ntrain: {train_list.resolve().as_posix()}\n"
+                    f"val: val.txt\ntest: test.txt\nnames:\n{names}", encoding="utf-8")
+    summary = {"vn_train_images": len(vn), "vn_repeat": vn_repeat, "public_replay": len(picked),
+               "public_train": len(public), "train_list": len(lines)}
+    (output / "stage2_summary.json").write_text(json.dumps(summary, indent=1), encoding="utf-8")
+    print("stage 2 data:", summary, flush=True)
+    return yaml, len(vn)
+
+
+def finetune_vn(args):
+    if args.init is None or not Path(args.init).is_file():
+        raise SystemExit(f"--init must point to the stage-1 weights (got {args.init})")
+    yaml, vn_count = stage2_lists(args.data, Path(args.output), args.vn_repeat, args.replay)
+    if vn_count == 0:
+        print("no Vietnamese train images: stage-1 weights kept as the result", flush=True)
+        target = weights_dir(args.output)
+        target.mkdir(parents=True, exist_ok=True)
+        for name in ("best.pt", "last.pt"):
+            shutil.copy(args.init, target / name)
+        (Path(args.output) / "train" / "TRAIN_DONE").write_text("stage 1 copied", encoding="utf-8")
+        return
+    run_training(args, yaml, args.init, freeze=args.freeze, warmup_epochs=1)
 
 
 # ------------------------------------------------------------------ evaluate
@@ -105,12 +159,14 @@ def evaluate(args):
     best = weights_dir(args.output) / "best.pt"
     model = YOLO(str(best))
     data = Path(args.data)
-    report = {"weights": str(best), "imgsz": args.imgsz}
+    single = len(model.names) == 1  # trained with --single-cls: only class-agnostic metrics exist
+    report = {"weights": str(best), "imgsz": args.imgsz, "model_classes": [str(n) for n in model.names.values()]}
     for name, yaml_name in (("all", "data.yaml"), ("vn", "data_vn.yaml")):
         for split in ("val", "test"):
-            report[f"box_{name}_{split}"] = box_metrics(model, data / yaml_name, split, args.imgsz, False, args.device)
-            report[f"box_{name}_{split}_agnostic"] = box_metrics(model, data / yaml_name, split, args.imgsz, True,
-                                                                 args.device)
+            agnostic = box_metrics(model, data / yaml_name, split, args.imgsz, True, args.device)
+            report[f"box_{name}_{split}_agnostic"] = agnostic
+            report[f"box_{name}_{split}"] = agnostic if single else box_metrics(model, data / yaml_name, split,
+                                                                                args.imgsz, False, args.device)
     val_rows = image_scores(model, data / "val.txt", args.imgsz, args.device)
     test_rows = image_scores(model, data / "test.txt", args.imgsz, args.device)
     threshold, rule = choose_threshold(val_rows, args.max_false_alarm, args.min_threshold)
@@ -145,12 +201,14 @@ def export(args):
     for key in ("optimizer", "ema", "updates", "train_results"):
         checkpoint.pop(key, None)
     checkpoint["model"] = checkpoint["model"].half()
+    model_classes = [str(n) for n in dict(checkpoint["model"].names).values()]
     torch.save(checkpoint, package / "sharp_object.pt")
     spec = {"name": "sharp_object", "run_tag": args.run_tag, "framework": "ultralytics", "weights": "sharp_object.pt",
-            "classes": CLASSES, "alert": CLASS_MAP["alert"], "imgsz": args.imgsz,
+            "classes": model_classes if len(model_classes) == 1 else CLASSES, "label_classes": CLASSES,
+            "alert": CLASS_MAP["alert"], "imgsz": args.imgsz, "confirm_seconds": 0.5, "release_seconds": 1.0,
             "alert_threshold": evaluation["alert_threshold"], "threshold_rule": evaluation["threshold_rule"],
-            "alert_logic": "alert when a sharp-object box (any class) >= alert_threshold overlaps or is near a person box "
-                           "for K of N consecutive frames (runtime side)",
+            "alert_logic": "alert when a sharp-object box (any class) >= alert_threshold lies inside a person box "
+                           "widened for arms/long handles, confirmed over time (extensions/sharp_object/extension.py)",
             "created": time.strftime("%Y-%m-%d %H:%M:%S")}
     (package / "sharp_object_spec.json").write_text(json.dumps(spec, indent=1), encoding="utf-8")
     shutil.copy(output / "evaluation.json", package / "evaluation.json")
@@ -166,7 +224,7 @@ def export(args):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--stage", choices=["train", "evaluate", "export"], required=True)
+    parser.add_argument("--stage", choices=["train", "finetune_vn", "evaluate", "export"], required=True)
     parser.add_argument("--data", type=Path, required=True, help="output of build_dataset.py")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--model", default="yolo11m.pt")
@@ -183,10 +241,15 @@ def main():
     parser.add_argument("--max-false-alarm", type=float, default=0.03, help="image-level, on val negatives")
     parser.add_argument("--min-threshold", type=float, default=0.15)
     parser.add_argument("--run-tag", default="sharp_01")
+    parser.add_argument("--single-cls", action="store_true", help="train one merged 'sharp object' class")
+    parser.add_argument("--init", type=Path, default=None, help="finetune_vn: stage-1 best.pt")
+    parser.add_argument("--freeze", type=int, default=10, help="finetune_vn: frozen first layers (backbone)")
+    parser.add_argument("--vn-repeat", type=int, default=10, help="finetune_vn: Vietnamese image repeats")
+    parser.add_argument("--replay", type=float, default=0.25, help="finetune_vn: share of public train images")
     args = parser.parse_args()
     if isinstance(args.cache, str) and args.cache.lower() in {"false", "0", "no", ""}:
         args.cache = False
-    {"train": train, "evaluate": evaluate, "export": export}[args.stage](args)
+    {"train": train, "finetune_vn": finetune_vn, "evaluate": evaluate, "export": export}[args.stage](args)
 
 
 if __name__ == "__main__":
