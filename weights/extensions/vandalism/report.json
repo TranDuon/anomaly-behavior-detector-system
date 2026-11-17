@@ -1,0 +1,256 @@
+{
+ "spec": {
+  "name": "vandalism",
+  "display_label": "VANDALISM",
+  "kind": "extension",
+  "backbone": "facebook/vjepa2-vitl-fpc64-256",
+  "backbone_revision": "b3c1679b7c34d3255ef3547f27c7b226aefab26f",
+  "frames": 8,
+  "fps": 3.75,
+  "size": 256,
+  "resize": "full_frame_no_crop",
+  "pooled_grid": [
+   4,
+   4,
+   4
+  ],
+  "probe": "AttentiveProbe(width=1024, heads=16, queries=4, hidden=512)",
+  "bag_pooling": "top3_mean",
+  "threshold": 0.6667,
+  "threshold_rule": "min_precision",
+  "min_precision": 0.9,
+  "confirm_seconds": 0.8,
+  "release_seconds": 1.0,
+  "approved_for_demo": false,
+  "run_tag": "vjepa2_probe_02_ft",
+  "backbone_tail_blocks": 4,
+  "backbone_tail_file": "vandalism_tail.pt",
+  "finetune": {
+   "best_epoch": 8,
+   "dev_proxy_ap": 0.9184495643445675,
+   "lr_tail": 2e-05,
+   "lr_probe": 0.0001,
+   "layer_decay": 0.75
+  }
+ },
+ "history": [
+  {
+   "epoch": 0,
+   "loss": null,
+   "dev_proxy_ap": 0.8743643579024419,
+   "dev_proxy_auc": 0.9652773269276548
+  },
+  {
+   "epoch": 1,
+   "loss": 0.7367224840449056,
+   "dev_proxy_ap": 0.8736582722080464,
+   "dev_proxy_auc": 0.9743303973973324
+  },
+  {
+   "epoch": 2,
+   "loss": 0.5129421460936276,
+   "dev_proxy_ap": 0.8757975494354651,
+   "dev_proxy_auc": 0.9666551249035181
+  },
+  {
+   "epoch": 3,
+   "loss": 0.24997625566097156,
+   "dev_proxy_ap": 0.8797912685008655,
+   "dev_proxy_auc": 0.9616056035260087
+  },
+  {
+   "epoch": 4,
+   "loss": 0.10536748369977543,
+   "dev_proxy_ap": 0.9015312894021384,
+   "dev_proxy_auc": 0.972231239224682
+  },
+  {
+   "epoch": 5,
+   "loss": 0.0745549037038728,
+   "dev_proxy_ap": 0.9023392473155354,
+   "dev_proxy_auc": 0.9769417213097016
+  },
+  {
+   "epoch": 6,
+   "loss": 0.02012390734413784,
+   "dev_proxy_ap": 0.8985325604963489,
+   "dev_proxy_auc": 0.9752934132600432
+  },
+  {
+   "epoch": 7,
+   "loss": 0.00020062418609536383,
+   "dev_proxy_ap": 0.9147501849681806,
+   "dev_proxy_auc": 0.977475527855324
+  },
+  {
+   "epoch": 8,
+   "loss": 4.08312102676984e-06,
+   "dev_proxy_ap": 0.9184495643445675,
+   "dev_proxy_auc": 0.9778326011527336
+  }
+ ],
+ "dev": {
+  "all_bags": {
+   "n": 1525,
+   "ap": 0.8983091884523906,
+   "roc_auc": 0.9775115958651633
+  },
+  "kinetics700_2020": {
+   "n": 1114,
+   "positives": 198,
+   "ap": 0.901484972809923,
+   "roc_auc": 0.9710919236028406,
+   "at_threshold": {
+    "precision": 0.9078014184397163,
+    "recall": 0.6464646464646465,
+    "tp": 128,
+    "fp": 13,
+    "fn": 70,
+    "n": 1114
+   }
+  },
+  "ashen": {
+   "n": 18,
+   "positives": 13,
+   "ap": 0.9751850713389175,
+   "roc_auc": 0.9384615384615385,
+   "at_threshold": {
+    "precision": 0.9230769230769231,
+    "recall": 0.9230769230769231,
+    "tp": 12,
+    "fp": 1,
+    "fn": 1,
+    "n": 18
+   },
+   "window_ap": 0.936273603218623,
+   "window_roc_auc": 0.882051282051282
+  },
+  "charades": {
+   "n": 393,
+   "positives": 0,
+   "ap": null,
+   "roc_auc": null,
+   "at_threshold": {
+    "precision": null,
+    "recall": null,
+    "tp": 0,
+    "fp": 0,
+    "fn": 0,
+    "n": 393
+   },
+   "false_alarm_rate": 0.0
+  },
+  "false_alarm_by_negative_class": {
+   "bouncing ball (not juggling)": 0.0,
+   "breaking boards": 0.031,
+   "charades_other": 0.0,
+   "charades_throw": 0.0,
+   "chopping meat": 0.0,
+   "chopping wood": 0.056,
+   "closing door": 0.0,
+   "digging": 0.0,
+   "folding clothes": 0.0,
+   "high kick": 0.0,
+   "hitting baseball": 0.0,
+   "kicking soccer ball": 0.0,
+   "mopping floor": 0.059,
+   "moving furniture": 0.0,
+   "normal": 0.2,
+   "opening door": 0.0,
+   "punching bag": 0.0,
+   "punching person (boxing)": 0.0,
+   "sawing wood": 0.0,
+   "side kick": 0.015,
+   "slapping": 0.083,
+   "sweeping floor": 0.0,
+   "swinging baseball bat": 0.016,
+   "throwing axe": 0.018,
+   "throwing ball (not baseball or American football)": 0.042,
+   "unboxing": 0.0,
+   "vacuuming floor": 0.0,
+   "wrestling": 0.05
+  }
+ },
+ "test": {
+  "all_bags": {
+   "n": 1444,
+   "ap": 0.7094099565593857,
+   "roc_auc": 0.958551358683005
+  },
+  "kinetics700_2020": {
+   "n": 845,
+   "positives": 95,
+   "ap": 0.6906153118483159,
+   "roc_auc": 0.9405192982456141,
+   "at_threshold": {
+    "precision": 0.7380952380952381,
+    "recall": 0.6526315789473685,
+    "tp": 62,
+    "fp": 22,
+    "fn": 33,
+    "n": 845
+   }
+  },
+  "ashen": {
+   "n": 78,
+   "positives": 18,
+   "ap": 0.8923916574850976,
+   "roc_auc": 0.9277777777777778,
+   "at_threshold": {
+    "precision": 0.6538461538461539,
+    "recall": 0.9444444444444444,
+    "tp": 17,
+    "fp": 9,
+    "fn": 1,
+    "n": 78
+   },
+   "window_ap": 0.35523232489044837,
+   "window_roc_auc": 0.8360522674047264
+  },
+  "charades": {
+   "n": 521,
+   "positives": 0,
+   "ap": null,
+   "roc_auc": null,
+   "at_threshold": {
+    "precision": null,
+    "recall": null,
+    "tp": 0,
+    "fp": 0,
+    "fn": 0,
+    "n": 521
+   },
+   "false_alarm_rate": 0.0
+  },
+  "false_alarm_by_negative_class": {
+   "bouncing ball (not juggling)": 0.0,
+   "breaking boards": 0.0,
+   "charades_other": 0.0,
+   "charades_throw": 0.0,
+   "chopping meat": 0.0,
+   "chopping wood": 0.1,
+   "closing door": 0.033,
+   "digging": 0.033,
+   "folding clothes": 0.0,
+   "high kick": 0.0,
+   "hitting baseball": 0.0,
+   "kicking soccer ball": 0.067,
+   "mopping floor": 0.0,
+   "moving furniture": 0.033,
+   "normal": 0.15,
+   "opening door": 0.033,
+   "punching bag": 0.033,
+   "punching person (boxing)": 0.0,
+   "sawing wood": 0.0,
+   "side kick": 0.0,
+   "slapping": 0.0,
+   "sweeping floor": 0.067,
+   "swinging baseball bat": 0.1,
+   "throwing axe": 0.2,
+   "throwing ball (not baseball or American football)": 0.0,
+   "unboxing": 0.0,
+   "vacuuming floor": 0.0,
+   "wrestling": 0.033
+  }
+ }
+}

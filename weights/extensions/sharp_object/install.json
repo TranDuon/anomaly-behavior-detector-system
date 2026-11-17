@@ -1,0 +1,16 @@
+{
+ "installed_at": "2026-11-18T01:17:40",
+ "run_tag": "hand_04",
+ "source_zip": "sharp_object_hand_04.zip",
+ "source_sha256": "15f698f552796b9e91a0e2342f719c03a535ae2d4a6aae5c78a639fae9a675ed",
+ "classes": {
+  "method": "hand_crop",
+  "arch": "resnet50"
+ },
+ "files": {
+  "evaluation.json": "17d8b07bf48fc85d8dbebb92650eea8b96f559946cd06c59e0d79be893f0299c",
+  "hand_classifier.pt": "a8813abc61a687e322849d5be3796a65b6172da63a5e4f18a4c166e6d6e3e4e9",
+  "sharp_object_spec.json": "17709b5bfd45506970bcc181e9ee66dd370490ad67169c15592af2c95fef97aa",
+  "yolo11s-pose.pt": "1060bda4a27012060eca246f9b2adeea22eabb045a1e58f8d229be29b7ebc2ba"
+ }
+}

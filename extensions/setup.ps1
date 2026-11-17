@@ -26,7 +26,14 @@ if (-not (Test-Path -LiteralPath $Python)) {
 }
 
 Run-Checked $Python @('-m', 'pip', 'install', '--upgrade', 'pip==25.1.1')
-Run-Checked $Python @('-m', 'pip', 'install', '-r', (Join-Path $Repo 'requirements-extensions.txt'))
+# Ultralytics must be installed with --no-deps (its own deps would add opencv-python next to the pinned
+# headless build); its runtime dependencies are pinned in the same file.
+$Requirements = Join-Path $Repo 'requirements-extensions.txt'
+$Filtered = Join-Path $env:TEMP 'requirements-extensions.no-ultralytics.txt'
+Get-Content -LiteralPath $Requirements | Where-Object { $_ -notmatch '^\s*ultralytics==' } | Set-Content -LiteralPath $Filtered -Encoding utf8
+Run-Checked $Python @('-m', 'pip', 'install', '-r', $Filtered)
+$Ultralytics = (Get-Content -LiteralPath $Requirements | Where-Object { $_ -match '^\s*ultralytics==' } | Select-Object -First 1).Trim()
+Run-Checked $Python @('-m', 'pip', 'install', '--no-deps', $Ultralytics)
 Run-Checked $Python @('-c', "import torch, numpy, cv2; print('torch', torch.__version__, 'cuda', torch.cuda.is_available())")
 # Smoke test: the worker starts and answers with the dependency-free selftest extension.
 Run-Checked $Python @((Join-Path $Root 'check_worker.py'))

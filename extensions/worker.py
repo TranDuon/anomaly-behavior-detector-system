@@ -32,7 +32,7 @@ from frame_transport import SharedFrameReader  # noqa: E402
 
 # Modules that register real extensions. Missing optional dependencies only
 # disable the extension that needs them.
-KNOWN_MODULES = ("extensions.vandalism", "extensions.sharp_object")
+KNOWN_MODULES = ("extensions.vandalism.extension", "extensions.sharp_object.extension")
 
 
 def reply(value):
@@ -89,7 +89,10 @@ def main():
                 frames = reader.read(request)
                 read_done = time.perf_counter()
                 results, timings = {}, {"read": (read_done - started) * 1000}
+                only = request.get("only")  # light steps run a subset (e.g. sharp_object between full steps)
                 for name, extension in extensions.items():
+                    if only is not None and name not in only:
+                        continue
                     step = time.perf_counter()
                     try:
                         with contextlib.redirect_stdout(sys.stderr):

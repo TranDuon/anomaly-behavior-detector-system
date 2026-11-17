@@ -6,6 +6,16 @@ torch==2.6.0+cu124
 torchvision==0.21.0+cu124
 numpy==2.2.6
 opencv-python-headless==4.11.0.86
-# Added at the step that needs them, after checking versions/licences:
-#   V3 vandalism   : transformers (V-JEPA 2 / VideoMAE V2)
-#   S4 sharp object: rfdetr
+# V3 vandalism (V-JEPA 2, MIT) and S1 sharp-object pre-labelling (Grounding DINO, Apache-2.0)
+transformers==4.57.1
+# S5 sharp object runtime (Ultralytics YOLO, AGPL-3.0); installed with --no-deps so torch/opencv
+# stay as pinned above, then its runtime dependencies:
+ultralytics==8.4.183
+ultralytics-thop==2.2.5
+matplotlib==3.11.2
+PyYAML==6.0.3
+scipy==1.18.1
+pillow==13.0.0
+requests==2.34.2
+psutil==7.2.2
+polars==2.1.0

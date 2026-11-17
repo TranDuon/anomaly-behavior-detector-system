@@ -57,15 +57,21 @@ def _boxes(values):
 
 
 def snapshot(result):
-    """Core-only view of one prediction; extension keys are dropped."""
-    regions = result.get("action_regions") or {}
+    """Core-only view of one prediction; extension keys are dropped.
+
+    With the extension backend the raw core decision (before strike arbitration)
+    is in core_*; that is what must match the golden traces.
+    """
+    regions = result.get("core_action_regions") or result.get("action_regions") or {}
+    states = result.get("core_action_states", result.get("action_states")) or {}
+    active = result.get("core_active_behaviors", result.get("active_behaviors", []))
     return {
         "timestamp": _round(result.get("prediction_timestamp"), 6),
-        "state": result.get("state"),
+        "state": result.get("core_state", result.get("state")),
         "event": result.get("event"),
         "people": result.get("people"),
-        "active_behaviors": sorted(b for b in result.get("active_behaviors", []) if b in CORE_LABELS),
-        "action_states": {k: v for k, v in sorted((result.get("action_states") or {}).items()) if k in CORE_LABELS},
+        "active_behaviors": sorted(b for b in active if b in CORE_LABELS),
+        "action_states": {k: v for k, v in sorted(states.items()) if k in CORE_LABELS},
         "action_scores": {k: _round(v) for k, v in sorted((result.get("action_scores") or {}).items()) if k in CORE_LABELS},
         "action_regions": {k: _boxes(regions.get(k)) for k in CORE_LABELS if regions.get(k)},
         "person_boxes": _boxes(result.get("person_boxes")),

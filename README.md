@@ -28,6 +28,9 @@ MMAction2 cần môi trường GPU riêng: xem [hướng dẫn cài và chạy](
 .venv\Scripts\python.exe main.py run --source video.mp4 --allow-pilot --backend mmaction_transition_redid
 ```
 
+**Sáu hành vi** (thêm Phá hoại tài sản và Cầm vật sắc nhọn, backend `mmaction_separate_actions_ext`): xem
+[hướng dẫn cài và chạy](docs/SIX_BEHAVIOURS_SETUP.md).
+
 ## Cài interaction v1 từ Drive
 
 Tải gói ZIP trong [run v1](https://drive.google.com/drive/folders/1hk5eNnqToJezDlI2otsPOEFIWIBPzH0R), dừng phiên nhận diện rồi kéo ZIP vào `mmaction2_demo/install_branch.cmd`. Installer chỉ nhận head v1, kiểm tra SHA-256, nguồn backbone, preprocessing, báo cáo hoàn tất và cấu trúc state dict trước khi thay file; lưu bản cũ trong `mmaction2_demo/results/branch_backup_*`.

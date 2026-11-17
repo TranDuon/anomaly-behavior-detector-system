@@ -1,0 +1,302 @@
+{
+ "run_tag": "vjepa2_probe_02_ft",
+ "seed": 3407,
+ "args": {
+  "stage": "evaluate",
+  "data": "/content/vandalism_work/data",
+  "cache": "None",
+  "frozen": "/content/drive/MyDrive/SENTINEL/artifacts/vandalism/vjepa2_probe_02/frozen",
+  "tail_cache": "None",
+  "eval_cache": "/content/vandalism_work/eval_cache_ft",
+  "output": "/content/drive/MyDrive/SENTINEL/artifacts/vandalism/vjepa2_probe_02/finetune",
+  "run_tag": "vjepa2_probe_02_ft",
+  "tail_blocks": "4",
+  "windows_per_bag": "0",
+  "max_windows": "12",
+  "max_windows_long": "120",
+  "batch": "32",
+  "batch_bags": "8",
+  "workers": "4",
+  "epochs": "8",
+  "patience": "3",
+  "max_steps": "0",
+  "lr_tail": "2e-05",
+  "lr_probe": "0.0001",
+  "layer_decay": "0.75",
+  "weight_decay": "0.05",
+  "checkpointing": "True",
+  "top_k": "3",
+  "min_precision": "0.9",
+  "max_focus_false_alarm": "0.1",
+  "seed": "3407",
+  "hf_model": "facebook/vjepa2-vitl-fpc64-256",
+  "hf_revision": "b3c1679b7c34d3255ef3547f27c7b226aefab26f"
+ },
+ "manifest_sha256": "6e02904aade3f4c2785b54e9b1dfbdcb3d12a66b6dc70afd0ec57e7145632562",
+ "items": 11816,
+ "prepare_summary": {
+  "manifest": "/content/vandalism_work/data/manifest.jsonl",
+  "manifest_sha256": "6e02904aade3f4c2785b54e9b1dfbdcb3d12a66b6dc70afd0ec57e7145632562",
+  "items": 11816,
+  "seconds": 7501.0,
+  "args": {
+   "root": "/content/vandalism_work/data",
+   "pos_per_class": "None",
+   "neg_per_class": "150",
+   "neg_test_per_class": "30",
+   "focus_per_class": "400",
+   "focus_weight": "2.0",
+   "ashen_weight": "0.5",
+   "ashen_normal_train": "60",
+   "ashen_normal_test": "60",
+   "ashen_fighting": "False",
+   "ashen_vandal_limit": "None",
+   "charades_throw_limit": "None",
+   "charades_other_train": "1500",
+   "charades_other_test": "200",
+   "dev_fraction": "0.15",
+   "seed": "3407",
+   "skip": "[]"
+  },
+  "counts": {
+   "dev/ashen/neg": 5,
+   "dev/ashen/pos": 13,
+   "dev/charades/neg": 393,
+   "dev/kinetics700_2020/neg": 916,
+   "dev/kinetics700_2020/pos": 198,
+   "test/ashen/neg": 60,
+   "test/ashen/pos": 18,
+   "test/charades/neg": 521,
+   "test/kinetics700_2020/neg": 750,
+   "test/kinetics700_2020/pos": 95,
+   "train/ashen/neg": 55,
+   "train/ashen/pos": 69,
+   "train/charades/neg": 2056,
+   "train/kinetics700_2020/neg": 5584,
+   "train/kinetics700_2020/pos": 1083
+  },
+  "kinetics_archives": [
+   [
+    "k700_train_049.tar.gz",
+    "940ce82ff90dfb3d96d42db87ced69eefc591b72e2d1c9c8d0418c716164d957"
+   ],
+   [
+    "k700_train_056.tar.gz",
+    "a5010412af4b732c99d9761f1202ab94dc78299cd3093ed17c14872589481eb9"
+   ],
+   [
+    "k700_train_057.tar.gz",
+    "0050b4de2a3a5dea2356112fa14d89d3468dd078793c696f03c21b403cd1621a"
+   ],
+   [
+    "k700_train_101.tar.gz",
+    "ec987085c9ea7cc5bf93a4169d985d1d5a1a4d461d8c6a14107a81283f39593b"
+   ],
+   [
+    "k700_train_102.tar.gz",
+    "0527fa63d0c21ebf2c73bb2635174f19d07ca61afd4d8e23ac30f8b0b0a2ddee"
+   ],
+   [
+    "k700_train_115.tar.gz",
+    "8e3c8f652f6ffc8c580d7bed871c7f182751b2156ce6f99337b01792f428fdd3"
+   ],
+   [
+    "k700_train_156.tar.gz",
+    "9b78ed8b390267af0128d1d6ca2a256192aa3e6effd14ee46115c200d92b9927"
+   ],
+   [
+    "k700_train_214.tar.gz",
+    "2f2a2afdbd8b5c046b0dffa9db46a0cc9bd53e4717e3d7166f77aff18db7b530"
+   ],
+   [
+    "k700_train_244.tar.gz",
+    "2139c88423df7d7ec3b426e516934b9c1eb57b35cb843159eef1372421ca6984"
+   ],
+   [
+    "k700_train_246.tar.gz",
+    "5815b2410f421673829e19aa62dbe74035b1e3cdf376f345d7cda10404382892"
+   ],
+   [
+    "k700_train_280.tar.gz",
+    "1b3551cada18228da3bb1937de135b8dfd14dba9c5c4e466f0dfb132fe42d80c"
+   ],
+   [
+    "k700_train_334.tar.gz",
+    "1565f7546178b9b6253827b1a33e8f93331201449cc8179c90ea491272654723"
+   ],
+   [
+    "k700_train_340.tar.gz",
+    "71899062566e39c8b5bc21dc89fbaf4a0bde3cc687ec4108054a84ecdf4e95be"
+   ],
+   [
+    "k700_train_347.tar.gz",
+    "eb269eec101085ad1a23f0b4d35d3647a8133bfe2c1415bbfe6d84bc9e0129fe"
+   ],
+   [
+    "k700_train_459.tar.gz",
+    "4a1f53deb359096f6390113f5a7cecc66df5b63a009824f30de77a649abafcc5"
+   ],
+   [
+    "k700_train_460.tar.gz",
+    "a1b1e1b4ae0861d422e3f728ba325144815e5dd95e5dbcee66e1adfc35a0c801"
+   ],
+   [
+    "k700_train_505.tar.gz",
+    "4e5bd4ec3f145b638ddeef1caa566548d706b0f6c1e4a6cee6192ede464bf6e8"
+   ],
+   [
+    "k700_train_536.tar.gz",
+    "e2116ab677e58331c6f5a2e3e6e042d0cad6de8d561f4c558053297f943bce9b"
+   ],
+   [
+    "k700_train_553.tar.gz",
+    "44e62ed950590c5c22de3cd31cfedaa93d3e6d828db2ee8fd1b204f2fcec6926"
+   ],
+   [
+    "k700_train_557.tar.gz",
+    "d67e83ab3f2929914fbb94883a9566449c30e8599fb74fa1f227d6aa6006c46f"
+   ],
+   [
+    "k700_train_593.tar.gz",
+    "7bead891de0af1afbb372b7c715e4dc504d38eaf00b37220687084056112c04e"
+   ],
+   [
+    "k700_train_601.tar.gz",
+    "ebac0a75213079d7c2b5c6e01d8da84aa47ce3f9b5206b3154b0973c8fa92023"
+   ],
+   [
+    "k700_train_620.tar.gz",
+    "b2a3df80fb5e6c34d1fb13ff93bea802d43a3132df51fc3881a71e63a6dd1fba"
+   ],
+   [
+    "k700_train_621.tar.gz",
+    "9d108d8d678f3e59e32cf30beb5e7ccd11f47765943842b1b223a1f7e2dae0b5"
+   ],
+   [
+    "k700_train_646.tar.gz",
+    "bb4da86e9d86f07566b9199fd1a299e4b44a054fc40214f1150fd9c2ac3bbab2"
+   ],
+   [
+    "k700_train_663.tar.gz",
+    "b3cf1c44376f99d9360a233c1842fdbe352c0bd199f694109b0968997d4e7af1"
+   ],
+   [
+    "k700_train_695.tar.gz",
+    "8731dad1c45d998db2912f1ae233c60c8c9a8afbc5cbae25a9662ec3fa8f4f0d"
+   ],
+   [
+    "k700_val_049.tar.gz",
+    "9bfbb55e6a2934c0d82851c7a826b8dfc2355e6c17b8f8188d8a22dbf8da1a62"
+   ],
+   [
+    "k700_val_056.tar.gz",
+    "ed42d9c4d8a914f694e40ff6232e882881045d3c67d56a88f54e35e501471d87"
+   ],
+   [
+    "k700_val_057.tar.gz",
+    "ce2538794849d40593cc4ff07ef0b019cce36ac89108d04b8abb931543a03daf"
+   ],
+   [
+    "k700_val_101.tar.gz",
+    "413138642015c949c8574e939c39211c8a4dcbc619a0fe0b8155c62924b49bb1"
+   ],
+   [
+    "k700_val_102.tar.gz",
+    "106e1d3aadfba6adcb7a3a104b9c9d1f0b5b855a306bd5469c40178cbcb06d18"
+   ],
+   [
+    "k700_val_115.tar.gz",
+    "d534e3805e49710a779ad19b8e41c579bf72f448df5cf7cf24903dbda0a00c54"
+   ],
+   [
+    "k700_val_156.tar.gz",
+    "58f4abe089dad152f8170a3f41ec61340a807547569353582126fe3ec5446052"
+   ],
+   [
+    "k700_val_214.tar.gz",
+    "a0d585652fa747636b73f53c7145f839376962df7c1bdd86a0379a80e9491fed"
+   ],
+   [
+    "k700_val_244.tar.gz",
+    "5b4c5337a8011ae33db1a545a576e1fee6cf8ff95894cdacc0f2bb9a7b8c2a49"
+   ],
+   [
+    "k700_val_246.tar.gz",
+    "a38ba4231226610fc3153845789de3b968ab71ec02e0acb8eaa652cfc57cd242"
+   ],
+   [
+    "k700_val_280.tar.gz",
+    "c3dcca94f03a938fc88d1910f607f4592b290b12325814ec9917a8d962ab633b"
+   ],
+   [
+    "k700_val_334.tar.gz",
+    "6f32ce1ab563502e190f6aef5aeaf155f25f0ca6f9a42ed5a7e05254a3724c2a"
+   ],
+   [
+    "k700_val_340.tar.gz",
+    "87ac41fc0a70c3e091e2c37dd4b567494808a9137314ae6748ab6a85dc18310f"
+   ],
+   [
+    "k700_val_347.tar.gz",
+    "ffa8034cda0b736bcb49fe8b74d505c36902f67c48ed3ca161a800c8c24b3bd2"
+   ],
+   [
+    "k700_val_459.tar.gz",
+    "acdcd6e30476027fa88a4d0a3a9af31a1a0e369457bff7225cfc0512c0aebbf9"
+   ],
+   [
+    "k700_val_460.tar.gz",
+    "837d023cb7f4b6b0806f23224e3b5c41518be78cf57c2e3e466b15a80f8a76f9"
+   ],
+   [
+    "k700_val_505.tar.gz",
+    "61a8d1d2f47fbc80048608551f30aac83d8051a2823563c64731f5c3ad2c73db"
+   ],
+   [
+    "k700_val_536.tar.gz",
+    "2b5cfd62267c0095d85282bc5d7d90d41be01323c2b1a1dc4983bc44611dfd2a"
+   ],
+   [
+    "k700_val_553.tar.gz",
+    "828e59757fd48080a1f476a750f736afa378d050b6c34df239f11132a6bce320"
+   ],
+   [
+    "k700_val_557.tar.gz",
+    "3b00453729ca9e4f946a9602a214154f1df01a99a80b97e83ee33a4d648667de"
+   ],
+   [
+    "k700_val_593.tar.gz",
+    "e7447c3c77adc049055d765a2b992ac8f438158f6d29587e38d9f3b2aba29d0c"
+   ],
+   [
+    "k700_val_601.tar.gz",
+    "6725da71bb9e18b85e8ecbe55d6ec97199979d538f00c8e847fd7c27d566c050"
+   ],
+   [
+    "k700_val_620.tar.gz",
+    "240ee90ca944289726bf3362a9497113e720aae0a84fae62bc6d92f0453a04c0"
+   ],
+   [
+    "k700_val_621.tar.gz",
+    "26f972621d8604431525823d1ca2a56687edcebafc3f9758ff73b9ac75c050e2"
+   ],
+   [
+    "k700_val_646.tar.gz",
+    "4de27456f15dc368f9c19d272590ac97adb33fb3490f3a2cfdc6aa1301646f2c"
+   ],
+   [
+    "k700_val_663.tar.gz",
+    "25dc08c5d25fe30b92560b5aeec260166a0e7d1ad92bcf5bb28d52627d0c5cb1"
+   ],
+   [
+    "k700_val_695.tar.gz",
+    "881e61afe3e9e452197701395f5848ebd0c6d3747ffc8bd4f64e28ef011d8ee6"
+   ]
+  ]
+ },
+ "torch": "2.14.1+cu130",
+ "transformers": "4.57.1",
+ "python": "3.13.16",
+ "cuda_device": "NVIDIA L4",
+ "sources": "datasets/vandalism/sources.json (Kinetics-700-2020, ASHEN, Charades)"
+}

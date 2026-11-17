@@ -1,0 +1,13 @@
+{
+ "installed_at": "2026-11-17T13:39:04",
+ "source_zip": "vandalism_vjepa2_probe_02_ft.zip",
+ "source_zip_sha256": "7776ae851405d5768dc696fc3060a7550b0ea57ac1ffeb4a5f583449a90d399d",
+ "run_tag": "vjepa2_probe_02_ft",
+ "files": {
+  "vandalism.pt": "371b6588bd70c530114970755234090bc76c321c775d6b0be0cd11c772f27518",
+  "vandalism.json": "c62ad24c81bef4c6174bc030f0c0b972e828bdae7ddd23f9b88fcbde7f972c23",
+  "report.json": "bc73d066f4b4ab0892625a0091df9a9d8f800beee7334ef837422f0e8fa24e02",
+  "protocol.json": "3704ea8b4467b52f957acd3d4ee01ff1e462aef24ed098b003c98471d00fb912",
+  "vandalism_tail.pt": "a1592cc18f32bd8b7e3240e0db4a577defadad81d6d26ecdb3b7961c75bdd19a"
+ }
+}

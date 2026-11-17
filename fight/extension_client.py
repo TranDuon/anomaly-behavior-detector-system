@@ -147,7 +147,7 @@ class ExtensionClient:
             pass
 
     # ---------------------------------------------------------------- per step
-    def submit(self, frames, timestamp, people=None):
+    def submit(self, frames, timestamp, people=None, only=None):
         """Send one step if the worker is idle. Never blocks, never raises."""
         if not self.enabled:
             return False
@@ -163,6 +163,8 @@ class ExtensionClient:
         try:
             request = self.buffer.write(list(frames))
             request.update(op="infer", timestamp=float(timestamp), people=people or {})
+            if only is not None:
+                request["only"] = list(only)
             self.process.stdin.write(json.dumps(request) + "\n")
             self.process.stdin.flush()
             self.submitted += 1

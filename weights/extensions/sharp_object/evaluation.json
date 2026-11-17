@@ -1,0 +1,238 @@
+{
+ "arch": "resnet50",
+ "weights": "/content/sharp_hand_work/out/train/best.pt",
+ "crop_all_val": {
+  "crops": 3716,
+  "positives": 390,
+  "ap": 0.9420928701423826,
+  "auc": 0.9856561358064665
+ },
+ "crop_vn_val": {
+  "crops": 3,
+  "positives": 3,
+  "ap": 1.0,
+  "auc": null
+ },
+ "crop_all_test": {
+  "crops": 2996,
+  "positives": 260,
+  "ap": 0.9402754040951651,
+  "auc": 0.9867015294646874
+ },
+ "crop_vn_test": {
+  "crops": 1,
+  "positives": 1,
+  "ap": 1.0,
+  "auc": null
+ },
+ "alert_threshold": 0.8538,
+ "threshold_rule": "false alarm <= 0.03 on 680 val negatives (images without any weapon; image alert = max hand-crop score)",
+ "alert_val": {
+  "positives": 196,
+  "negatives": 680,
+  "recall": 0.8928571428571429,
+  "false_alarm": 0.029411764705882353
+ },
+ "alert_test": {
+  "positives": 132,
+  "negatives": 578,
+  "recall": 0.9166666666666666,
+  "false_alarm": 0.01730103806228374
+ },
+ "alert_vn_val": {
+  "positives": 2,
+  "negatives": 0,
+  "recall": 0.5,
+  "false_alarm": null
+ },
+ "alert_vn_test": {
+  "positives": 1,
+  "negatives": 0,
+  "recall": 0.0,
+  "false_alarm": null
+ },
+ "alert_hard_negative_val": {
+  "positives": 0,
+  "negatives": 607,
+  "recall": null,
+  "false_alarm": 0.02800658978583196
+ },
+ "alert_hard_negative_test": {
+  "positives": 0,
+  "negatives": 525,
+  "recall": null,
+  "false_alarm": 0.015238095238095238
+ },
+ "crop_false_alarm_test": 0.011330409356725146,
+ "alert_curve": [
+  {
+   "threshold": 0.2,
+   "test": {
+    "positives": 132,
+    "negatives": 578,
+    "recall": 0.9393939393939394,
+    "false_alarm": 0.058823529411764705
+   },
+   "vn_test": {
+    "positives": 1,
+    "negatives": 0,
+    "recall": 0.0,
+    "false_alarm": null
+   }
+  },
+  {
+   "threshold": 0.3,
+   "test": {
+    "positives": 132,
+    "negatives": 578,
+    "recall": 0.9393939393939394,
+    "false_alarm": 0.050173010380622836
+   },
+   "vn_test": {
+    "positives": 1,
+    "negatives": 0,
+    "recall": 0.0,
+    "false_alarm": null
+   }
+  },
+  {
+   "threshold": 0.4,
+   "test": {
+    "positives": 132,
+    "negatives": 578,
+    "recall": 0.9393939393939394,
+    "false_alarm": 0.04498269896193772
+   },
+   "vn_test": {
+    "positives": 1,
+    "negatives": 0,
+    "recall": 0.0,
+    "false_alarm": null
+   }
+  },
+  {
+   "threshold": 0.5,
+   "test": {
+    "positives": 132,
+    "negatives": 578,
+    "recall": 0.9393939393939394,
+    "false_alarm": 0.039792387543252594
+   },
+   "vn_test": {
+    "positives": 1,
+    "negatives": 0,
+    "recall": 0.0,
+    "false_alarm": null
+   }
+  },
+  {
+   "threshold": 0.6,
+   "test": {
+    "positives": 132,
+    "negatives": 578,
+    "recall": 0.9318181818181818,
+    "false_alarm": 0.02768166089965398
+   },
+   "vn_test": {
+    "positives": 1,
+    "negatives": 0,
+    "recall": 0.0,
+    "false_alarm": null
+   }
+  },
+  {
+   "threshold": 0.7,
+   "test": {
+    "positives": 132,
+    "negatives": 578,
+    "recall": 0.9242424242424242,
+    "false_alarm": 0.02249134948096886
+   },
+   "vn_test": {
+    "positives": 1,
+    "negatives": 0,
+    "recall": 0.0,
+    "false_alarm": null
+   }
+  },
+  {
+   "threshold": 0.8,
+   "test": {
+    "positives": 132,
+    "negatives": 578,
+    "recall": 0.9166666666666666,
+    "false_alarm": 0.01730103806228374
+   },
+   "vn_test": {
+    "positives": 1,
+    "negatives": 0,
+    "recall": 0.0,
+    "false_alarm": null
+   }
+  },
+  {
+   "threshold": 0.9,
+   "test": {
+    "positives": 132,
+    "negatives": 578,
+    "recall": 0.9090909090909091,
+    "false_alarm": 0.012110726643598616
+   },
+   "vn_test": {
+    "positives": 1,
+    "negatives": 0,
+    "recall": 0.0,
+    "false_alarm": null
+   }
+  }
+ ],
+ "crops": {
+  "pose": "yolo11s-pose.pt",
+  "pose_imgsz": 960,
+  "crop": {
+   "crop_scale": 0.45,
+   "forward": 0.5,
+   "min_side": 48,
+   "keypoint_conf": 0.3
+  },
+  "pos_overlap": 0.25,
+  "save_size": 256,
+  "splits": {
+   "train": {
+    "images": 12198,
+    "images_with_people": 10091,
+    "weapon_images": 4071,
+    "weapon_images_with_positive_hand": 1889,
+    "hand_neg": 34246,
+    "hand_pos": 3800,
+    "ambiguous": 602,
+    "pseudo_pos": 3830,
+    "pseudo_neg": 605,
+    "hand_coverage_of_weapon_images": 0.464,
+    "vn_hand_pos": 48
+   },
+   "val": {
+    "images": 1149,
+    "images_with_people": 952,
+    "weapon_images": 394,
+    "weapon_images_with_positive_hand": 196,
+    "hand_neg": 3326,
+    "hand_pos": 390,
+    "ambiguous": 64,
+    "hand_coverage_of_weapon_images": 0.497,
+    "vn_hand_pos": 3
+   },
+   "test": {
+    "images": 969,
+    "images_with_people": 794,
+    "weapon_images": 309,
+    "weapon_images_with_positive_hand": 132,
+    "hand_pos": 260,
+    "ambiguous": 47,
+    "hand_neg": 2736,
+    "hand_coverage_of_weapon_images": 0.427,
+    "vn_hand_pos": 1
+   }
+  }
+ }
+}

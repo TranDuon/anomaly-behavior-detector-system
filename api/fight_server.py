@@ -90,8 +90,44 @@ def open_capture(source):
     return cv2.VideoCapture(source)
 
 
+def _box_iou(a, b):
+    inter = max(0.0, min(a[2], b[2]) - max(a[0], b[0])) * max(0.0, min(a[3], b[3]) - max(a[1], b[1]))
+    union = (a[2] - a[0]) * (a[3] - a[1]) + (b[2] - b[0]) * (b[3] - b[1]) - inter
+    return inter / union if union > 0 else 0.0
+
+
 def annotate(frame, result):
     image = frame.copy()
+    detected = list(result.get("active_behaviors", []))
+    if "presented_behaviors" in result:  # extension backend: show the presented labels
+        result = {**result, "active_behaviors": result["presented_behaviors"],
+                  "action_regions": result.get("presented_regions", result.get("action_regions", {}))}
+    # Display only: extension behaviours (e.g. vandalism) are drawn like a fight, red when
+    # confirmed and yellow while verifying, although the overall state comes from the core.
+    # Vandalism is a whole-scene judgement, so everybody in view is outlined; when a strike was
+    # re-labelled as vandalism the striker region from the core is already in "regions".
+    names = [n for n in behavior_registry.recorded_names() if n not in behavior_registry.CORE_NAMES]
+    extension_active = [n for n in result.get("active_behaviors", []) if n not in behavior_registry.CORE_NAMES]
+    relabelled = "strike" in detected and "strike" not in result.get("active_behaviors", [])
+    hidden = relabelled and "object_hit" in {(result.get("strike_context") or {}).get(key)
+                                             for key in ("episode_verdict", "presented_as")}
+    if hidden:
+        # Strike hidden as a legitimate object hit: drop the striker highlight; if nothing else
+        # is presented the overlay is not red/yellow although the core state still says fighting.
+        relabelled = False
+        others = [n for n in result.get("active_behaviors", []) if n in behavior_registry.CORE_NAMES]
+        regions = [box for name in others for box in (result.get("action_regions") or {}).get(name, [])]
+        result = {**result, "regions": regions,
+                  **({} if others else {"state": "normal"})}
+    verifying = [n for n in names if (result.get("action_states") or {}).get(n) == "verifying"]
+    if extension_active or (verifying and result["state"] not in {"fighting", "verifying"}):
+        scene = [] if relabelled else list(result.get("person_boxes", []))
+        if set(extension_active or verifying) <= {"sharp_object"}:
+            # Person holding a sharp object: highlight only the holders, not everybody in view.
+            scene = list((result.get("action_regions") or {}).get("sharp_object", []))
+        result = {**result, "state": "fighting" if extension_active else "verifying",
+                  "regions": list(result.get("regions", [])) + scene,
+                  **({} if extension_active else {"suspected": verifying})}
     color = (
         (50, 65, 235)
         if result["state"] == "fighting"
@@ -105,7 +141,7 @@ def annotate(frame, result):
         for box in result.get("person_boxes", []):
             left, top, right, bottom = map(int, box)
             highlighted = result["state"] in {"fighting", "verifying"} and any(
-                len(region) == 4 and all(abs(first - second) <= 2 for first, second in zip(box, region))
+                len(region) == 4 and _box_iou(box, region) >= 0.5  # regions may come from an earlier step
                 for region in result.get("regions", [])
             )
             person_color = color if highlighted else (40, 200, 60)
@@ -131,6 +167,16 @@ def annotate(frame, result):
                     (40, 220, 180),
                     1,
                 )
+    sharp = ((result.get("extensions") or {}).get("behaviors") or {}).get("sharp_object") or {}
+    if sharp.get("state") in {"fighting", "verifying"} and not result.get("score_stale", False):
+        for weapon in sharp.get("weapons", []):
+            if weapon.get("holder") is None:
+                continue
+            left, top, right, bottom = map(int, weapon["box"])
+            weapon_color = (50, 65, 235) if sharp["state"] == "fighting" else (40, 195, 215)
+            cv2.rectangle(image, (left, top), (right, bottom), weapon_color, 2)
+            cv2.putText(image, f"{weapon.get('class', 'sharp')} {weapon.get('conf', 0):.2f}",
+                        (left, max(48, top - 6)), cv2.FONT_HERSHEY_SIMPLEX, 0.45, weapon_color, 1)
     cv2.rectangle(image, (0, 0), (image.shape[1], 36), (25, 30, 28), -1)
     if result.get('behavior_scope') == 'three_actions' and result['state'] in {'normal', 'fighting'}:
         label = ' + '.join(behavior_registry.display_label(name)
@@ -142,6 +188,8 @@ def annotate(frame, result):
         label = "ACTION DETECTED" if result["state"] == "fighting" else "NO ACTION CONFIRMED"
     else:
         label = LABELS.get(result["state"], result["state"])
+    if result.get("suspected"):  # B: first high extension score -> yellow + named suspicion
+        label = "SUSPECTED " + " + ".join(behavior_registry.display_label(n) for n in result["suspected"])
     visible = result.get("visible_people")
     if visible is not None and not result.get("score_stale", False):
         label += f" | PERSONS: {visible}"
@@ -447,6 +495,15 @@ class FightProcessor:
                 {**person, "box": [coordinate * scale for coordinate in person["box"]]}
                 for person in result.get("actions", [])
             ]
+            display["action_regions"] = {
+                name: [[coordinate * scale for coordinate in box] for box in boxes]
+                for name, boxes in (result.get("action_regions") or {}).items()
+            }
+            behaviors = (result.get("extensions") or {}).get("behaviors") or {}
+            if (behaviors.get("sharp_object") or {}).get("weapons"):
+                sharp = dict(behaviors["sharp_object"])
+                sharp["weapons"] = [{**w, "box": [c * scale for c in w["box"]]} for w in sharp["weapons"]]
+                display["extensions"] = {**result["extensions"], "behaviors": {**behaviors, "sharp_object": sharp}}
         image = annotate(preview, display)
         ok, encoded = cv2.imencode(".jpg", image, [cv2.IMWRITE_JPEG_QUALITY, settings.jpeg_quality])
         if ok:
@@ -489,17 +546,26 @@ class FightProcessor:
     def record(self, frame, result):
         self.before.append((self.timestamp, frame.copy()))
         if getattr(self.runtime, 'backend_name', '') in SEPARATE_BACKENDS:
+            presented = result.get('presented_behaviors', result.get('active_behaviors', []))
+            regions_by_label = result.get('presented_regions', result.get('action_regions', {}))
             for label in getattr(self.runtime, 'behavior_names', behavior_registry.CORE_NAMES):
                 self.active_event, self.event_frames = self.label_recordings.pop(label, (None, []))
-                active = label in result.get('active_behaviors', [])
+                active = label in presented
                 event = 'started' if active and self.active_event is None else 'ended' if not active and self.active_event is not None else None
                 score = result.get('action_scores', {}).get(label)
                 if score is None:
                     score = 0.
                 selected = {**result, 'event': event, 'score': score, 'active_behaviors': [label] if active else [],
-                            'regions': result.get('action_regions', {}).get(label, []),
+                            'regions': regions_by_label.get(label, []),
                             'state': 'fighting' if active else 'normal'}
                 self.record_single(frame, selected)
+                onset = (((result.get('extensions') or {}).get('behaviors') or {}).get(label) or {}).get('onset_estimate')
+                if event == 'started' and self.active_event is not None and onset is not None:
+                    # D: log when the action started (window start of the first high score), keep
+                    # the detection time separately. The live alarm itself is unchanged.
+                    self.active_event['detected_at'] = self.active_event['started_at']
+                    self.active_event['started_at'] = min(onset, self.active_event['started_at'])
+                    self.active_event['onset_estimated'] = True
                 if self.active_event is not None:
                     self.label_recordings[label] = (self.active_event, self.event_frames)
             self.active_event, self.event_frames = None, []
@@ -866,6 +932,9 @@ class FightProcessor:
                                 "fall_confirmation": result.get('fall_confirmation'),
                                 "posture_evidence": result.get('posture', {}).get('evidence', []),
                                 "active_behaviors": result.get("active_behaviors", []),
+                                **({"extensions": result["extensions"]} if "extensions" in result else {}),
+                                **({"strike_context": result["strike_context"]} if "strike_context" in result else {}),
+                                **({"presented_behaviors": result["presented_behaviors"]} if "presented_behaviors" in result else {}),
                                 "event": result.get("event"), "people": result.get("people"),
                                 "regions": result.get("regions", []),
                                 "person_boxes": result.get("person_boxes", []),

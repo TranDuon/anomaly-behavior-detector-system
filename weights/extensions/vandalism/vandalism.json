@@ -1,0 +1,34 @@
+{
+ "name": "vandalism",
+ "display_label": "VANDALISM",
+ "kind": "extension",
+ "backbone": "facebook/vjepa2-vitl-fpc64-256",
+ "backbone_revision": "b3c1679b7c34d3255ef3547f27c7b226aefab26f",
+ "frames": 8,
+ "fps": 3.75,
+ "size": 256,
+ "resize": "full_frame_no_crop",
+ "pooled_grid": [
+  4,
+  4,
+  4
+ ],
+ "probe": "AttentiveProbe(width=1024, heads=16, queries=4, hidden=512)",
+ "bag_pooling": "top3_mean",
+ "threshold": 0.6667,
+ "threshold_rule": "min_precision",
+ "min_precision": 0.9,
+ "confirm_seconds": 0.8,
+ "release_seconds": 1.0,
+ "approved_for_demo": false,
+ "run_tag": "vjepa2_probe_02_ft",
+ "backbone_tail_blocks": 4,
+ "backbone_tail_file": "vandalism_tail.pt",
+ "finetune": {
+  "best_epoch": 8,
+  "dev_proxy_ap": 0.9184495643445675,
+  "lr_tail": 2e-05,
+  "lr_probe": 0.0001,
+  "layer_decay": 0.75
+ }
+}

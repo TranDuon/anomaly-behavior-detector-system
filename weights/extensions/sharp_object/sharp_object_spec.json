@@ -1,0 +1,25 @@
+{
+ "name": "sharp_object",
+ "method": "hand_crop",
+ "run_tag": "hand_04",
+ "alert": "sharp_object",
+ "classifier": "hand_classifier.pt",
+ "arch": "resnet50",
+ "input_size": 224,
+ "pose_weights": "yolo11s-pose.pt",
+ "pose_imgsz": 640,
+ "pose_conf": 0.35,
+ "max_people": 8,
+ "crop": {
+  "crop_scale": 0.45,
+  "forward": 0.5,
+  "min_side": 48,
+  "keypoint_conf": 0.3
+ },
+ "confirm_seconds": 0.5,
+ "release_seconds": 1.0,
+ "alert_threshold": 0.8538,
+ "threshold_rule": "false alarm <= 0.03 on 680 val negatives (images without any weapon; image alert = max hand-crop score)",
+ "alert_logic": "pose -> square crop around each visible hand -> ResNet; step score = max over hands, confirmed over time (extensions/sharp_object/extension.py)",
+ "created": "2026-11-17 18:12:52"
+}
