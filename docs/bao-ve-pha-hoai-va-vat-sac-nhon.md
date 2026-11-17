@@ -1,268 +1,228 @@
 # Hai nhánh mở rộng: Phá hoại tài sản & Người cầm vật sắc nhọn
 
-Tài liệu trình bày: các nhánh này **dùng gì**, **chạy thế nào**, **xử lý các vấn đề ra sao** và **số liệu** chứng minh.
-Phạm vi: demo trong một phòng, camera laptop / điện thoại (không nhắm tới CCTV ngoài trời).
+Tài liệu trình bày theo **pipeline**: mỗi bước dùng **công cụ gì**, nhận **đầu vào** gì, cho ra **đầu ra** gì và **vì sao** chọn như vậy.
+Phạm vi: demo trong một phòng, camera laptop / điện thoại.
 
 ---
 
-## 1. Tổng quan kiến trúc
-
-Hệ thống gốc (FightWatch) nhận diện đánh / vật / ngã / chạy. Hai hành vi mới được thêm như **nhánh mở rộng (extension)**:
-chạy trong **một tiến trình riêng** (`extensions/worker.py`, môi trường Python riêng `extensions/env`), nhận khung hình
-qua bộ nhớ dùng chung, trả điểm về runtime. Nhánh mở rộng lỗi hay chậm **không làm hỏng** nhánh gốc.
+## 0. Bức tranh chung
 
 ```mermaid
 flowchart LR
-    CAM[Camera / video] --> CORE[Runtime gốc<br/>MMAction2 + pose<br/>đánh · vật · ngã · chạy<br/>mỗi 0.27 s]
-    CORE -- "9 khung gần nhất<br/>(shared memory)<br/>+ khung người" --> W[Extension worker<br/>tiến trình riêng]
-    subgraph W[Extension worker - tiến trình riêng, GPU]
-        V[Phá hoại tài sản<br/>V-JEPA 2 ViT-L<br/>mỗi ~0.8 s]
-        S[Cầm vật sắc nhọn<br/>pose → ô quanh tay → ResNet50<br/>mỗi 0.27 s]
+    CAM[Camera] --> CORE["Hệ thống gốc<br/>đánh · vật · ngã · chạy"]
+    CORE -- "9 khung gần nhất + khung người" --> WK
+    subgraph WK["Tiến trình mở rộng (riêng, GPU)"]
+        V["Nhánh A<br/>Phá hoại tài sản"]
+        S["Nhánh B<br/>Cầm vật sắc nhọn"]
     end
-    W -- "điểm + khung + chi tiết" --> GATE[EventGate<br/>xác nhận theo thời gian]
-    CORE --> GATE
-    GATE --> UI[Web: khung đỏ / vàng<br/>nhật ký sự kiện, báo cáo JSON]
+    WK -- "điểm 0–1 + khung" --> GATE["Cổng thời gian<br/>(EventGate)"]
+    GATE --> UI["Web: vàng = xác minh<br/>đỏ = cảnh báo"]
 ```
 
-| Thành phần | Vai trò |
-|---|---|
-| `fight/mmaction_runtime.py` | Gửi khung cho worker, đọc kết quả, cổng thời gian (EventGate), giữ / làm mượt khung hiển thị |
-| `fight/extension_client.py` | Giao tiếp với worker (không bao giờ chặn nhánh gốc; worker bận thì bỏ lượt) |
-| `extensions/worker.py` | Nạp các nhánh đã cài, chạy `observe()` mỗi lượt |
-| `extensions/vandalism/` | Nhánh phá hoại (train, cài đặt, runtime) |
-| `extensions/sharp_object/` | Nhánh vật sắc nhọn (dữ liệu, train, cài đặt, runtime) |
-| `colab/*.ipynb` | Notebook train trên Google Colab (mã nguồn ghim theo commit để tái lập) |
-| `weights/extensions/<tên>/` | Bản đã cài (model + spec + `install.json` có SHA-256 mọi file) |
-
-**Cách dùng:** web `http://localhost:8000` → chọn **"Bốn nhánh + mở rộng (phá hoại tài sản) · thử nghiệm"** → chọn camera hoặc video.
-Chế độ khác (ví dụ "Tách Đánh / Vật / Ngã / Chạy") **không** chạy hai nhánh này.
-
-### Cổng thời gian (EventGate) – dùng chung
-
-Mỗi nhánh cho một điểm 0–1 mỗi lượt. Cảnh báo không bật từ một khung đơn lẻ:
-
-```mermaid
-stateDiagram-v2
-    [*] --> normal
-    normal --> verifying: điểm ≥ ngưỡng
-    verifying --> normal: điểm tụt
-    verifying --> fighting: giữ ≥ confirm_seconds
-    fighting --> fighting: điểm ≥ ngưỡng tắt
-    fighting --> normal: điểm < ngưỡng tắt liên tục release_seconds
-```
-
-Trên web: **vàng** = đang xác minh, **đỏ** = cảnh báo.
+- Hai nhánh chạy trong **tiến trình riêng** (`extensions/worker.py`, môi trường `extensions/env`): nhánh mở rộng lỗi hay chậm
+  thì bỏ lượt, **không làm hỏng** hệ thống gốc.
+- Mỗi nhánh trả **một điểm 0–1** mỗi lượt. Cảnh báo không bật từ một khung đơn lẻ mà qua **cổng thời gian**:
+  điểm ≥ ngưỡng → *đang xác minh* (vàng) → giữ đủ `confirm_seconds` → *cảnh báo* (đỏ) → điểm dưới ngưỡng tắt đủ
+  `release_seconds` → tắt.
+- Cách dùng: web `http://localhost:8000` → chọn **"Bốn nhánh + mở rộng (phá hoại tài sản) · thử nghiệm"**.
 
 ---
 
-## 2. Nhánh Phá hoại tài sản (vandalism)
+## 1. Nhánh A — Phá hoại tài sản
 
-### 2.1 Model
-
-| Thành phần | Chi tiết |
-|---|---|
-| Backbone | **V-JEPA 2 ViT-L** (`facebook/vjepa2-vitl-fpc64-256`, ghim revision), model video tự giám sát của Meta |
-| Đầu vào | **8 khung** liên tiếp ở **3.75 khung/giây** (~2.1 s), cả khung hình resize 256×256, không cắt |
-| Đặc trưng | Token không-thời gian được gộp về lưới **4×4×4** |
-| Đầu phân loại | **Attentive probe** (width 1024, 16 head, 4 query, hidden 512) → xác suất "đang phá hoại" |
-| Học yếu (MIL) | Video dài chỉ có nhãn cả video → chia nhiều cửa sổ, điểm video = **trung bình 3 cửa sổ cao nhất** (top-3) |
-| Tinh chỉnh | probe_02: thêm bản âm khó, rồi **mở 4 block cuối** của backbone (lr 2e-5, layer decay 0.75, probe lr 1e-4) |
-| Ngưỡng | **0.667**, chọn sao cho **precision ≥ 0.9** trên tập dev |
-| Thời gian | xác nhận 0.8 s, nhả 1.0 s |
+### 1.1 Pipeline nhận diện
 
 ```mermaid
 flowchart LR
-    F[8 khung · 3.75 fps<br/>256×256] --> B[V-JEPA 2 ViT-L<br/>24 block, 4 block cuối tinh chỉnh]
-    B --> P[Gộp token 4×4×4]
-    P --> A[Attentive probe<br/>4 query × 16 head]
-    A --> SC[Xác suất phá hoại]
-    SC --> CTX{Ngữ cảnh}
-    CTX -->|người đứng yên| Z[0 - không bằng chứng]
-    CTX -->|cú đánh đơn lẻ| K[× 0.7]
-    CTX -->|đang đánh nhau| H[cần ≥ 0.9]
-    CTX -->|còn lại| G[EventGate]
-    K --> G
-    H --> G
+    A1["① Gom clip<br/>8 khung · 3.75 fps<br/>(~2.1 s)"] --> A2["② V-JEPA 2 ViT-L<br/>trích đặc trưng<br/>chuyển động"]
+    A2 --> A3["③ Gộp token<br/>lưới 4×4×4"]
+    A3 --> A4["④ Attentive probe<br/>→ xác suất<br/>phá hoại"]
+    A4 --> A5["⑤ Luật ngữ cảnh<br/>đứng yên · đánh nhau<br/>cú đánh đơn lẻ"]
+    A5 --> A6["⑥ Cổng thời gian<br/>xác nhận 0.8 s<br/>nhả nhanh"]
+    A6 --> A7["⑦ Hiển thị<br/>khoanh người<br/>trong cảnh"]
 ```
 
-### 2.2 Dữ liệu (không cần đăng ký, tải tự động)
+| Bước | Công cụ | Đầu vào → Đầu ra | Thông số | Vì sao |
+|---|---|---|---|---|
+| ① Gom clip | Bộ đệm khung của hệ thống gốc | luồng camera → 8 khung | 3.75 khung/giây, cả khung resize 256×256, không cắt | Phá hoại là **hành động theo thời gian** (đá, đập, xô đổ), một ảnh đơn không đủ |
+| ② Trích đặc trưng | **V-JEPA 2 ViT-L** (Meta, tự giám sát trên video, ghim revision) | 8 khung → token không-thời gian | fp16 trên GPU; **4 block cuối được tinh chỉnh** | Model video học sẵn cách vật thể chuyển động / va chạm → cần ít dữ liệu gán nhãn |
+| ③ Gộp token | Average pooling | token → lưới 4×4×4 | 64 token đại diện | Giảm chi phí cho bước phân loại |
+| ④ Phân loại | **Attentive probe** (width 1024, 16 head, 4 query, hidden 512) | 64 token → xác suất | ngưỡng **0.667** (chọn để precision ≥ 0.9 trên dev) | Query học được tự "nhìn" vào vùng có hành động |
+| ⑤ Luật ngữ cảnh | Thông tin từ hệ thống gốc | xác suất → bằng chứng | người đứng yên (chuyển động < 4.0) → 0; cú đánh đơn lẻ ×0.7; đang đánh nhau cần ≥ 0.9 | Tránh nhầm với đứng yên, đánh nhau |
+| ⑥ Cổng thời gian | EventGate | bằng chứng → trạng thái | xác nhận 0.8 s, nhả 1.0 s; trung bình 4 lượt dưới ngưỡng → nhả ngay | Chống báo thoáng qua, tắt nhanh khi hết hành vi |
+| ⑦ Hiển thị | Khung người của hệ thống gốc | → khung đỏ | khoanh mọi người trong cảnh | Model chấm **cả cảnh**, không biết ai phá |
 
-| Nguồn | Vai trò | Ghi chú |
-|---|---|---|
-| **Kinetics-700 (2020)** | Bản dương: *smashing*, *breaking glass*. Bản âm khó: đấm bao cát, đá bóng, đóng/mở cửa, quét nhà, lau nhà, khuân đồ, gấp quần áo, đấm người, tát, vật nhau… | Nhãn CC BY 4.0, video thuộc người đăng YouTube (nghiên cứu) |
-| **ASHEN** (`dead4556/ASHEN-Dataset`) | Phá hoại thật: đá, xô đổ đồ (lớp *Vandalism*) + video bình thường | CC BY-NC 4.0 |
-| **Charades** | Bản âm "trong nhà": ném / cầm đồ vật bình thường | Giấy phép phi thương mại |
-| Đã loại | graffiti / phun sơn (ngoài phạm vi), tantrum, búa tạ | quyết định 16/11/2026 |
+Tần suất: ~**0.8 s/lần** (model nặng, chạy cách lượt để không làm chậm hệ thống gốc).
 
-Tổng 11 816 mẫu sau khi chuẩn bị. Chia tập theo **nguồn** để cùng một video không lọt vào cả train và test.
+### 1.2 Pipeline huấn luyện
 
-### 2.3 Kết quả (bản `vjepa2_probe_02_ft`)
+```mermaid
+flowchart LR
+    D1["① Thu dữ liệu<br/>Kinetics-700 · ASHEN<br/>Charades"] --> D2["② Cắt cửa sổ<br/>8 khung/cửa sổ<br/>nhiều cửa sổ/video"]
+    D2 --> D3["③ Học yếu (MIL)<br/>điểm video =<br/>TB 3 cửa sổ cao nhất"]
+    D3 --> D4["④ Train probe<br/>backbone đóng băng"]
+    D4 --> D5["⑤ Tinh chỉnh<br/>+ bản âm khó<br/>+ 4 block cuối"]
+    D5 --> D6["⑥ Chọn ngưỡng<br/>precision ≥ 0.9"]
+```
 
-| Tập | AP | ROC-AUC | Ghi chú |
+| Bước | Nội dung |
+|---|---|
+| ① Dữ liệu | **Bản dương:** Kinetics-700 *smashing*, *breaking glass*; ASHEN lớp *Vandalism* (đá, xô đổ đồ thật). **Bản âm khó:** đấm bao cát, đá bóng, đóng/mở cửa, quét nhà, lau nhà, khuân đồ, gấp quần áo, đấm người, tát, vật nhau; Charades (cầm / ném đồ trong nhà). Tổng **11 816** mẫu; chia tập **theo nguồn** để một video không lọt cả train lẫn test. Loại: graffiti/phun sơn, tantrum, búa tạ |
+| ②–③ Học yếu | Video chỉ có nhãn cả video → chia nhiều cửa sổ; điểm video = **trung bình 3 cửa sổ cao nhất** (Multiple Instance Learning) |
+| ④ Probe | Backbone đóng băng, chỉ train probe (probe_01) |
+| ⑤ Tinh chỉnh | probe_02: thêm bản âm khó, mở **4 block cuối** (lr 2e-5, layer decay 0.75; probe lr 1e-4), dừng ở epoch 8 |
+| ⑥ Ngưỡng | Ngưỡng thấp nhất đạt precision ≥ 0.9 trên dev → **0.667** |
+
+### 1.3 Kết quả (`vjepa2_probe_02_ft`)
+
+| Tập | AP | ROC-AUC | Ở ngưỡng |
 |---|---|---|---|
-| Dev – toàn bộ (1525 túi) | 0.898 | 0.978 | |
-| Dev – Charades (393, toàn bản âm) | – | – | **báo nhầm 0%** |
+| Dev – toàn bộ (1525) | 0.898 | 0.978 | |
+| Dev – Charades (393 bản âm trong nhà) | – | – | **báo nhầm 0%** |
 | Test – toàn bộ (1444) | 0.709 | 0.959 | |
-| Test – Kinetics | 0.691 | 0.941 | ở ngưỡng: precision 0.74, recall 0.65 |
-| Test – ASHEN | 0.892 | 0.928 | ở ngưỡng: precision 0.65, recall 0.94 |
+| Test – Kinetics | 0.691 | 0.941 | precision 0.74 · recall 0.65 |
+| Test – ASHEN (phá hoại thật) | 0.892 | 0.928 | precision 0.65 · recall **0.94** |
 
-Báo nhầm trên dev theo lớp bản âm: chặt củi 5.6%, lau nhà 5.9%, đập ván 3.1%, các lớp còn lại 0%.
-
-### 2.4 Xử lý ở runtime
-
-| Vấn đề | Cách xử lý |
-|---|---|
-| Model nặng (ViT-L) trên GPU laptop 6 GB | fp16, chạy **cách lượt** (~0.8 s/lần), tự giãn khi máy chậm |
-| Người đứng yên mà điểm vẫn cao | **Cổng chuyển động**: chuyển động của người < 4.0 → bằng chứng = 0 |
-| Cú đánh vào đồ vật bị nhầm thành đánh nhau, hoặc ngược lại | Dùng ngữ cảnh nhánh gốc: cú đánh đơn lẻ ×0.7; khi đang đánh nhau cần ≥ 0.9 |
-| Cảnh báo kéo dài sau khi hết hành vi | **Nhả nhanh**: trung bình 4 lượt gần nhất dưới ngưỡng nhả → tắt ngay |
-| Không biết ai đang phá (model chấm cả cảnh) | Khoanh mọi người trong khung khi cảnh báo |
+Báo nhầm trên dev theo lớp: chặt củi 5.6%, lau nhà 5.9%, đập ván 3.1%, các lớp còn lại 0%.
 
 ---
 
-## 3. Nhánh Người cầm vật sắc nhọn (sharp_object)
+## 2. Nhánh B — Người cầm vật sắc nhọn
 
-### 3.1 Vì sao chọn "ô quanh tay" thay vì detector toàn khung
-
-Hướng đầu (sharp_02) là **YOLO phát hiện vũ khí trên cả khung** rồi ghép với người. Vấn đề: dao nhỏ trong khung 1280×720
-chỉ vài chục pixel, khó học, train lâu và hay bị ngắt trên Colab. Hướng hiện tại:
+### 2.1 Pipeline nhận diện
 
 ```mermaid
 flowchart LR
-    F[Khung mới nhất] --> P[YOLO11s-pose<br/>người + khuỷu tay, cổ tay]
-    P --> C[Cắt ô vuông quanh mỗi bàn tay<br/>cạnh = 0.45 × chiều cao người<br/>đẩy qua cổ tay 0.5 × cẳng tay]
-    C --> R[ResNet50 · 224 px<br/>tay này có cầm vật sắc?]
-    R --> VETO{YOLO COCO<br/>tay cầm chai / cốc /<br/>điện thoại / sách…?}
-    VETO -->|có| X[bỏ điểm của tay đó]
-    VETO -->|không| K[3 trong 4 lượt<br/>≥ ngưỡng 0.854]
-    K --> G[EventGate<br/>xác nhận 0.5 s · nhả 1.2 s<br/>ngưỡng nhả 0.43]
-    G --> L[YOLO-World<br/>vẽ khung bao cả vũ khí]
-    L --> UI[Khung đỏ: người cầm + vũ khí]
+    B1["① YOLO11s-pose<br/>box người +<br/>khuỷu tay, cổ tay"] --> B2["② Cắt ô quanh tay<br/>vuông, đẩy theo<br/>hướng cẳng tay"]
+    B2 --> B3["③ ResNet50<br/>tay có cầm<br/>vật sắc? (0–1)"]
+    B3 --> B4["④ YOLO11s COCO<br/>lọc đồ thường:<br/>chai, cốc, điện thoại…"]
+    B4 --> B5["⑤ Ổn định thời gian<br/>3/4 lượt vượt ngưỡng<br/>+ cổng 2 mức"]
+    B5 --> B6["⑥ YOLO-World<br/>box bao cả<br/>vũ khí"]
+    B6 --> B7["⑦ Hiển thị<br/>khung đỏ: người cầm<br/>+ vũ khí"]
 ```
 
-- Ô quanh tay **phóng to** vật nhỏ lên 224 px → dễ phân loại.
-- Chỉ **vật đang được cầm** mới được xét (dao để trên bàn không báo).
-- Không cần vẽ box tay: nhãn ô suy ra tự động từ box vũ khí sẵn có
-  (ô chạm ≥ 25% box vũ khí → dương; không chạm → âm; lưng chừng → bỏ).
-- Ảnh cận cảnh không có người: ở tập train cắt thêm ô "giả" quanh box vũ khí (trọng số ×0.5);
-  val/test chỉ dùng ô quanh tay thật nên điểm phản ánh đúng lúc chạy.
+| Bước | Công cụ | Đầu vào → Đầu ra | Thông số | Vì sao |
+|---|---|---|---|---|
+| ① Tìm người & tay | **YOLO11s-pose** (17 điểm COCO) | khung hình → box người + khuỷu tay (7, 8), cổ tay (9, 10) | ảnh 640 px, conf 0.35, tối đa 8 người, điểm cổ tay ≥ 0.3 | Vũ khí nguy hiểm khi **đang được cầm** → xét đúng chỗ bàn tay; dao trên bàn không báo |
+| ② Cắt ô quanh tay | Hình học (`hand_crop.py`, dùng chung train & runtime) | điểm khớp → ô vuông | cạnh = **0.45 × chiều cao người** (≥ 48 px); tâm = cổ tay + **0.5 × (cổ tay − khuỷu)** | Ô lấy được cán và lưỡi; dao nhỏ (vài chục px) được **phóng to** lên 224 px |
+| ③ Phân loại ô | **ResNet50** (ImageNet → tinh chỉnh), 1 logit | ô 224 px → điểm 0–1 | ngưỡng **0.854** (tự chọn: báo nhầm ≤ 3% trên ảnh không vũ khí của val) | Bài toán nhỏ, rõ ràng: "tay này có cầm vật sắc không" |
+| ④ Lọc đồ vật thường | **YOLO11s (COCO)**, chỉ chạy khi ③ vượt ngưỡng | ô quanh tay ×2 → có/không đồ thường | chai, cốc, điện thoại, điều khiển, sách, ly, bàn chải, máy sấy, chuột, bình hoa; conf ≥ 0.35, ≥ 60% vật nằm trong ô tay; **không bao giờ** lọc dao/kéo/nĩa | Vật kim loại thon dài (bình inox) dễ giống lưỡi dao; detector COCO nhận các vật này rất chắc |
+| ⑤ Ổn định thời gian | Luật k-of-n + EventGate | điểm theo lượt → trạng thái | **≥ 3/4 lượt** gần nhất vượt ngưỡng; xác nhận 0.5 s; ngưỡng tắt **0.5×** ngưỡng, giữ 1.2 s | Vật thường cho điểm nhảy 0.01 ↔ 0.98; dao thật cho điểm cao ổn định |
+| ⑥ Box vũ khí | **YOLO-World** (từ vựng mở: knife, machete, sword, spear, axe, sickle, cleaver, long blade on a pole) | vùng 4× ô tay → box vũ khí | conf 0.01 (chỉ để vẽ); gộp box chạm tay; giới hạn ≤ 3× cạnh ô tay | ResNet chỉ trả lời có/không → cần thêm bước định vị để khung bao cả dao |
+| ⑦ Hiển thị | Server vẽ khung | → khung đỏ | khung người cầm (khớp khung hệ thống theo IoU ≥ 0.5) + khung vũ khí; giữ khung ≤ 1 s khi một lượt trống, làm mượt 60/40 | Khung không chập chờn, bám người |
 
-### 3.2 Dữ liệu
+Tần suất: **mỗi 0.27 s** (cùng nhịp hệ thống gốc). Chi phí: ~55 ms/lượt (①–③, ⑥), bước ④ thêm ~15 ms chỉ khi có cảnh báo; 0.2 GB VRAM.
 
-| Nguồn | Vai trò |
-|---|---|
-| Zenodo dangerous items, Granada knife, OpenImages (Knife, Dagger, Sword, Axe), COCO knife, Simuletic | Bản dương công khai (dao, kiếm, rìu, mã tấu) |
-| Bộ VN đã duyệt (009 → 011) | Ảnh báo chí / mạng xã hội VN: dao phóng lợn, mã tấu, kiếm… + **22 khung tự quay** dao phóng lợn ở tư thế khó |
-| OpenImages: gậy bóng chày, ô, điện thoại, chai | Bản âm (ít ô tay thật vì ảnh sản phẩm) |
-| **COCO `coco_neg`** (3000 ảnh) | Người cầm gậy bóng chày, vợt, ô, ván trượt |
-| **COCO `coco_hold`** (3000 ảnh) | Người cầm điện thoại, chai, cốc, sách, điều khiển, bàn chải, laptop… (bỏ ảnh có dao / kéo / nĩa) |
-| **Charades `charades_neg`** (2324 khung từ 800 video) | Trong nhà, camera nghiệp dư: cầm chổi, máy hút bụi, điện thoại, cốc, sách, gối… (bỏ video nấu ăn) |
-
-Lớp gốc (`datasets/sharp_object/class_map.json`): dao phóng lợn, mã tấu, dao ngắn, kiếm, liềm, rìu, vật sắc khác –
-mọi lớp cùng dẫn tới **một** cảnh báo "cầm vật sắc nhọn".
-
-### 3.3 Quá trình cải tiến (mỗi bản train tiếp từ bản trước)
+### 2.2 Pipeline huấn luyện
 
 ```mermaid
-flowchart TB
-    H1["hand_01<br/>ResNet50 từ ImageNet<br/>dữ liệu công khai + VN 009"] --> H2
-    H2["hand_02<br/>+ 22 khung tự quay (bắt buộc ở train)<br/>bớt chập chờn khi dao dọc thân / chĩa thẳng"] --> H3
-    H3["hand_03<br/>+ bản âm COCO: gậy, vợt, ô<br/>sửa: cầm gậy bị báo"] --> H4
-    H4["hand_04 (đang dùng)<br/>+ COCO cầm đồ vật, Charades trong nhà<br/>hạ trọng số khung tự quay ×6 → ×3<br/>sửa: điện thoại, chai, chổi bị báo"]
+flowchart LR
+    T1["① Gom dữ liệu<br/>box vũ khí công khai<br/>+ VN + bản âm"] --> T2["② Chia tập<br/>theo nguồn"]
+    T2 --> T3["③ YOLO-pose<br/>trên mọi ảnh"]
+    T3 --> T4["④ Cắt ô quanh tay<br/>+ tự gán nhãn<br/>từ box vũ khí"]
+    T4 --> T5["⑤ Tinh chỉnh ResNet50<br/>lấy mẫu cân bằng<br/>có trọng số"]
+    T5 --> T6["⑥ Đánh giá & chọn ngưỡng<br/>+ chấm clip<br/>theo thời gian"]
+    T6 --> T7["⑦ Đóng gói zip<br/>→ cài đặt"]
+```
+
+| Bước | Nội dung |
+|---|---|
+| ① Dữ liệu | **Bản dương** (box vũ khí có sẵn): Zenodo, Granada knife, OpenImages (Knife, Dagger, Sword, Axe), COCO knife, Simuletic; bộ VN đã duyệt (dao phóng lợn, mã tấu, kiếm…) gồm **22 khung tự quay** ở tư thế khó. **Bản âm khó:** COCO người cầm gậy/vợt/ô (3000 ảnh); COCO người cầm điện thoại/chai/cốc/sách… (3000, bỏ ảnh có dao/kéo/nĩa); **Charades** — 2324 khung trong nhà, camera nghiệp dư, người cầm chổi/máy hút bụi/điện thoại/cốc (bỏ video nấu ăn) |
+| ② Chia tập | Theo nhóm nguồn (cùng video/bài báo không lọt hai tập); 22 khung tự quay **luôn ở train** |
+| ③ Pose | YOLO11s-pose ở 960 px (lớn hơn runtime để bắt người nhỏ) |
+| ④ Tự gán nhãn | Ô chạm ≥ 25% box vũ khí → **dương**; không chạm → **âm**; lưng chừng → bỏ. Ảnh cận cảnh không thấy người: cắt ô "giả" quanh box vũ khí (chỉ ở train, trọng số ×0.5). **Không cần vẽ box tay** |
+| ⑤ Train | ResNet50, AdamW (backbone 1e-4 / đầu ra ×10; tinh chỉnh tiếp 3e-5), cosine, AMP; tăng cường crop/lật/xoay ±20°/màu/mờ; lấy mẫu cân bằng 2 lớp, ảnh VN ×3, bản âm khó ×3; dừng sớm theo AP |
+| ⑥ Đánh giá | AP/AUC trên ô tay **thật** của val/test; ngưỡng = thấp nhất mà báo nhầm ≤ 3% trên ảnh không vũ khí của val; chấm **16 clip dao phóng lợn** và **24 clip Charades test** theo thời gian (tỉ lệ bước cảnh báo, số lần tụt điểm) |
+| ⑦ Đóng gói | zip: classifier (fp16) + model pose + spec + `evaluation.json`; `install_sharp_object.py` kiểm tra, ghi SHA-256, giữ bản trước |
+
+Chạy trên **Google Colab (L4)**, mã nguồn ghim theo commit, dữ liệu cache trên Drive, phiên tự ngắt khi xong.
+
+### 2.3 Quá trình cải tiến (mỗi bản train tiếp từ bản trước)
+
+```mermaid
+flowchart LR
+    H1["hand_01<br/>dữ liệu công khai<br/>+ VN"] --> H2["hand_02<br/>+ 22 khung tự quay<br/>tư thế khó"]
+    H2 --> H3["hand_03<br/>+ bản âm<br/>gậy, vợt, ô"]
+    H3 --> H4["hand_04 ✔<br/>+ đồ vật trong nhà<br/>COCO + Charades"]
 ```
 
 | Chỉ số | hand_01 | hand_02 | hand_03 | hand_04 |
 |---|---|---|---|---|
-| AP ô quanh tay (test công khai) | 0.966 | 0.974 | 0.967 | – |
 | Bắt đúng / báo nhầm theo ảnh (test công khai) | 93% / 3.8% | 91% / 0% | 92% / 0.4% | 92% / 1.7% |
-| 16 clip dao phóng lợn tự quay: thời gian có cảnh báo (theo bước) | 76% | 87% | 84% | **89%** |
-| 16 clip đó: số lần tụt điểm (chập chờn) | 96 | 66 | 82 | **62** |
-| Video phá hoại cầm gậy: bước bị báo nhầm | – | 35% | 12% | **3%** |
-| 24 clip Charades test (cầm đồ trong nhà, không dùng train) | – | – | 5.4% | **0.9%** |
-| Ảnh người cầm đồ vật bị báo nhầm (test) | – | – | – | 1.5% |
-| Ngưỡng cảnh báo (tự chọn: báo nhầm ≤ 3% trên val) | 0.95 | 0.95 | 0.95 | **0.854** |
+| 16 clip dao phóng lợn: tỉ lệ bước cảnh báo | 76% | 87% | 84% | **89%** |
+| 16 clip đó: số lần tụt điểm | 96 | 66 | 82 | **62** |
+| Video phá hoại cầm gậy: bước báo nhầm | – | 35% | 12% | **3%** |
+| 24 clip Charades test (cầm đồ trong nhà): bước báo nhầm | – | – | 5.4% | **0.9%** |
+| Ngưỡng tự chọn | 0.95 | 0.95 | 0.95 | **0.854** |
 
-### 3.4 Các vấn đề gặp khi test thật và cách xử lý
-
-| Vấn đề quan sát | Nguyên nhân (đã kiểm tra bằng log) | Cách xử lý |
-|---|---|---|
-| Cài rồi mà không bao giờ báo | Runtime chỉ bật nhánh khi có `sharp_object.pt`; bản hand-crop không có file này | Nhận diện nhánh qua file spec |
-| Khung người vẫn xanh khi cảnh báo | Tô đỏ đòi khung trùng từng pixel; khung từ lượt trước lệch vài px | Tô đỏ theo **IoU ≥ 0.5**; ghép người cầm vào khung người của hệ thống |
-| Khung chỉ bao bàn tay, không bao dao | Classifier chỉ trả lời có/không | **YOLO-World** tìm vũ khí quanh bàn tay đã cảnh báo, gộp khung, giới hạn ≤ 3× ô tay |
-| Khung chập chờn đỏ/xanh | Điểm tụt thoáng qua; khung chỉ sống 1 lượt | Giữ khung ≤ 1 s, làm mượt vị trí (60/40), **ngưỡng tắt hai mức** (0.5× ngưỡng, 1.2 s) |
-| Hình giật, khung nhảy cóc | Nhánh chỉ chạy 0.8 s/lần; hình gửi web không đều | Nhánh này chạy **mỗi 0.27 s** (lượt nhẹ riêng, ~55 ms GPU); hình web đều 20 khung/giây, JPEG 75 |
-| Cầm gậy bị báo vũ khí | Không có bản âm "cầm gậy" | hand_03: bản âm COCO gậy / vợt / ô |
-| Cầm điện thoại, bình nước, chổi bị báo | Không có ô "tay cầm đồ trong nhà"; 22 khung tự quay đều là bản dương ×6 → model học "phòng này + giơ tay = dao" | hand_04: COCO + Charades, trọng số ×3 |
-| Bình nước inox xoắn vẫn bị báo | Vật kim loại thon dài giống lưỡi dao; điểm nhảy 0.01 ↔ 0.98 giữa các khung | **Bộ lọc COCO** (bỏ khi tay cầm chai/cốc/điện thoại…) + **3 trong 4 lượt** phải vượt ngưỡng |
-
-Thử nghiệm đã **loại bỏ** (có số đo):
-- *Lọc bằng YOLO-World "giống gậy hay giống dao"*: chặn mất **30/40** cảnh báo dao phóng lợn thật (dao phóng lợn chính là cây sào có lưỡi) → không dùng.
-- *Nâng ngưỡng lên 0.997*: điện thoại cũng được chấm ≥ 0.95 → mất luôn cảnh báo dao thật → không dùng.
-
-Bộ lọc COCO được giữ vì đo được: bỏ **15/23** khung báo nhầm bình nước/điện thoại, chỉ mất **5/229** khung dao phóng lợn
+Thêm bước ④ (lọc COCO) ở runtime: bỏ **15/23** khung báo nhầm bình nước/điện thoại, chỉ mất **5/229** khung dao phóng lợn
 (cả 16 clip vẫn được cảnh báo).
 
-### 3.5 Hiệu năng (RTX 4050 Laptop 6 GB)
+---
+
+## 3. Vấn đề gặp khi test thật → bước pipeline xử lý
+
+| Hiện tượng | Nguyên nhân (đã kiểm chứng bằng log) | Xử lý ở bước |
+|---|---|---|
+| Cài rồi không bao giờ báo | Runtime chỉ bật nhánh khi có file detector cũ | Nhận nhánh qua file spec |
+| Khung chỉ bao bàn tay | ResNet chỉ trả lời có/không | B⑥ YOLO-World |
+| Khung người xanh khi đang cảnh báo | So khung từng pixel, khung lượt trước lệch vài px | B⑦ khớp theo IoU ≥ 0.5 |
+| Khung chập chờn đỏ/xanh | Điểm tụt thoáng qua, khung sống 1 lượt | B⑤ ngưỡng tắt 2 mức; B⑦ giữ khung ≤ 1 s, làm mượt |
+| Hình giật, khung nhảy cóc | Nhánh chỉ chạy 0.8 s/lần; hình gửi web không đều | Chạy nhánh B mỗi 0.27 s; web đều 20 khung/giây |
+| Cầm gậy bị báo vũ khí | Thiếu bản âm gậy | Train hand_03 |
+| Cầm điện thoại, chổi bị báo | Thiếu bản âm đồ trong nhà; 22 khung tự quay toàn bản dương → model học "phòng này + giơ tay = dao" | Train hand_04 (hạ trọng số ×6 → ×3) |
+| Bình nước inox bị báo | Kim loại thon dài giống lưỡi; điểm nhảy giữa các khung | B④ lọc COCO + B⑤ luật 3/4 |
+
+Thử nghiệm đã **loại bỏ** (có số đo):
+- Lọc bằng YOLO-World "giống gậy hay giống dao" → chặn mất **30/40** cảnh báo dao phóng lợn thật (dao phóng lợn là cây sào có lưỡi).
+- Nâng ngưỡng lên 0.997 → điện thoại cũng ≥ 0.95, mất luôn cảnh báo dao thật.
+
+---
+
+## 4. Hiệu năng (RTX 4050 Laptop 6 GB)
 
 | Hạng mục | Số đo |
 |---|---|
-| Một lượt nhánh vật sắc nhọn (pose 17 ms + ResNet + YOLO-World) | ~55 ms, 0.2 GB VRAM |
-| Bộ lọc COCO (chỉ khi có cảnh báo) | ~15 ms |
+| Nhánh B mỗi lượt | ~55 ms (pose 17 ms), +15 ms lọc COCO khi có cảnh báo |
 | Cập nhật khung vũ khí | 0.80 s → **0.27 s** |
-| Nhánh gốc / nhánh phá hoại | giữ nguyên 0.27 s / 0.80 s |
-| Lượt chấm bị bỏ do quá tải (video test 180 s) | 14 → **0** |
-| Bộ test có sẵn (runtime, cách ly nhánh mở rộng, server) | 68 đạt, 1 bỏ qua |
+| Nhánh gốc / nhánh A | giữ nguyên 0.27 s / 0.80 s |
+| Lượt chấm bị bỏ do quá tải (video 180 s) | 14 → **0** |
+| Bộ test có sẵn (runtime, cách ly, server) | 68 đạt, 1 bỏ qua |
 
 ---
 
-## 4. Quy trình train và cài đặt
-
-```mermaid
-sequenceDiagram
-    participant U as Người dùng
-    participant C as Colab (GPU L4)
-    participant D as Google Drive
-    participant M as Máy demo
-    U->>C: Mở notebook (mã ghim theo commit), Run all
-    C->>D: Đọc cache dữ liệu (pool_vN.tar), checkpoint trước
-    C->>C: Pose → cắt ô → train → đánh giá → chấm clip
-    C->>D: zip model + evaluation.json + clips_eval.json
-    C-->>C: tự ngắt phiên (tiết kiệm compute unit)
-    U->>M: tải zip
-    M->>M: install_sharp_object.py (kiểm tra, SHA-256, giữ bản trước)
-    M->>M: khởi động lại web
-```
+## 5. Lệnh sử dụng
 
 | Việc | Lệnh / nơi |
 |---|---|
-| Notebook vật sắc nhọn | `colab/sharp_object_hand_v1..v4.ipynb` (sinh bởi `scripts/build_sharp_hand_notebook.py <commit> hand_0N`) |
-| Cài vật sắc nhọn | `extensions\env\Scripts\python.exe -m extensions.sharp_object.install_sharp_object sharp_object_hand_04.zip` |
-| Cài phá hoại | `extensions\env\Scripts\python.exe -m extensions.vandalism.install_vandalism <zip>` |
-| Quay lại bản trước | thư mục `weights\extensions\sharp_object.previous` |
-| Thêm bản âm tự quay | `python -m extensions.sharp_object.make_negative_set <video|thư mục> --out vn_negatives_001.zip` → Drive `SENTINEL/datasets/sharp_object_vn/` |
-| Đo độ ổn định trên clip | `python -m extensions.sharp_object.eval_hand_clips --package <thư mục cài> --clips <thư mục clip> --out kq.json` |
-| Clip test có sẵn | `samples\demo video\sharp_test\` (dương: rìu, tin VN; âm: chổi, lau nhà) |
+| Train | `colab/sharp_object_hand_v4.ipynb` (GPU L4, Run all) |
+| Cài nhánh B | `extensions\env\Scripts\python.exe -m extensions.sharp_object.install_sharp_object sharp_object_hand_04.zip` |
+| Cài nhánh A | `extensions\env\Scripts\python.exe -m extensions.vandalism.install_vandalism <zip>` |
+| Quay lại bản trước | `weights\extensions\sharp_object.previous` |
+| Thêm bản âm tự quay | `python -m extensions.sharp_object.make_negative_set <video> --out vn_negatives_001.zip` → Drive `SENTINEL/datasets/sharp_object_vn/` |
+| Chấm clip theo thời gian | `python -m extensions.sharp_object.eval_hand_clips --package <thư mục cài> --clips <thư mục> --out kq.json` |
+| Clip test có sẵn | `samples\demo video\sharp_test\` |
 
 ---
 
-## 5. Giới hạn còn lại (nói thẳng khi trình bày)
+## 6. Giới hạn còn lại
 
-| Giới hạn | Mức độ | Hướng tiếp |
-|---|---|---|
-| **Rìu** gần như không bắt được (0–3%) | dữ liệu rìu rất ít | thêm Kinetics *chopping wood* làm bản dương |
-| **Cây lau nhà giơ cao** vẫn có clip bị báo (67% bước ở 1 clip) | COCO không có chổi / cây lau nhà | bản âm tự quay trong phòng demo; Kinetics *mopping / sweeping floor* |
-| **Súng, gậy cùn** | không thuộc phạm vi (không có trong dữ liệu) | dataset riêng nếu cần |
-| Người **xa / nhỏ**, tay **bị che** | pose không thấy cổ tay → không có ô để chấm | camera gần hơn; hạ kích thước ô tối thiểu |
-| Phá hoại **chấm cả cảnh**, không biết ai phá | khoanh mọi người | khoanh người cử động nhiều nhất |
-| Phá hoại & vật sắc nhọn **cùng màu đỏ** | dễ lẫn khi cả hai cùng bật | màu và nhãn riêng từng hành vi |
-| Bộ test VN nhỏ (1 ảnh trong test) | số liệu dao VN chỉ để tham khảo | quay thêm video độc lập để kiểm tra |
-| Dữ liệu báo chí VN | quyền tái sử dụng chưa xác minh | chỉ dùng nghiên cứu nội bộ |
+| Giới hạn | Hướng tiếp |
+|---|---|
+| **Rìu** gần như không bắt được | Thêm Kinetics *chopping wood* làm bản dương |
+| **Cây lau nhà giơ cao** còn bị báo ở 1 clip; COCO không có chổi để lọc ở B④ | Bản âm tự quay trong phòng demo; Kinetics *mopping / sweeping floor* |
+| Súng, gậy cùn | Ngoài phạm vi dữ liệu |
+| Người xa / nhỏ, tay bị che | Pose không thấy cổ tay → không có ô để chấm; đặt camera gần |
+| Nhánh A chấm cả cảnh, không biết ai phá | Khoanh người cử động nhiều nhất |
+| A và B cùng màu đỏ | Màu và nhãn riêng từng hành vi |
+| Test VN nhỏ; dữ liệu báo chí VN chưa xác minh quyền | Quay video kiểm tra độc lập; chỉ dùng nội bộ |
 
 ---
 
-## 6. Tóm tắt một câu cho từng nhánh
+## 7. Tóm tắt
 
-- **Phá hoại:** model video V-JEPA 2 nhìn 2 giây chuyển động của cả cảnh, cộng các luật ngữ cảnh (đứng yên, đang đánh nhau,
-  cú đánh đơn lẻ) để không nhầm với hoạt động thường ngày; precision ≥ 0.9 trên dev, 0% báo nhầm trên Charades.
-- **Vật sắc nhọn:** tìm bàn tay bằng pose, phóng to vùng quanh tay cho ResNet50 phán đoán, rồi lọc đồ vật thường ngày và
-  đòi điểm ổn định theo thời gian; bắt 89% thời gian trên clip dao phóng lợn, báo nhầm 0.9% trên clip người cầm đồ trong nhà.
+- **Nhánh A — Phá hoại:** *gom 2 giây video → V-JEPA 2 trích chuyển động → attentive probe chấm điểm → luật ngữ cảnh
+  → cổng thời gian.* Precision ≥ 0.9 trên dev, recall 0.94 trên phá hoại thật (ASHEN), 0% báo nhầm trên Charades.
+- **Nhánh B — Vật sắc nhọn:** *YOLO-pose tìm người & bàn tay → cắt ô quanh tay → ResNet50 phán đoán → YOLO COCO lọc đồ
+  thường → ổn định 3/4 lượt → YOLO-World vẽ box vũ khí.* Cảnh báo 89% thời gian trên clip dao phóng lợn, báo nhầm 0.9%
+  trên clip người cầm đồ trong nhà.
