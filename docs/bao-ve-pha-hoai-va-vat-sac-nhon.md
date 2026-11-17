@@ -24,7 +24,7 @@ flowchart LR
 - Mỗi nhánh trả **một điểm 0–1** mỗi lượt. Cảnh báo không bật từ một khung đơn lẻ mà qua **cổng thời gian**:
   điểm ≥ ngưỡng → *đang xác minh* (vàng) → giữ đủ `confirm_seconds` → *cảnh báo* (đỏ) → điểm dưới ngưỡng tắt đủ
   `release_seconds` → tắt.
-- Cách dùng: web `http://localhost:8000` → chọn **"Bốn nhánh + mở rộng (phá hoại tài sản) · thử nghiệm"**.
+- Cách dùng: web `http://localhost:8000` → chọn **"Sáu hành vi: Đánh / Vật / Ngã / Chạy / Phá hoại / Cầm vật sắc"**.
 
 ---
 
