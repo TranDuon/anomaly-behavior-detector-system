@@ -43,6 +43,17 @@ LOCATOR_IMGSZ = 640
 LOCATOR_CONF = 0.01                   # very low: display only, and only on hands the classifier flagged
 LOCATOR_REACH = 4.0                   # search square = 4x the hand crop side, centred on the hand
 LOCATOR_MAX_SIDE = 3.0                # weapon box sides capped at 3x the hand crop side (drops huge merges)
+# A: everyday-object veto. A COCO detector looks around each alerted hand; a confidently detected
+# harmless object held in that hand (most of its box inside the hand crop) cancels the hand's alert.
+# Measured on a live bottle/phone session: 15/23 false-alarm frames removed, 5/229 spear frames lost.
+VETO_BASE = "yolo11s.pt"
+VETO_FILE = "object_veto.pt"          # copied into the install folder on first use
+VETO_CLASSES = {"bottle", "cup", "cell phone", "remote", "book", "wine glass", "toothbrush", "hair drier",
+                "mouse", "vase"}       # never knife / scissors / fork
+VETO_CONF = 0.35
+VETO_INSIDE = 0.6                     # share of the object box inside the hand crop
+VETO_IMGSZ = 320
+VETO_REACH = 2.0                      # search square = 2x the hand crop side
 FLOOR_BAND = 0.12   # object entirely in the lowest 12 % of the person box and wider than tall
 #                      -> lying on the floor next to the feet, not held
 
@@ -125,6 +136,7 @@ class SharpObjectExtension(Extension):
         if self.half:
             self.classifier.half()
         self.locator = self._load_locator(folder)
+        self.veto = self._load_veto(folder)
         blank = np.zeros((self.pose_imgsz, self.pose_imgsz, 3), np.uint8)
         self.pose.predict(blank, imgsz=self.pose_imgsz, verbose=False, device=self.device, half=self.half)  # warm-up
         self._classify([np.zeros((self.input_size, self.input_size, 3), np.uint8)])
@@ -151,6 +163,47 @@ class SharpObjectExtension(Extension):
         except Exception as error:  # the extension still works with hand boxes only
             print(f"sharp_object: weapon locator disabled ({type(error).__name__}: {error})", flush=True)
             return None
+
+    def _load_veto(self, folder):
+        import shutil
+
+        from ultralytics import YOLO
+
+        local = folder / VETO_FILE
+        try:
+            if not local.is_file():
+                model = YOLO(VETO_BASE)  # downloads the official COCO weights once
+                shutil.copy(model.ckpt_path, local)
+            model = YOLO(str(local))
+            model.predict(np.zeros((VETO_IMGSZ, VETO_IMGSZ, 3), np.uint8), imgsz=VETO_IMGSZ, verbose=False,
+                          device=self.device)  # warm-up
+            return model
+        except Exception as error:  # the extension still works without the veto
+            print(f"sharp_object: object veto disabled ({type(error).__name__}: {error})", flush=True)
+            return None
+
+    def _vetoed(self, frame, hand_box):
+        """Name of a harmless COCO object held in ``hand_box`` (frame pixels), else None."""
+        if self.veto is None:
+            return None
+        height, width = frame.shape[:2]
+        side = max(hand_box[2] - hand_box[0], hand_box[3] - hand_box[1])
+        cx, cy = (hand_box[0] + hand_box[2]) / 2, (hand_box[1] + hand_box[3]) / 2
+        reach = side * VETO_REACH / 2
+        x1, y1 = int(max(0, cx - reach)), int(max(0, cy - reach))
+        x2, y2 = int(min(width, cx + reach)), int(min(height, cy + reach))
+        if x2 - x1 < 16 or y2 - y1 < 16:
+            return None
+        result = self.veto.predict(frame[y1:y2, x1:x2], imgsz=VETO_IMGSZ, conf=VETO_CONF, verbose=False,
+                                   device=self.device)[0]
+        if result.boxes is None or not len(result.boxes):
+            return None
+        for (bx1, by1, bx2, by2), cls in zip(result.boxes.xyxy.cpu().numpy(), result.boxes.cls.cpu().numpy()):
+            name = self.veto.names[int(cls)]
+            box = [float(bx1 + x1), float(by1 + y1), float(bx2 + x1), float(by2 + y1)]
+            if name in VETO_CLASSES and _intersection(box, hand_box) / max(1e-6, _area(box)) >= VETO_INSIDE:
+                return name
+        return None
 
     def _locate(self, frame, hand_box):
         """Weapon box touching ``hand_box`` (frame pixels) or the hand box itself."""
@@ -211,8 +264,13 @@ class SharpObjectExtension(Extension):
                 hands.append({"person": index, "arm": hand["arm"],
                               "box": [round(float(v) * s, 1) for v, s in zip(hand["box"], (sx, sy, sx, sy))]})
         scores = self._classify(crops) if crops else []
-        for hand, score in zip(hands, scores):
+        for hand, score, frame_box in zip(hands, scores, frame_boxes):
             hand["score"] = round(float(score), 4)
+            if score >= self.threshold:
+                held = self._vetoed(frame, frame_box)
+                if held is not None:  # A: harmless object in this hand -> no alert from it
+                    hand.update(raw_score=hand["score"], vetoed=held, score=0.0)
+        scores = [hand["score"] for hand in hands]
         # Holders are reported with the core person boxes (exact match needed for the red overlay);
         # a pose person with no matching core box keeps its own box.
         core = [list(map(float, box)) for box in people.get("person_boxes", [])]
