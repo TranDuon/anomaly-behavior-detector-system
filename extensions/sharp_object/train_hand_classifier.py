@@ -162,6 +162,12 @@ def train(args):
         scaler.load_state_dict(checkpoint["scaler"])
         state = checkpoint["state"]
         print(f"resuming after epoch {state['epoch']} (best val AP {state['best_ap']:.4f})", flush=True)
+    elif args.init:
+        initial = torch.load(args.init, map_location="cpu", weights_only=True)
+        if initial.get("arch", args.arch) != args.arch:
+            raise SystemExit(f"--init is {initial['arch']}, --arch is {args.arch}")
+        model.load_state_dict({k: v.float() for k, v in initial["state_dict"].items()})
+        print(f"fine-tuning from {args.init}", flush=True)
     for epoch in range(state["epoch"] + 1, args.epochs + 1):
         started = time.time()
         model.train()
@@ -313,6 +319,8 @@ def main():
     parser.add_argument("--pose", default="yolo11s-pose.pt", help="export: pose weights shipped with the classifier")
     parser.add_argument("--runtime-pose-imgsz", type=int, default=640)
     parser.add_argument("--runtime-pose-conf", type=float, default=0.35)
+    parser.add_argument("--init", type=Path, default=None,
+                        help="start from this classifier (best.pt / hand_classifier.pt of an earlier run)")
     parser.add_argument("--run-tag", default="hand_01")
     parser.add_argument("--device", default=None)
     args = parser.parse_args()

@@ -1,6 +1,9 @@
 """Build the pinned Colab notebook for the hand-crop sharp-object classifier.
 
-    python scripts/build_sharp_hand_notebook.py <source_commit_sha>
+    python scripts/build_sharp_hand_notebook.py <source_commit_sha> [hand_01|hand_02]
+
+hand_01: first run from ImageNet. hand_02: fine-tune from hand_01 with the newest reviewed VN zip
+(self-filmed frames forced into train) and a clip stability check against hand_01.
 """
 
 import json
@@ -8,7 +11,8 @@ import sys
 from pathlib import Path
 from textwrap import dedent
 
-OUTPUT = Path(__file__).resolve().parents[1] / "colab" / "sharp_object_hand_v1.ipynb"
+COLAB = Path(__file__).resolve().parents[1] / "colab"
+OUTPUTS = {"hand_01": COLAB / "sharp_object_hand_v1.ipynb", "hand_02": COLAB / "sharp_object_hand_v2.ipynb"}
 
 
 def cell(kind, value, index):
@@ -64,7 +68,6 @@ from pathlib import Path
 import json, os, shutil, subprocess, sys, tarfile, time, traceback, urllib.request, zipfile
 from google.colab import drive
 
-RUN_TAG = 'hand_01'           # đổi tên khi chạy thí nghiệm mới
 ARCH = 'resnet50'             # resnet18 / resnet34 nhẹ hơn cho laptop yếu
 POSE = 'yolo11s-pose.pt'      # model pose dùng để cắt crop và chạy ở runtime
 EPOCHS = 25
@@ -77,6 +80,7 @@ AUTO_DISCONNECT = True        # tự ngắt phiên khi xong hoặc khi lỗi
 SYNC_DURING_TRAIN = False     # True: chép last.pt lên Drive mỗi SYNC_MINUTES phút để train tiếp nếu bị ngắt
 SYNC_MINUTES = 5              # chu kỳ in RAM/GPU (và chép Drive nếu bật)
 SOURCE_REVISION = '{revision}'
+{variant}
 
 assert RUN_TAG and all(c.isalnum() or c in '_-' for c in RUN_TAG)
 subprocess.run(['nvidia-smi'], check=True)
@@ -242,6 +246,11 @@ VN_MD = """
 VN_CODE = """
 vn_inputs = [VN_DIR / 'vn_weapons_all_260_training_inputs_009.zip']
 vn_inputs = [p for p in vn_inputs if p.exists()]
+reviewed = []
+if VN_REVIEWED_GLOB:
+    reviewed = sorted(VN_DIR.glob(VN_REVIEWED_GLOB))
+    assert reviewed, f'Không thấy {VN_REVIEWED_GLOB} trong {VN_DIR}'
+    vn_inputs.append(reviewed[-1])  # bản duyệt mới nhất đã gồm các bản trước
 vn_inputs += sorted((p for p in (VN_DIR / 'labelled').iterdir() if p.suffix.lower() == '.zip' or p.is_dir()),
                     key=lambda p: p.stat().st_mtime)
 print('Đầu vào VN:')
@@ -257,7 +266,7 @@ for index, path in enumerate(vn_inputs):
         shutil.copy(path, target)
     local_inputs.append(target)
 py('extensions.sharp_object.build_dataset', '--pool', POOL, '--vn', *local_inputs, '--out', DATA,
-   log='build_dataset.log')
+   *(['--vn-train-groups', *VN_TRAIN_GROUPS] if VN_TRAIN_GROUPS else []), log='build_dataset.log')
 shutil.copy(DATA / 'summary.json', OUT / 'dataset_summary.json')
 summary = json.loads((DATA / 'summary.json').read_text())
 for split in ('train', 'val', 'test'):
@@ -308,6 +317,11 @@ TRAIN_MD = """
 TRAIN_CODE = """
 import threading, torch
 
+INIT_LOCAL = WORK / 'init.pt'
+if INIT_FROM:
+    assert INIT_FROM.is_file(), f'Không thấy checkpoint khởi đầu {INIT_FROM}'
+    shutil.copy(INIT_FROM, INIT_LOCAL)
+    print('Train tiếp từ:', INIT_FROM)
 drive_last, local_last = OUT / 'train' / 'last.pt', LOCAL_OUT / 'train' / 'last.pt'
 if drive_last.is_file() and not local_last.is_file():
     print('Chép run dở từ Drive về ổ phiên:', OUT / 'train')
@@ -339,7 +353,7 @@ if SYNC_DURING_TRAIN:
 common = ['--crops', CROPS, '--output', LOCAL_OUT / 'train', '--arch', ARCH, '--batch', BATCH, '--workers', WORKERS]
 try:
     py('extensions.sharp_object.train_hand_classifier', '--stage', 'train', *common, '--epochs', EPOCHS,
-       '--vn-weight', VN_WEIGHT, log='train.log')
+       '--vn-weight', VN_WEIGHT, '--lr', LR, *(['--init', INIT_LOCAL] if INIT_FROM else []), log='train.log')
 finally:
     stop_sync.set()
     sync_to_drive()
@@ -379,12 +393,77 @@ print('\\nTổng thời gian: %.1f giờ' % ((time.time() - STARTED) / 3600))
 print('Bước tiếp theo: tải sharp_object_' + RUN_TAG + '.zip về máy, cài bằng install_sharp_object.py rồi thử trên camera.')
 """
 
+CLIPS_MD = """
+## Bước 6 · Độ ổn định theo thời gian trên clip tự quay
 
-def build(revision):
-    parts = [("markdown", INTRO), ("code", SETUP.replace("{revision}", revision).replace("{{", "{").replace("}}", "}")),
+Chấm các clip trong `source_clips/` của zip VN mới nhất ở 4 khung/giây bằng bản mới và hand_01.
+`alert_share` = tỉ lệ bước có điểm ≥ ngưỡng (clip nào cũng có người cầm dao nên càng cao càng tốt);
+`drops` = số lần điểm tụt dưới ngưỡng ngay sau một bước trên ngưỡng (khung chập chờn), càng ít càng tốt.
+Clip cùng phòng với khung hình đã train nên chỉ đo độ ổn định, không phải độ tổng quát.
+"""
+
+CLIPS_CODE = """
+clips_dir, previous_dir = WORK / 'clips', WORK / 'previous'
+for path in (clips_dir, previous_dir):
+    shutil.rmtree(path, ignore_errors=True)
+    path.mkdir(parents=True)
+with zipfile.ZipFile(reviewed[-1]) as bundle:
+    for name in bundle.namelist():
+        if '/source_clips/' in '/' + name and name.lower().endswith('.mp4'):
+            (clips_dir / Path(name).name).write_bytes(bundle.read(name))
+print('Clip:', len(list(clips_dir.iterdir())))
+extra = []
+if PREVIOUS_ZIP.is_file():
+    with zipfile.ZipFile(PREVIOUS_ZIP) as bundle:
+        bundle.extractall(previous_dir)
+    extra = ['--extra-package', previous_dir]
+if any(clips_dir.iterdir()):
+    py('extensions.sharp_object.eval_hand_clips', '--package', LOCAL_OUT / 'train' / 'package', *extra,
+       '--clips', clips_dir, '--out', LOCAL_OUT / 'train' / 'clips_eval.json', log='clips_eval.log')
+    shutil.copy(LOCAL_OUT / 'train' / 'clips_eval.json', OUT / 'clips_eval.json')
+    sync_to_drive()
+"""
+
+VARIANTS = {
+    "hand_01": """RUN_TAG = 'hand_01'
+INIT_FROM = None              # train từ ImageNet
+LR = 1e-4
+VN_REVIEWED_GLOB = None
+VN_TRAIN_GROUPS = []""",
+    "hand_02": """RUN_TAG = 'hand_02'
+HAND_01 = Path('/content/drive/MyDrive/SENTINEL/artifacts/sharp_object/hand_01')
+INIT_FROM = HAND_01 / 'train' / 'best.pt'   # train tiếp từ hand_01
+PREVIOUS_ZIP = HAND_01 / 'sharp_object_hand_01.zip'  # để so sánh ở bước 6
+LR = 3e-5                     # lr nhỏ vì chỉ tinh chỉnh
+VN_REVIEWED_GLOB = 'vn_weapons_reviewed_dataset_*.zip'  # zip duyệt mới nhất (011: 22 khung tự quay)
+VN_TRAIN_GROUPS = ['user_filming']  # video tự quay chỉ dùng để train""",
+}
+
+HAND_02_INTRO = """
+# Người cầm vật sắc nhọn · hand_02: tinh chỉnh hand_01 với video tự quay
+
+Giống hand_01 (pose → crop quanh tay → ResNet50), khác ở:
+
+- **Train tiếp từ `best.pt` của hand_01**, lr 3e-5, tối đa 10 epoch.
+- **Thêm zip VN duyệt mới nhất** (`vn_weapons_reviewed_dataset_*.zip`, hiện là 011): 22 khung tự quay dao phóng lợn
+  ở các tư thế khó (dựng đứng, chĩa thẳng, sát người). Nhóm `user_filming` luôn vào **train**.
+- **Bước 6:** chấm 16 clip tự quay theo thời gian, so với hand_01.
+
+**Cách chạy:** GPU **L4**, *Run all*. Phiên tự ngắt khi xong hoặc lỗi.
+Kết quả ở `MyDrive/SENTINEL/artifacts/sharp_object/hand_02/`. Ước tính 40–80 phút, phần lớn là bước 3.
+"""
+
+
+def build(revision, variant="hand_01"):
+    setup = SETUP.replace("{revision}", revision).replace("{variant}", VARIANTS[variant])
+    setup = setup.replace("{{", "{").replace("}}", "}")
+    if variant == "hand_02":
+        setup = setup.replace("EPOCHS = 25", "EPOCHS = 10")
+    parts = [("markdown", HAND_02_INTRO if variant == "hand_02" else INTRO), ("code", setup),
              ("code", SOURCE), ("code", INSTALL), ("markdown", POOL_MD), ("code", POOL_CODE), ("markdown", VN_MD),
              ("code", VN_CODE), ("markdown", CROPS_MD), ("code", CROPS_CODE), ("markdown", TRAIN_MD),
              ("code", TRAIN_CODE), ("markdown", EVAL_MD), ("code", EVAL_CODE),
+             *([("markdown", CLIPS_MD), ("code", CLIPS_CODE)] if variant == "hand_02" else []),
              ("markdown", "## Tự ngắt phiên\n\nKết quả đã nằm trên Drive nên ngắt phiên để không tốn compute unit.\n"),
              ("code", "disconnect('XONG. Kết quả ở ' + str(OUT))\n")]
     cells = [cell(kind, value, index) for index, (kind, value) in enumerate(parts)]
@@ -392,12 +471,13 @@ def build(revision):
                                              "kernelspec": {"display_name": "Python 3", "name": "python3"},
                                              "language_info": {"name": "python"}},
                 "nbformat": 4, "nbformat_minor": 5}
-    OUTPUT.parent.mkdir(exist_ok=True)
-    OUTPUT.write_text(json.dumps(notebook, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
-    print("wrote", OUTPUT)
+    output = OUTPUTS[variant]
+    output.parent.mkdir(exist_ok=True)
+    output.write_text(json.dumps(notebook, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+    print("wrote", output)
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2 or len(sys.argv[1]) != 40:
-        raise SystemExit("usage: build_sharp_hand_notebook.py <40-char source commit sha>")
-    build(sys.argv[1])
+    if len(sys.argv) not in (2, 3) or len(sys.argv[1]) != 40 or (len(sys.argv) == 3 and sys.argv[2] not in VARIANTS):
+        raise SystemExit("usage: build_sharp_hand_notebook.py <40-char source commit sha> [hand_01|hand_02]")
+    build(sys.argv[1], sys.argv[2] if len(sys.argv) == 3 else "hand_01")

@@ -295,11 +295,18 @@ def main():
     parser.add_argument("--vn-test", type=float, default=0.2)
     parser.add_argument("--public-val", type=float, default=0.08)
     parser.add_argument("--public-test", type=float, default=0.07)
+    parser.add_argument("--vn-train-groups", nargs="*", default=[],
+                        help="Vietnamese groups containing any of these substrings always go to train "
+                             "(e.g. self-filmed videos of one room that must not be used for evaluation)")
     args = parser.parse_args()
 
     public = pool_items(args.pool) if args.pool else []
     vietnamese, report = vn_items(args.vn, args.vn_keep_empty)
-    assignment = vn_splits({item["group"] for item in vietnamese}, args.vn_val, args.vn_test)
+    forced = {item["group"] for item in vietnamese if any(k in item["group"] for k in args.vn_train_groups)}
+    assignment = vn_splits({item["group"] for item in vietnamese} - forced, args.vn_val, args.vn_test)
+    assignment.update({group: "train" for group in forced})
+    if forced:
+        print(f"forced to train: {sorted(forced)}", flush=True)
     if not public and not vietnamese:
         raise SystemExit("no labelled images found")
     rows, lists = write_dataset(args.out, public, vietnamese, assignment, args)
