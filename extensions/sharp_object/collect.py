@@ -325,6 +325,54 @@ def coco(pool, work, limit, min_area=0.002):
     return added
 
 
+# Hard negatives for the hand-crop classifier: people holding long non-weapon objects.
+COCO_HARD_NEGATIVES = ("baseball bat", "tennis racket", "umbrella", "skis")
+COCO_EXCLUDE = ("knife", "scissors")  # anything sharp in the image -> not a clean negative
+
+
+def coco_negatives(pool, work, limit, min_area=0.002):
+    """COCO images with a person and a bat / racket / umbrella / skis and nothing sharp; no boxes (negatives)."""
+    archive = Path(work) / "coco_annotations_2017.zip"
+    fetch.download(COCO_ANNOTATIONS, archive)
+    selected = []
+    with zipfile.ZipFile(archive) as bundle:
+        for split in ("train2017", "val2017"):
+            content = json.loads(bundle.read(f"annotations/instances_{split}.json"))
+            ids = {c["name"]: c["id"] for c in content["categories"]}
+            wanted = {ids[n] for n in COCO_HARD_NEGATIVES}
+            excluded = {ids[n] for n in COCO_EXCLUDE}
+            images = {i["id"]: i for i in content["images"]}
+            seen = defaultdict(set)
+            largest = defaultdict(float)
+            for ann in content["annotations"]:
+                seen[ann["image_id"]].add(ann["category_id"])
+                if ann["category_id"] in wanted:
+                    info = images[ann["image_id"]]
+                    largest[ann["image_id"]] = max(largest[ann["image_id"]],
+                                                   ann["area"] / (info["width"] * info["height"]))
+            for image_id, area in largest.items():
+                if area >= min_area and ids["person"] in seen[image_id] and not seen[image_id] & excluded:
+                    selected.append((split, images[image_id]["file_name"]))
+    archive.unlink(missing_ok=True)
+    random.Random(3407).shuffle(selected)
+    selected = selected[:limit]
+
+    def load(item):
+        split, name = item
+        if pool.has("coco_neg", Path(name).stem):
+            return None
+        return decode(http_bytes(COCO_IMAGE.format(split=split, name=name)))
+
+    added = 0
+    for (split, name), image in parallel(load, selected):
+        if image is None or isinstance(image, Exception):
+            continue
+        pool.add("coco_neg", Path(name).stem, image, [], "CC BY 4.0 (annotations); images per Flickr terms",
+                 "coco_neg:" + Path(name).stem, origin=split)
+        added += 1
+    return added
+
+
 def simuletic(pool, work):
     from huggingface_hub import snapshot_download
 
@@ -549,6 +597,7 @@ def main():
     parser.add_argument("--oi-negatives-per-class", type=int, default=300)
     parser.add_argument("--oi-splits", nargs="*", default=["train", "validation", "test"])
     parser.add_argument("--coco-limit", type=int, default=1500)
+    parser.add_argument("--coco-neg-limit", type=int, default=3000, help="coco_neg: people holding bats/rackets/...")
     parser.add_argument("--kinetics-per-class", type=int, default=120)
     parser.add_argument("--kinetics-classes", type=int, default=None, help="smoke tests only")
     parser.add_argument("--frames-per-clip", type=int, default=3)
@@ -578,6 +627,8 @@ def main():
                                    min(args.limit or 10 ** 9, args.oi_negatives_per_class), args.oi_splits)
             elif source == "coco":
                 count = coco(pool, args.work, args.limit or args.coco_limit)
+            elif source == "coco_neg":
+                count = coco_negatives(pool, args.work, args.limit or args.coco_neg_limit)
             else:
                 count = simuletic(pool, args.work)
             pool.save()

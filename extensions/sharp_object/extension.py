@@ -42,6 +42,7 @@ LOCATOR_CLASSES = ["knife", "machete", "sword", "spear", "axe", "sickle", "cleav
 LOCATOR_IMGSZ = 640
 LOCATOR_CONF = 0.01                   # very low: display only, and only on hands the classifier flagged
 LOCATOR_REACH = 4.0                   # search square = 4x the hand crop side, centred on the hand
+LOCATOR_MAX_SIDE = 3.0                # weapon box sides capped at 3x the hand crop side (drops huge merges)
 FLOOR_BAND = 0.12   # object entirely in the lowest 12 % of the person box and wider than tall
 #                      -> lying on the floor next to the feet, not held
 
@@ -173,8 +174,14 @@ class SharpObjectExtension(Extension):
                     best_conf = max(best_conf, float(conf))
         if best is None:
             return list(hand_box), None
-        return [min(best[0], hand_box[0]), min(best[1], hand_box[1]),
-                max(best[2], hand_box[2]), max(best[3], hand_box[3])], best_conf
+        box = [min(best[0], hand_box[0]), min(best[1], hand_box[1]),
+               max(best[2], hand_box[2]), max(best[3], hand_box[3])]
+        limit = side * LOCATOR_MAX_SIDE
+        for low, high in ((0, 2), (1, 3)):  # oversized side: keep the window that holds the hand
+            if box[high] - box[low] > limit:  # and overlaps the detected weapon the most
+                start = min(max(best[low], hand_box[high] - limit), hand_box[low])
+                box[low], box[high] = start, start + limit
+        return box, best_conf
 
     def _classify(self, crops):
         import torch

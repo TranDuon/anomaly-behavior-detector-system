@@ -166,6 +166,8 @@ def vn_items(inputs, keep_empty):
     for order, path in enumerate(inputs):
         tree = Tree(path)
         groups = manifest_groups(tree)
+        # make_negative_set.py zips: every (empty) label is a real "no weapon" frame
+        keep = keep_empty or "NEGATIVE_SET" in tree.name_set
         counts = Counter()
         dropped = Counter()
         for name in tree.names:
@@ -177,7 +179,7 @@ def vn_items(inputs, keep_empty):
                 continue
             boxes, lost = parse_label(tree.text(label), class_names_for(tree, name))
             dropped += lost
-            if not boxes and not keep_empty:
+            if not boxes and not keep:
                 counts["empty_skipped"] += 1
                 continue
             data = tree.read(name)

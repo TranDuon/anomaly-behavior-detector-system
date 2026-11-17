@@ -98,10 +98,13 @@ def loader(root, rows, train, batch, workers, sample_weights=None, samples=None)
                                        persistent_workers=workers > 0)
 
 
-def train_weights(rows, vn_weight, pseudo_weight):
+HARD_NEGATIVE_SOURCES = ("coco_neg",)  # people holding bats / rackets / umbrellas / skis (collect.py)
+
+
+def train_weights(rows, vn_weight, pseudo_weight, hard_weight=1.0):
     """Per-crop sampling weights: source/kind weight, then each class gets half of the total mass."""
-    base = np.array([(vn_weight if r["source"] == "vn" else 1.0) * (pseudo_weight if r["kind"] == "pseudo" else 1.0)
-                     for r in rows])
+    base = np.array([(vn_weight if r["source"] == "vn" else hard_weight if r["source"] in HARD_NEGATIVE_SOURCES else 1.0)
+                     * (pseudo_weight if r["kind"] == "pseudo" else 1.0) for r in rows])
     labels = np.array([r["label"] for r in rows])
     for value in (0, 1):
         mask = labels == value
@@ -139,7 +142,7 @@ def train(args):
     device = torch.device(args.device or ("cuda" if torch.cuda.is_available() else "cpu"))
     samples = min(len(train_rows), args.max_samples_per_epoch) if args.max_samples_per_epoch else len(train_rows)
     train_loader = loader(args.crops, train_rows, True, args.batch, args.workers,
-                          train_weights(train_rows, args.vn_weight, args.pseudo_weight), samples)
+                          train_weights(train_rows, args.vn_weight, args.pseudo_weight, args.hard_negative_weight), samples)
     val_loader = loader(args.crops, val_rows, False, args.batch * 2, args.workers)
     model = build_classifier(args.arch, pretrained=True).to(device).to(memory_format=torch.channels_last)
     head = list(model.fc.parameters())
@@ -254,6 +257,9 @@ def evaluate(args):
     report["alert_test"] = alert_rates(test_images, threshold)
     report["alert_vn_val"] = alert_rates([r for r in val_images if r[0] in vn_images], threshold)
     report["alert_vn_test"] = alert_rates([r for r in test_images if r[0] in vn_images], threshold)
+    for split, images in (("val", val_images), ("test", test_images)):  # false alarms on held long objects
+        hard = {r["image"] for r in split_rows[split] if r["source"] in HARD_NEGATIVE_SOURCES}
+        report[f"alert_hard_negative_{split}"] = alert_rates([r for r in images if r[0] in hard], threshold)
     negatives = [s for r, s in zip(split_rows["test"], split_scores["test"]) if not r["label"]]
     report["crop_false_alarm_test"] = float(np.mean(np.asarray(negatives) >= threshold)) if negatives else None
     report["alert_curve"] = [{"threshold": t, "test": alert_rates(test_images, t),
@@ -312,6 +318,8 @@ def main():
     parser.add_argument("--lr", type=float, default=1e-4, help="backbone lr; the head uses 10x")
     parser.add_argument("--weight-decay", type=float, default=0.05)
     parser.add_argument("--vn-weight", type=float, default=6.0, help="sampling weight of Vietnamese crops")
+    parser.add_argument("--hard-negative-weight", type=float, default=3.0,
+                        help="sampling weight of hard-negative crops (people holding bats, rackets, ...)")
     parser.add_argument("--pseudo-weight", type=float, default=0.5, help="sampling weight of pseudo crops")
     parser.add_argument("--max-samples-per-epoch", type=int, default=0, help="0 = number of train crops")
     parser.add_argument("--max-false-alarm", type=float, default=0.03, help="image-level, on val weapon-free images")

@@ -1,9 +1,11 @@
 """Build the pinned Colab notebook for the hand-crop sharp-object classifier.
 
-    python scripts/build_sharp_hand_notebook.py <source_commit_sha> [hand_01|hand_02]
+    python scripts/build_sharp_hand_notebook.py <source_commit_sha> [hand_01|hand_02|hand_03]
 
 hand_01: first run from ImageNet. hand_02: fine-tune from hand_01 with the newest reviewed VN zip
 (self-filmed frames forced into train) and a clip stability check against hand_01.
+hand_03: fine-tune from hand_02 with COCO hard negatives (people holding bats / rackets / umbrellas /
+skis; pool v2 = v1 + coco_neg) and any vn_negatives_*.zip, compared with hand_02.
 """
 
 import json
@@ -12,7 +14,8 @@ from pathlib import Path
 from textwrap import dedent
 
 COLAB = Path(__file__).resolve().parents[1] / "colab"
-OUTPUTS = {"hand_01": COLAB / "sharp_object_hand_v1.ipynb", "hand_02": COLAB / "sharp_object_hand_v2.ipynb"}
+OUTPUTS = {"hand_01": COLAB / "sharp_object_hand_v1.ipynb", "hand_02": COLAB / "sharp_object_hand_v2.ipynb",
+           "hand_03": COLAB / "sharp_object_hand_v3.ipynb"}
 
 
 def cell(kind, value, index):
@@ -208,16 +211,31 @@ Nếu `pool_v1.tar` đã có trên Drive thì chỉ giải nén. Chưa có thì 
 """
 
 POOL_CODE = """
+BASE_CACHE = PUBLIC_CACHE.with_name(f'pool_{BASE_POOL_VERSION}.tar') if BASE_POOL_VERSION else None
 if PUBLIC_CACHE.is_file() and not REFRESH_PUBLIC_POOL:
     print('Dùng pool công khai đã cache:', PUBLIC_CACHE, '(%.2f GB)' % (PUBLIC_CACHE.stat().st_size / 1e9))
     shutil.rmtree(POOL, ignore_errors=True)
     with tarfile.open(PUBLIC_CACHE) as bundle:
         bundle.extractall(WORK)
+elif BASE_CACHE is not None and BASE_CACHE.is_file() and not REFRESH_PUBLIC_POOL:
+    print('Mở pool gốc', BASE_CACHE.name, 'rồi thêm', EXTRA_POOL_SOURCES)
+    shutil.rmtree(POOL, ignore_errors=True)
+    with tarfile.open(BASE_CACHE) as bundle:
+        bundle.extractall(WORK)
+    for source in EXTRA_POOL_SOURCES:
+        py('extensions.sharp_object.collect', 'labeled', '--root', POOL, '--work', SCRATCH, '--sources', source,
+           log='collect.log')
+    partial = PUBLIC_CACHE.with_suffix('.partial')
+    with tarfile.open(partial, 'w') as bundle:
+        bundle.add(POOL, arcname='pool')
+    partial.replace(PUBLIC_CACHE)
+    print('Đã cache pool mới lên Drive:', PUBLIC_CACHE)
 else:
     failed = []
     for source, extra in (('zenodo', []), ('granada', []), ('simuletic', []),
                           ('coco', ['--coco-limit', 800]),
-                          ('openimages', ['--oi-per-class', 1500, '--oi-negatives-per-class', 300])):
+                          ('openimages', ['--oi-per-class', 1500, '--oi-negatives-per-class', 300]),
+                          *((name, []) for name in EXTRA_POOL_SOURCES)):
         try:
             py('extensions.sharp_object.collect', 'labeled', '--root', POOL, '--work', SCRATCH,
                '--sources', source, *extra, log='collect.log')
@@ -251,6 +269,8 @@ if VN_REVIEWED_GLOB:
     reviewed = sorted(VN_DIR.glob(VN_REVIEWED_GLOB))
     assert reviewed, f'Không thấy {VN_REVIEWED_GLOB} trong {VN_DIR}'
     vn_inputs.append(reviewed[-1])  # bản duyệt mới nhất đã gồm các bản trước
+if VN_NEGATIVES_GLOB:
+    vn_inputs += sorted(VN_DIR.glob(VN_NEGATIVES_GLOB))  # make_negative_set.py: khung không có vũ khí
 vn_inputs += sorted((p for p in (VN_DIR / 'labelled').iterdir() if p.suffix.lower() == '.zip' or p.is_dir()),
                     key=lambda p: p.stat().st_mtime)
 print('Đầu vào VN:')
@@ -353,7 +373,7 @@ if SYNC_DURING_TRAIN:
 common = ['--crops', CROPS, '--output', LOCAL_OUT / 'train', '--arch', ARCH, '--batch', BATCH, '--workers', WORKERS]
 try:
     py('extensions.sharp_object.train_hand_classifier', '--stage', 'train', *common, '--epochs', EPOCHS,
-       '--vn-weight', VN_WEIGHT, '--lr', LR, *(['--init', INIT_LOCAL] if INIT_FROM else []), log='train.log')
+       '--vn-weight', VN_WEIGHT, '--lr', LR, '--hard-negative-weight', HARD_NEGATIVE_WEIGHT, *(['--init', INIT_LOCAL] if INIT_FROM else []), log='train.log')
 finally:
     stop_sync.set()
     sync_to_drive()
@@ -377,8 +397,9 @@ fmt = lambda d: {k: (round(v, 3) if isinstance(v, float) else v) for k, v in d.i
 for key in ('crop_all_val', 'crop_all_test', 'crop_vn_val', 'crop_vn_test'):
     print(f'{key:16s}', fmt(report[key]))
 print('\\nNgưỡng cảnh báo:', report['alert_threshold'], '-', report['threshold_rule'])
-for key in ('alert_val', 'alert_test', 'alert_vn_test'):
-    print(f'{key:16s}', fmt(report[key]))
+for key in ('alert_val', 'alert_test', 'alert_vn_test', 'alert_hard_negative_val', 'alert_hard_negative_test'):
+    if key in report:
+        print(f'{key:24s}', fmt(report[key]))
 print('Báo nhầm theo crop (test):', report['crop_false_alarm_test'])
 print('\\nĐường cong ngưỡng (test):')
 for row in report['alert_curve']:
@@ -429,14 +450,33 @@ VARIANTS = {
 INIT_FROM = None              # train từ ImageNet
 LR = 1e-4
 VN_REVIEWED_GLOB = None
-VN_TRAIN_GROUPS = []""",
+VN_TRAIN_GROUPS = []
+BASE_POOL_VERSION = None
+EXTRA_POOL_SOURCES = []
+VN_NEGATIVES_GLOB = None
+HARD_NEGATIVE_WEIGHT = 1.0""",
     "hand_02": """RUN_TAG = 'hand_02'
 HAND_01 = Path('/content/drive/MyDrive/SENTINEL/artifacts/sharp_object/hand_01')
 INIT_FROM = HAND_01 / 'train' / 'best.pt'   # train tiếp từ hand_01
 PREVIOUS_ZIP = HAND_01 / 'sharp_object_hand_01.zip'  # để so sánh ở bước 6
 LR = 3e-5                     # lr nhỏ vì chỉ tinh chỉnh
 VN_REVIEWED_GLOB = 'vn_weapons_reviewed_dataset_*.zip'  # zip duyệt mới nhất (011: 22 khung tự quay)
-VN_TRAIN_GROUPS = ['user_filming']  # video tự quay chỉ dùng để train""",
+VN_TRAIN_GROUPS = ['user_filming']  # video tự quay chỉ dùng để train
+BASE_POOL_VERSION = None
+EXTRA_POOL_SOURCES = []
+VN_NEGATIVES_GLOB = None
+HARD_NEGATIVE_WEIGHT = 1.0""",
+    "hand_03": """RUN_TAG = 'hand_03'
+HAND_02 = Path('/content/drive/MyDrive/SENTINEL/artifacts/sharp_object/hand_02')
+INIT_FROM = HAND_02 / 'train' / 'best.pt'   # train tiếp từ hand_02
+PREVIOUS_ZIP = HAND_02 / 'sharp_object_hand_02.zip'  # để so sánh ở bước 6
+LR = 3e-5
+VN_REVIEWED_GLOB = 'vn_weapons_reviewed_dataset_*.zip'
+VN_TRAIN_GROUPS = ['user_filming']
+BASE_POOL_VERSION = 'v1'      # pool v2 = pool v1 (cache trên Drive) + bản âm COCO
+EXTRA_POOL_SOURCES = ['coco_neg']  # người cầm gậy bóng chày / vợt / ô / ván trượt, không có vật sắc
+VN_NEGATIVES_GLOB = 'vn_negatives_*.zip'  # nếu sau này có video bản âm tự quay
+HARD_NEGATIVE_WEIGHT = 3.0    # lấy mẫu bản âm khó gấp 3""",
 }
 
 HAND_02_INTRO = """
@@ -453,17 +493,39 @@ Giống hand_01 (pose → crop quanh tay → ResNet50), khác ở:
 Kết quả ở `MyDrive/SENTINEL/artifacts/sharp_object/hand_02/`. Ước tính 40–80 phút, phần lớn là bước 3.
 """
 
+HAND_03_INTRO = """
+# Người cầm vật sắc nhọn · hand_03: bớt báo nhầm khi cầm gậy
+
+hand_02 chấm ô quanh tay **cầm gậy** tới 0.96–0.996 (video phá hoại), nên báo nhầm "cầm vật sắc nhọn".
+hand_03 tinh chỉnh tiếp từ hand_02 với **bản âm khó** lấy từ dữ liệu có sẵn, không cần quay thêm:
+
+- **COCO `coco_neg`** (tối đa 3000 ảnh): ảnh có người và gậy bóng chày / vợt tennis / ô / ván trượt tuyết,
+  không có dao hay kéo. Mọi ô quanh tay ở các ảnh này là bản âm, lấy mẫu **×3**.
+- Pool công khai **v2** = pool v1 đã cache + `coco_neg`; lần đầu tạo và cache lên Drive (thêm ~10–20 phút), lần sau dùng lại.
+- Giữ toàn bộ dữ liệu hand_02 (zip VN 011, 22 khung tự quay ở train), lr 3e-5, tối đa 10 epoch.
+- Ngưỡng vẫn chọn theo báo nhầm ≤ 3% trên ảnh không vũ khí của val, nay gồm cả ảnh cầm gậy/vợt.
+
+**Bước 5:** `alert_hard_negative_test` = tỉ lệ ảnh *người cầm gậy/vợt/ô* bị báo nhầm (càng thấp càng tốt).
+**Bước 6:** 16 clip dao phóng lợn tự quay, so với hand_02: `alert_share` không được tụt nhiều.
+
+**Cách chạy:** GPU **L4**, *Run all*. Kết quả ở `MyDrive/SENTINEL/artifacts/sharp_object/hand_03/`. Ước tính 50–90 phút.
+"""
+
 
 def build(revision, variant="hand_01"):
     setup = SETUP.replace("{revision}", revision).replace("{variant}", VARIANTS[variant])
     setup = setup.replace("{{", "{").replace("}}", "}")
-    if variant == "hand_02":
+    if variant in ("hand_02", "hand_03"):
         setup = setup.replace("EPOCHS = 25", "EPOCHS = 10")
-    parts = [("markdown", HAND_02_INTRO if variant == "hand_02" else INTRO), ("code", setup),
+    if variant == "hand_03":
+        setup = setup.replace("PUBLIC_POOL_VERSION = 'v1'    # dùng lại pool công khai sharp_02 đã cache trên Drive",
+                              "PUBLIC_POOL_VERSION = 'v2'    # v1 + bản âm COCO (tạo lần đầu, lần sau dùng cache)")
+    intro = {"hand_02": HAND_02_INTRO, "hand_03": HAND_03_INTRO}.get(variant, INTRO)
+    parts = [("markdown", intro), ("code", setup),
              ("code", SOURCE), ("code", INSTALL), ("markdown", POOL_MD), ("code", POOL_CODE), ("markdown", VN_MD),
              ("code", VN_CODE), ("markdown", CROPS_MD), ("code", CROPS_CODE), ("markdown", TRAIN_MD),
              ("code", TRAIN_CODE), ("markdown", EVAL_MD), ("code", EVAL_CODE),
-             *([("markdown", CLIPS_MD), ("code", CLIPS_CODE)] if variant == "hand_02" else []),
+             *([("markdown", CLIPS_MD), ("code", CLIPS_CODE)] if variant != "hand_01" else []),
              ("markdown", "## Tự ngắt phiên\n\nKết quả đã nằm trên Drive nên ngắt phiên để không tốn compute unit.\n"),
              ("code", "disconnect('XONG. Kết quả ở ' + str(OUT))\n")]
     cells = [cell(kind, value, index) for index, (kind, value) in enumerate(parts)]
