@@ -12,6 +12,14 @@ Approach 1 (detector + association):
 
 Boxes returned to the runtime are the holders' person boxes (overlay highlight); the weapon
 boxes are in details["weapons"], all in source-frame pixels.
+
+Approach 2 (spec "method": "hand_crop", train_hand_classifier.py):
+  1. A pose model (shipped in the install folder) finds people and their elbow/wrist keypoints
+     in the latest sample.
+  2. A square crop around each visible hand (extensions/sharp_object/hand_crop.py, same
+     geometry as training) goes through a ResNet: "this hand holds a sharp object".
+  3. The step score is the highest hand score; boxes are the person boxes of hands at or above
+     the alert threshold, details["hands"] lists every hand crop with its score.
 """
 
 import json
@@ -67,6 +75,7 @@ class SharpObjectExtension(Extension):
     confirm_seconds = 0.5
     release_seconds = 1.0
     threshold = 0.35
+    method = "detector"
 
     def load(self, weights_dir=WEIGHTS):
         import torch
@@ -77,6 +86,10 @@ class SharpObjectExtension(Extension):
         self.threshold = float(spec["alert_threshold"])
         self.confirm_seconds = float(spec.get("confirm_seconds", self.confirm_seconds))
         self.release_seconds = float(spec.get("release_seconds", self.release_seconds))
+        self.method = spec.get("method", "detector")
+        if self.method == "hand_crop":
+            self._load_hand_crop(folder, spec)
+            return
         self.imgsz = int(spec.get("imgsz", 960))
         # Keep low-confidence boxes for the details; the runtime gate applies the alert threshold.
         self.min_conf = min(0.1, self.threshold)
@@ -87,8 +100,66 @@ class SharpObjectExtension(Extension):
         self.model.predict(np.zeros((self.imgsz, self.imgsz, 3), np.uint8), imgsz=self.imgsz, verbose=False,
                            device=self.device, half=self.half)  # warm-up
 
+    def _load_hand_crop(self, folder, spec):
+        import torch
+        from ultralytics import YOLO
+
+        from extensions.sharp_object.hand_crop import crop_params, load_classifier
+
+        self.device = "cuda:0" if torch.cuda.is_available() else "cpu"
+        self.half = self.device != "cpu"
+        self.crop = crop_params(spec)
+        self.input_size = int(spec.get("input_size", 224))
+        self.pose_imgsz = int(spec.get("pose_imgsz", 640))
+        self.pose_conf = float(spec.get("pose_conf", 0.35))
+        self.max_people = int(spec.get("max_people", 8))
+        self.pose = YOLO(str(folder / spec["pose_weights"]))
+        self.classifier, _ = load_classifier(folder / spec["classifier"], self.device)
+        if self.half:
+            self.classifier.half()
+        blank = np.zeros((self.pose_imgsz, self.pose_imgsz, 3), np.uint8)
+        self.pose.predict(blank, imgsz=self.pose_imgsz, verbose=False, device=self.device, half=self.half)  # warm-up
+        self._classify([np.zeros((self.input_size, self.input_size, 3), np.uint8)])
+
+    def _classify(self, crops):
+        import torch
+
+        from extensions.sharp_object.hand_crop import to_tensor
+
+        batch = to_tensor(crops).to(self.device)
+        with torch.inference_mode():
+            logits = self.classifier(batch.half() if self.half else batch)
+        return torch.sigmoid(logits.float().squeeze(1)).cpu().numpy()
+
+    def _observe_hand_crop(self, frames, people):
+        from extensions.sharp_object.hand_crop import cut, hand_crops, people_from_pose
+
+        frame = frames[-1]
+        height, width = frame.shape[:2]
+        source_w, source_h = people.get("frame_size") or (width, height)
+        sx, sy = source_w / width, source_h / height
+        result = self.pose.predict(frame, imgsz=self.pose_imgsz, conf=self.pose_conf, verbose=False,
+                                   device=self.device, half=self.half)[0]
+        persons = people_from_pose(result, self.pose_conf, self.max_people)
+        crops, hands = [], []
+        for index, (box, keypoints) in enumerate(persons):
+            for hand in hand_crops(box, keypoints, self.crop):
+                crops.append(cut(frame, hand["box"], self.input_size))
+                hands.append({"person": index, "arm": hand["arm"],
+                              "box": [round(float(v) * s, 1) for v, s in zip(hand["box"], (sx, sy, sx, sy))]})
+        scores = self._classify(crops) if crops else []
+        for hand, score in zip(hands, scores):
+            hand["score"] = round(float(score), 4)
+        holders = sorted({h["person"] for h in hands if h["score"] >= self.threshold})
+        person_boxes = [[float(v) * s for v, s in zip(persons[i][0], (sx, sy, sx, sy))] for i in holders]
+        hands = sorted(hands, key=lambda h: -h["score"])[:MAX_REPORTED]
+        return {"score": float(max(scores, default=0.)), "boxes": person_boxes,
+                "details": {"method": "hand_crop", "people": len(persons), "hands": hands}}
+
     def observe(self, frames, timestamp, people=None):
         people = people or {}
+        if self.method == "hand_crop":
+            return self._observe_hand_crop(frames, people)
         frame = frames[-1]
         height, width = frame.shape[:2]
         source_w, source_h = people.get("frame_size") or (width, height)

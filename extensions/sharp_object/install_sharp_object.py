@@ -3,7 +3,8 @@
     extensions\\env\\Scripts\\python.exe -m extensions.sharp_object.install_sharp_object <sharp_object_<RUN_TAG>.zip>
     extensions\\env\\Scripts\\python.exe -m extensions.sharp_object.install_sharp_object --weights best.pt --threshold 0.35
 
-The zip comes from the Colab notebook (train_sharp_object.py --stage export). --weights installs
+The zip comes from a Colab notebook: the YOLO detector (train_sharp_object.py --stage export) or the
+hand-crop classifier (train_hand_classifier.py --stage export, spec "method": "hand_crop"). --weights installs
 an intermediate Ultralytics checkpoint (e.g. train/weights/best.pt from Drive) with a hand-set
 alert threshold, for trying the runtime before the run finishes.
 
@@ -23,7 +24,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 TARGET = ROOT / "weights" / "extensions" / "sharp_object"
-MEMBERS = ("sharp_object.pt", "sharp_object_spec.json")
+MEMBERS = ("sharp_object_spec.json",)  # weights members depend on the spec method, checked in check()
 
 
 def sha256(path):
@@ -34,11 +35,38 @@ def sha256(path):
     return digest.hexdigest()
 
 
+def check_hand_crop(folder, spec):
+    """Hand-crop install: classifier + pose weights load, and one blank step runs end to end."""
+    import numpy as np
+    from ultralytics import YOLO
+
+    from extensions.sharp_object.hand_crop import load_classifier, to_tensor
+
+    missing = [k for k in ("classifier", "arch", "pose_weights", "alert_threshold") if k not in spec]
+    if missing or spec["name"] != "sharp_object":
+        raise ValueError(f"bad spec (missing {missing}, name {spec.get('name')})")
+    if not 0 < float(spec["alert_threshold"]) < 1:
+        raise ValueError("alert_threshold must be in (0, 1)")
+    for member in (spec["classifier"], spec["pose_weights"]):
+        if not (folder / member).is_file():
+            raise ValueError(f"missing {member}")
+    model, arch = load_classifier(folder / spec["classifier"])
+    size = int(spec.get("input_size", 224))
+    model(to_tensor([np.zeros((size, size, 3), np.uint8)]))
+    pose = YOLO(str(folder / spec["pose_weights"]))
+    if pose.task != "pose":
+        raise ValueError(f"expected a pose model, got {pose.task}")
+    pose.predict(np.zeros((640, 640, 3), np.uint8), verbose=False, device="cpu")
+    return spec, {"method": "hand_crop", "arch": arch}
+
+
 def check(folder):
     import numpy as np
     from ultralytics import YOLO
 
     spec = json.loads((folder / "sharp_object_spec.json").read_text(encoding="utf-8"))
+    if spec.get("method") == "hand_crop":
+        return check_hand_crop(folder, spec)
     missing = [k for k in ("name", "weights", "alert_threshold", "imgsz") if k not in spec]
     if missing or spec["name"] != "sharp_object":
         raise ValueError(f"bad spec (missing {missing}, name {spec.get('name')})")
