@@ -98,7 +98,9 @@ def loader(root, rows, train, batch, workers, sample_weights=None, samples=None)
                                        persistent_workers=workers > 0)
 
 
-HARD_NEGATIVE_SOURCES = ("coco_neg",)  # people holding bats / rackets / umbrellas / skis (collect.py)
+# collect.py hard negatives: people holding bats / rackets (coco_neg), phones / bottles / cups (coco_hold),
+# brooms / vacuums / household objects indoors (charades_neg)
+HARD_NEGATIVE_SOURCES = ("coco_neg", "coco_hold", "charades_neg")
 
 
 def train_weights(rows, vn_weight, pseudo_weight, hard_weight=1.0):

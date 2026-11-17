@@ -1,11 +1,14 @@
 """Build the pinned Colab notebook for the hand-crop sharp-object classifier.
 
-    python scripts/build_sharp_hand_notebook.py <source_commit_sha> [hand_01|hand_02|hand_03]
+    python scripts/build_sharp_hand_notebook.py <source_commit_sha> [hand_01|hand_02|hand_03|hand_04]
 
 hand_01: first run from ImageNet. hand_02: fine-tune from hand_01 with the newest reviewed VN zip
 (self-filmed frames forced into train) and a clip stability check against hand_01.
 hand_03: fine-tune from hand_02 with COCO hard negatives (people holding bats / rackets / umbrellas /
 skis; pool v2 = v1 + coco_neg) and any vn_negatives_*.zip, compared with hand_02.
+hand_04: fine-tune from hand_03 with indoor everyday-object negatives (COCO phones / bottles / cups ...,
+Charades people holding brooms / vacuums / phones / cups at home; pool v3 = v2 + coco_hold + charades_neg),
+lower weight on the self-filmed positives, and a false-alarm check on held-out Charades test clips.
 """
 
 import json
@@ -15,7 +18,7 @@ from textwrap import dedent
 
 COLAB = Path(__file__).resolve().parents[1] / "colab"
 OUTPUTS = {"hand_01": COLAB / "sharp_object_hand_v1.ipynb", "hand_02": COLAB / "sharp_object_hand_v2.ipynb",
-           "hand_03": COLAB / "sharp_object_hand_v3.ipynb"}
+           "hand_03": COLAB / "sharp_object_hand_v3.ipynb", "hand_04": COLAB / "sharp_object_hand_v4.ipynb"}
 
 
 def cell(kind, value, index):
@@ -443,6 +446,18 @@ if any(clips_dir.iterdir()):
        '--clips', clips_dir, '--out', LOCAL_OUT / 'train' / 'clips_eval.json', log='clips_eval.log')
     shutil.copy(LOCAL_OUT / 'train' / 'clips_eval.json', OUT / 'clips_eval.json')
     sync_to_drive()
+if NEG_CLIPS:
+    # Bản âm theo thời gian: clip Charades TEST (người cầm chổi / điện thoại / cốc... trong nhà), không dùng train.
+    neg_dir = WORK / 'neg_clips'
+    shutil.rmtree(neg_dir, ignore_errors=True)
+    py('extensions.sharp_object.collect', 'charades_test', '--root', neg_dir, '--work', SCRATCH, '--limit', NEG_CLIPS,
+       log='neg_clips.log')
+    py('extensions.sharp_object.eval_hand_clips', '--package', LOCAL_OUT / 'train' / 'package', *extra,
+       '--clips', neg_dir, '--out', LOCAL_OUT / 'train' / 'clips_neg_eval.json', log='clips_eval.log')
+    shutil.copy(LOCAL_OUT / 'train' / 'clips_neg_eval.json', OUT / 'clips_neg_eval.json')
+    neg = json.loads((LOCAL_OUT / 'train' / 'clips_neg_eval.json').read_text())
+    print('BẢN ÂM (càng thấp càng tốt) - tỉ lệ bước vượt ngưỡng:', {k: v['alert_share'] for k, v in neg['overall'].items()})
+    sync_to_drive()
 """
 
 VARIANTS = {
@@ -454,7 +469,8 @@ VN_TRAIN_GROUPS = []
 BASE_POOL_VERSION = None
 EXTRA_POOL_SOURCES = []
 VN_NEGATIVES_GLOB = None
-HARD_NEGATIVE_WEIGHT = 1.0""",
+HARD_NEGATIVE_WEIGHT = 1.0
+NEG_CLIPS = 0""",
     "hand_02": """RUN_TAG = 'hand_02'
 HAND_01 = Path('/content/drive/MyDrive/SENTINEL/artifacts/sharp_object/hand_01')
 INIT_FROM = HAND_01 / 'train' / 'best.pt'   # train tiếp từ hand_01
@@ -465,7 +481,8 @@ VN_TRAIN_GROUPS = ['user_filming']  # video tự quay chỉ dùng để train
 BASE_POOL_VERSION = None
 EXTRA_POOL_SOURCES = []
 VN_NEGATIVES_GLOB = None
-HARD_NEGATIVE_WEIGHT = 1.0""",
+HARD_NEGATIVE_WEIGHT = 1.0
+NEG_CLIPS = 0""",
     "hand_03": """RUN_TAG = 'hand_03'
 HAND_02 = Path('/content/drive/MyDrive/SENTINEL/artifacts/sharp_object/hand_02')
 INIT_FROM = HAND_02 / 'train' / 'best.pt'   # train tiếp từ hand_02
@@ -476,7 +493,21 @@ VN_TRAIN_GROUPS = ['user_filming']
 BASE_POOL_VERSION = 'v1'      # pool v2 = pool v1 (cache trên Drive) + bản âm COCO
 EXTRA_POOL_SOURCES = ['coco_neg']  # người cầm gậy bóng chày / vợt / ô / ván trượt, không có vật sắc
 VN_NEGATIVES_GLOB = 'vn_negatives_*.zip'  # nếu sau này có video bản âm tự quay
-HARD_NEGATIVE_WEIGHT = 3.0    # lấy mẫu bản âm khó gấp 3""",
+HARD_NEGATIVE_WEIGHT = 3.0    # lấy mẫu bản âm khó gấp 3
+NEG_CLIPS = 0""",
+    "hand_04": """RUN_TAG = 'hand_04'
+HAND_03 = Path('/content/drive/MyDrive/SENTINEL/artifacts/sharp_object/hand_03')
+INIT_FROM = HAND_03 / 'train' / 'best.pt'   # train tiếp từ hand_03
+PREVIOUS_ZIP = HAND_03 / 'sharp_object_hand_03.zip'  # để so sánh ở bước 6
+LR = 3e-5
+VN_WEIGHT = 3                 # hạ từ 6: bớt "học thuộc" căn phòng tự quay (chỉ có bản dương)
+VN_REVIEWED_GLOB = 'vn_weapons_reviewed_dataset_*.zip'
+VN_TRAIN_GROUPS = ['user_filming']
+BASE_POOL_VERSION = 'v2'      # pool v3 = v2 (cache trên Drive) + 2 nguồn bản âm mới
+EXTRA_POOL_SOURCES = ['coco_hold', 'charades_neg']  # COCO cầm điện thoại/chai/cốc...; Charades cầm chổi/điện thoại... trong nhà
+VN_NEGATIVES_GLOB = 'vn_negatives_*.zip'  # video bản âm tự quay (make_negative_set.py), nếu có
+HARD_NEGATIVE_WEIGHT = 3.0
+NEG_CLIPS = 24                # clip Charades TEST (không dùng train) để đo báo nhầm theo thời gian""",
 }
 
 HAND_02_INTRO = """
@@ -511,16 +542,42 @@ hand_03 tinh chỉnh tiếp từ hand_02 với **bản âm khó** lấy từ d�
 **Cách chạy:** GPU **L4**, *Run all*. Kết quả ở `MyDrive/SENTINEL/artifacts/sharp_object/hand_03/`. Ước tính 50–90 phút.
 """
 
+HAND_04_INTRO = """
+# Người cầm vật sắc nhọn · hand_04: hết báo nhầm đồ vật thường ngày
+
+Khi test bằng camera, hand_03 vẫn báo "cầm vật sắc nhọn" khi cầm **điện thoại, bình nước, chổi, cây lau nhà**:
+gần như không có ô *tay cầm đồ vật trong nhà* nào làm bản âm, trong khi 22 khung tự quay (cùng phòng) đều là bản dương ×6,
+nên model dễ học "người trong phòng này giơ tay cầm gì đó = dao". hand_04 tinh chỉnh tiếp từ hand_03 với:
+
+- **COCO `coco_hold`** (tối đa 3000 ảnh): người cầm điện thoại, chai, cốc, sách, điều khiển, bàn chải, laptop...
+  (bỏ ảnh có dao, kéo, nĩa).
+- **Charades `charades_neg`** (800 video × 3 khung): quay **trong nhà bằng camera nghiệp dư**, đúng đoạn người
+  *cầm chổi, máy hút bụi, điện thoại, cốc/chai, sách, khăn, gối, hộp...*; bỏ video có nấu ăn / đồ ăn (có thể có dao).
+  Chỉ tải đúng các video cần từ zip 16 GB (HTTP range), xong xoá ngay.
+- Bản âm khó lấy mẫu ×3; ảnh VN (có 22 khung tự quay) hạ từ ×6 xuống **×3**.
+- Pool **v3** = v2 + 2 nguồn trên, cache lên Drive (lần đầu thêm ~20–40 phút).
+- **Bước 6:** ngoài 16 clip dao phóng lợn, chấm thêm **24 clip Charades TEST** (không dùng train) — báo nhầm theo thời gian.
+
+**Nhìn kết quả:** bước 5 `alert_hard_negative_test` (ảnh cầm đồ vật bị báo nhầm), bước 6 *BẢN ÂM* (càng thấp càng tốt)
+và `alert_share` dao phóng lợn (không được tụt nhiều so với hand_03).
+
+**Cách chạy:** GPU **L4**, *Run all*. Kết quả ở `MyDrive/SENTINEL/artifacts/sharp_object/hand_04/`. Ước tính 70–120 phút.
+"""
+
 
 def build(revision, variant="hand_01"):
     setup = SETUP.replace("{revision}", revision).replace("{variant}", VARIANTS[variant])
     setup = setup.replace("{{", "{").replace("}}", "}")
-    if variant in ("hand_02", "hand_03"):
+    if variant in ("hand_02", "hand_03", "hand_04"):
         setup = setup.replace("EPOCHS = 25", "EPOCHS = 10")
+    if variant == "hand_04":
+        setup = setup.replace("EPOCHS = 25", "EPOCHS = 10").replace(
+            "PUBLIC_POOL_VERSION = 'v1'    # dùng lại pool công khai sharp_02 đã cache trên Drive",
+            "PUBLIC_POOL_VERSION = 'v3'    # v2 + bản âm đồ vật trong nhà (tạo lần đầu, lần sau dùng cache)")
     if variant == "hand_03":
         setup = setup.replace("PUBLIC_POOL_VERSION = 'v1'    # dùng lại pool công khai sharp_02 đã cache trên Drive",
                               "PUBLIC_POOL_VERSION = 'v2'    # v1 + bản âm COCO (tạo lần đầu, lần sau dùng cache)")
-    intro = {"hand_02": HAND_02_INTRO, "hand_03": HAND_03_INTRO}.get(variant, INTRO)
+    intro = {"hand_02": HAND_02_INTRO, "hand_03": HAND_03_INTRO, "hand_04": HAND_04_INTRO}.get(variant, INTRO)
     parts = [("markdown", intro), ("code", setup),
              ("code", SOURCE), ("code", INSTALL), ("markdown", POOL_MD), ("code", POOL_CODE), ("markdown", VN_MD),
              ("code", VN_CODE), ("markdown", CROPS_MD), ("code", CROPS_CODE), ("markdown", TRAIN_MD),

@@ -330,8 +330,15 @@ COCO_HARD_NEGATIVES = ("baseball bat", "tennis racket", "umbrella", "skis")
 COCO_EXCLUDE = ("knife", "scissors")  # anything sharp in the image -> not a clean negative
 
 
-def coco_negatives(pool, work, limit, min_area=0.002):
-    """COCO images with a person and a bat / racket / umbrella / skis and nothing sharp; no boxes (negatives)."""
+# hand_04: everyday things people hold (phones, bottles, cups...) - false alarms seen on camera.
+COCO_HELD_OBJECTS = ("cell phone", "bottle", "cup", "book", "remote", "toothbrush", "wine glass", "hair drier",
+                     "handbag", "teddy bear", "frisbee", "sports ball", "laptop", "mouse")
+COCO_EXCLUDE_HELD = ("knife", "scissors", "fork")
+
+
+def coco_negatives(pool, work, limit, min_area=0.002, wanted_names=COCO_HARD_NEGATIVES, excluded_names=COCO_EXCLUDE,
+                   source="coco_neg"):
+    """COCO images with a person and one of ``wanted_names`` and nothing sharp; no boxes (negatives)."""
     archive = Path(work) / "coco_annotations_2017.zip"
     fetch.download(COCO_ANNOTATIONS, archive)
     selected = []
@@ -339,8 +346,8 @@ def coco_negatives(pool, work, limit, min_area=0.002):
         for split in ("train2017", "val2017"):
             content = json.loads(bundle.read(f"annotations/instances_{split}.json"))
             ids = {c["name"]: c["id"] for c in content["categories"]}
-            wanted = {ids[n] for n in COCO_HARD_NEGATIVES}
-            excluded = {ids[n] for n in COCO_EXCLUDE}
+            wanted = {ids[n] for n in wanted_names}
+            excluded = {ids[n] for n in excluded_names}
             images = {i["id"]: i for i in content["images"]}
             seen = defaultdict(set)
             largest = defaultdict(float)
@@ -359,7 +366,7 @@ def coco_negatives(pool, work, limit, min_area=0.002):
 
     def load(item):
         split, name = item
-        if pool.has("coco_neg", Path(name).stem):
+        if pool.has(source, Path(name).stem):
             return None
         return decode(http_bytes(COCO_IMAGE.format(split=split, name=name)))
 
@@ -367,10 +374,87 @@ def coco_negatives(pool, work, limit, min_area=0.002):
     for (split, name), image in parallel(load, selected):
         if image is None or isinstance(image, Exception):
             continue
-        pool.add("coco_neg", Path(name).stem, image, [], "CC BY 4.0 (annotations); images per Flickr terms",
-                 "coco_neg:" + Path(name).stem, origin=split)
+        pool.add(source, Path(name).stem, image, [], "CC BY 4.0 (annotations); images per Flickr terms",
+                 f"{source}:" + Path(name).stem, origin=split)
         added += 1
     return added
+
+
+# Charades (indoor homes, amateur cameras): people holding brooms, vacuums, phones, cups, books...
+CHARADES_HELD = ("broom", "vacuum", "phone", "cup/glass/bottle", "book", "laptop", "towel", "pillow", "box", "bag",
+                 "shoe", "blanket", "mirror", "picture", "paper/notebook", "medicine", "clothes", "door")
+CHARADES_EXCLUDE = ("cook", "food", "sandwich", "dish", "groceries", "refrigerator")  # kitchen: knives possible
+
+
+def charades_classes(cache_dir):
+    from extensions.vandalism.data import download, sources
+
+    archive = Path(cache_dir) / "Charades.zip"
+    download(sources()["charades"]["annotations"], archive)
+    with zipfile.ZipFile(archive) as bundle:
+        name = next(n for n in bundle.namelist() if n.endswith("Charades_v1_classes.txt"))
+        text = bundle.read(name).decode("utf-8")
+    return {line.split(" ", 1)[0]: line.split(" ", 1)[1].strip().lower() for line in text.splitlines() if " " in line}
+
+
+def charades_selection(work, split, limit, seed=3407):
+    """[(video id, [(start, end) of 'holding' segments])] for videos with no kitchen / food action."""
+    from extensions.vandalism.data import charades_annotations
+
+    names = charades_classes(work)
+    held = {c for c, text in names.items() if any(k in text for k in CHARADES_HELD)
+            and any(v in text for v in ("holding", "tidying", "playing with", "drinking", "talking on", "fixing"))}
+    excluded = {c for c, text in names.items() if any(k in text for k in CHARADES_EXCLUDE)}
+    chosen = []
+    for row in charades_annotations(work):
+        classes = {s["class"] for s in row["segments"]}
+        if row["split"] != split or classes & excluded:
+            continue
+        spans = [(s["start"], s["end"]) for s in row["segments"] if s["class"] in held and s["end"] - s["start"] >= 1]
+        if spans:
+            chosen.append((row["id"], spans))
+    random.Random(seed).shuffle(chosen)
+    return chosen[:limit]
+
+
+def charades_negatives(pool, work, limit, frames_per_video=3):
+    """Frames inside 'holding <household object>' segments of Charades train videos; no boxes (negatives)."""
+    import cv2
+
+    from extensions.vandalism.data import fetch_charades_videos
+
+    selection = [item for item in charades_selection(work, "train", limit)
+                 if not pool.has("charades_neg", f"{item[0]}_0")]
+    paths = fetch_charades_videos([vid for vid, _ in selection], Path(work) / "charades_videos")
+    rng, added = random.Random(3407), 0
+    for vid, spans in selection:
+        if vid not in paths:
+            continue
+        video = cv2.VideoCapture(paths[vid])
+        fps = video.get(cv2.CAP_PROP_FPS) or 24.0
+        for index in range(frames_per_video):
+            start, end = spans[index % len(spans)]
+            video.set(cv2.CAP_PROP_POS_FRAMES, int(rng.uniform(start, end) * fps))
+            ok, frame = video.read()
+            if ok:
+                pool.add("charades_neg", f"{vid}_{index}", frame, [], "Charades (non-commercial research licence)",
+                         "charades_neg:" + vid, origin="train")
+                added += 1
+        video.release()
+        Path(paths[vid]).unlink(missing_ok=True)
+    return added
+
+
+def charades_test_clips(work, out, limit):
+    """Held-out Charades TEST videos with 'holding' actions, copied to ``out`` for the clip false-alarm check."""
+    from extensions.vandalism.data import fetch_charades_videos
+
+    selection = charades_selection(work, "test", limit)
+    paths = fetch_charades_videos([vid for vid, _ in selection], Path(work) / "charades_test")
+    Path(out).mkdir(parents=True, exist_ok=True)
+    for vid, path in paths.items():
+        Path(path).replace(Path(out) / f"charades_{vid}.mp4")
+    return len(paths)
 
 
 def simuletic(pool, work):
@@ -588,7 +672,8 @@ def stats(pool):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("step", choices=["labeled", "frames", "prelabel", "batches", "stats"])
+    parser.add_argument("step", choices=["labeled", "frames", "prelabel", "batches", "stats", "charades_test"],
+                        help="charades_test: copy held-out Charades test videos (holding objects) into --root")
     parser.add_argument("--root", type=Path, required=True, help="pool directory (on Drive in Colab)")
     parser.add_argument("--work", type=Path, default=Path("/content/sharp_work"), help="scratch for archives/videos")
     parser.add_argument("--sources", nargs="*", default=["zenodo", "granada", "openimages", "coco", "simuletic"])
@@ -598,6 +683,7 @@ def main():
     parser.add_argument("--oi-splits", nargs="*", default=["train", "validation", "test"])
     parser.add_argument("--coco-limit", type=int, default=1500)
     parser.add_argument("--coco-neg-limit", type=int, default=3000, help="coco_neg: people holding bats/rackets/...")
+    parser.add_argument("--charades-videos", type=int, default=800, help="charades_neg: videos (3 frames each)")
     parser.add_argument("--kinetics-per-class", type=int, default=120)
     parser.add_argument("--kinetics-classes", type=int, default=None, help="smoke tests only")
     parser.add_argument("--frames-per-clip", type=int, default=3)
@@ -615,6 +701,9 @@ def main():
     args.root.mkdir(parents=True, exist_ok=True)
     args.work.mkdir(parents=True, exist_ok=True)
     pool = Pool(args.root)
+    if args.step == "charades_test":
+        print("charades test clips:", charades_test_clips(args.work, args.root, args.limit or 24))
+        return
     if args.step == "labeled":
         for source in args.sources:
             started = time.perf_counter()
@@ -629,6 +718,11 @@ def main():
                 count = coco(pool, args.work, args.limit or args.coco_limit)
             elif source == "coco_neg":
                 count = coco_negatives(pool, args.work, args.limit or args.coco_neg_limit)
+            elif source == "coco_hold":
+                count = coco_negatives(pool, args.work, args.limit or args.coco_neg_limit, wanted_names=COCO_HELD_OBJECTS,
+                                       excluded_names=COCO_EXCLUDE_HELD, source="coco_hold")
+            elif source == "charades_neg":
+                count = charades_negatives(pool, args.work, args.limit or args.charades_videos)
             else:
                 count = simuletic(pool, args.work)
             pool.save()
