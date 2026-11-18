@@ -122,9 +122,9 @@ def annotate(frame, result):
     verifying = [n for n in names if (result.get("action_states") or {}).get(n) == "verifying"]
     if extension_active or (verifying and result["state"] not in {"fighting", "verifying"}):
         scene = [] if relabelled else list(result.get("person_boxes", []) or result.get("vandalism_display_boxes", []))
-        if set(extension_active or verifying) <= {"sharp_object"}:
-            # Person holding a sharp object: highlight only the holders, not everybody in view.
-            scene = list((result.get("action_regions") or {}).get("sharp_object", []))
+        if set(extension_active or verifying) <= set(behavior_registry.WEAPON_BEHAVIORS):
+            # Person holding a sharp object / handgun: highlight only the holders, not everybody in view.
+            scene = [box for name in behavior_registry.WEAPON_BEHAVIORS for box in (result.get("action_regions") or {}).get(name, [])]
         result = {**result, "state": "fighting" if extension_active else "verifying",
                   "regions": list(result.get("regions", [])) + scene,
                   **({} if extension_active else {"suspected": verifying})}
@@ -167,8 +167,10 @@ def annotate(frame, result):
                     (40, 220, 180),
                     1,
                 )
-    sharp = ((result.get("extensions") or {}).get("behaviors") or {}).get("sharp_object") or {}
-    if sharp.get("state") in {"fighting", "verifying"} and not result.get("score_stale", False):
+    for weapon_name in behavior_registry.WEAPON_BEHAVIORS:
+        sharp = ((result.get("extensions") or {}).get("behaviors") or {}).get(weapon_name) or {}
+        if sharp.get("state") not in {"fighting", "verifying"} or result.get("score_stale", False):
+            continue
         for weapon in sharp.get("weapons", []):
             if weapon.get("holder") is None:
                 continue
@@ -500,10 +502,14 @@ class FightProcessor:
                 for name, boxes in (result.get("action_regions") or {}).items()
             }
             behaviors = (result.get("extensions") or {}).get("behaviors") or {}
-            if (behaviors.get("sharp_object") or {}).get("weapons"):
-                sharp = dict(behaviors["sharp_object"])
-                sharp["weapons"] = [{**w, "box": [c * scale for c in w["box"]]} for w in sharp["weapons"]]
-                display["extensions"] = {**result["extensions"], "behaviors": {**behaviors, "sharp_object": sharp}}
+            scaled = {}
+            for weapon_name in behavior_registry.WEAPON_BEHAVIORS:
+                if (behaviors.get(weapon_name) or {}).get("weapons"):
+                    sharp = dict(behaviors[weapon_name])
+                    sharp["weapons"] = [{**w, "box": [c * scale for c in w["box"]]} for w in sharp["weapons"]]
+                    scaled[weapon_name] = sharp
+            if scaled:
+                display["extensions"] = {**result["extensions"], "behaviors": {**behaviors, **scaled}}
         image = annotate(preview, display)
         ok, encoded = cv2.imencode(".jpg", image, [cv2.IMWRITE_JPEG_QUALITY, settings.jpeg_quality])
         if ok:

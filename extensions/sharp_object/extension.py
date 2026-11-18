@@ -69,6 +69,34 @@ CLIP_LOCAL = WEIGHTS.parent / "clip" / "ViT-B-32.pt"   # used when present, else
 FLOOR_BAND = 0.12   # object entirely in the lowest 12 % of the person box and wider than tall
 #                      -> lying on the floor next to the feet, not held
 
+# One pose pass per worker step for every hand-crop extension (sharp_object, handgun): the worker
+# hands the same ``frames`` array to each extension, so a second extension with the same pose
+# weights and settings reuses the first one's people instead of running pose again.
+_POSE_CACHE = {}
+# Loaded models shared by every hand-crop extension in the worker (pose, COCO veto): the same file
+# (by SHA-256) is loaded once. Results are unchanged; each extension keeps its own settings.
+_MODEL_CACHE = {}
+
+
+def _file_sha256(path):
+    import hashlib
+
+    digest = hashlib.sha256()
+    with open(path, "rb") as stream:
+        for block in iter(lambda: stream.read(1 << 20), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def shared_yolo(path):
+    """One Ultralytics model per distinct weights file in this process."""
+    from ultralytics import YOLO
+
+    key = _file_sha256(path)
+    if key not in _MODEL_CACHE:
+        _MODEL_CACHE[key] = YOLO(str(path))
+    return _MODEL_CACHE[key], key
+
 
 def _area(box):
     return max(0., box[2] - box[0]) * max(0., box[3] - box[1])
@@ -126,13 +154,18 @@ class SharpObjectExtension(Extension):
     release_seconds = 1.0
     threshold = 0.35
     method = "detector"
+    # Per-weapon settings; subclasses (extensions/handgun) override these, never the module constants.
+    locator_classes = LOCATOR_CLASSES
+    veto_classes = VETO_CLASSES
+    use_tool_veto = True       # B: mop / broom CLIP veto (long tools only)
+    weapon_class = "sharp"     # "class" of hand-crop weapon boxes in details["weapons"]
 
     def load(self, weights_dir=WEIGHTS):
         import torch
         from ultralytics import YOLO
 
-        folder = weights_dir / "sharp_object"
-        spec = json.loads((folder / "sharp_object_spec.json").read_text(encoding="utf-8"))
+        folder = weights_dir / self.name
+        spec = json.loads((folder / f"{self.name}_spec.json").read_text(encoding="utf-8"))
         self.threshold = float(spec["alert_threshold"])
         self.confirm_seconds = float(spec.get("confirm_seconds", self.confirm_seconds))
         self.release_seconds = float(spec.get("release_seconds", self.release_seconds))
@@ -145,7 +178,7 @@ class SharpObjectExtension(Extension):
         self.min_conf = min(0.1, self.threshold)
         self.device = "cuda:0" if torch.cuda.is_available() else "cpu"
         self.half = self.device != "cpu"
-        self.model = YOLO(str(folder / spec.get("weights", "sharp_object.pt")))
+        self.model = YOLO(str(folder / spec.get("weights", f"{self.name}.pt")))
         self.names = self.model.names
         self.model.predict(np.zeros((self.imgsz, self.imgsz, 3), np.uint8), imgsz=self.imgsz, verbose=False,
                            device=self.device, half=self.half)  # warm-up
@@ -163,13 +196,14 @@ class SharpObjectExtension(Extension):
         self.pose_imgsz = int(spec.get("pose_imgsz", 640))
         self.pose_conf = float(spec.get("pose_conf", 0.35))
         self.max_people = int(spec.get("max_people", 8))
-        self.pose = YOLO(str(folder / spec["pose_weights"]))
+        self.pose, pose_sha = shared_yolo(folder / spec["pose_weights"])
+        self.pose_key = (pose_sha, self.pose_imgsz, self.pose_conf, self.max_people)
         self.classifier, _ = load_classifier(folder / spec["classifier"], self.device)
         if self.half:
             self.classifier.half()
         self.locator = self._load_locator(folder)
         self.veto = self._load_veto(folder)
-        self.tool_veto = self._load_tool_veto()
+        self.tool_veto = self._load_tool_veto() if self.use_tool_veto else None
         blank = np.zeros((self.pose_imgsz, self.pose_imgsz, 3), np.uint8)
         self.pose.predict(blank, imgsz=self.pose_imgsz, verbose=False, device=self.device, half=self.half)  # warm-up
         self._classify([np.zeros((self.input_size, self.input_size, 3), np.uint8)])
@@ -188,13 +222,13 @@ class SharpObjectExtension(Extension):
                 model = YOLOWorld(str(baked))
             else:
                 model = YOLOWorld(LOCATOR_BASE)
-                model.set_classes(LOCATOR_CLASSES)
+                model.set_classes(list(self.locator_classes))
                 model.save(str(baked))
             model.predict(np.zeros((LOCATOR_IMGSZ, LOCATOR_IMGSZ, 3), np.uint8), imgsz=LOCATOR_IMGSZ,
                           verbose=False, device=self.device)  # warm-up
             return model
         except Exception as error:  # the extension still works with hand boxes only
-            print(f"sharp_object: weapon locator disabled ({type(error).__name__}: {error})", flush=True)
+            print(f"{self.name}: weapon locator disabled ({type(error).__name__}: {error})", flush=True)
             return None
 
     def _load_veto(self, folder):
@@ -207,12 +241,12 @@ class SharpObjectExtension(Extension):
             if not local.is_file():
                 model = YOLO(VETO_BASE)  # downloads the official COCO weights once
                 shutil.copy(model.ckpt_path, local)
-            model = YOLO(str(local))
+            model, _ = shared_yolo(local)
             model.predict(np.zeros((VETO_IMGSZ, VETO_IMGSZ, 3), np.uint8), imgsz=VETO_IMGSZ, verbose=False,
                           device=self.device)  # warm-up
             return model
         except Exception as error:  # the extension still works without the veto
-            print(f"sharp_object: object veto disabled ({type(error).__name__}: {error})", flush=True)
+            print(f"{self.name}: object veto disabled ({type(error).__name__}: {error})", flush=True)
             return None
 
     def _load_tool_veto(self):
@@ -226,7 +260,7 @@ class SharpObjectExtension(Extension):
                 text = text / text.norm(dim=-1, keepdim=True)
             return model, preprocess, text
         except Exception as error:  # the extension still works without this veto
-            print(f"sharp_object: tool veto disabled ({type(error).__name__}: {error})", flush=True)
+            print(f"{self.name}: tool veto disabled ({type(error).__name__}: {error})", flush=True)
             return None
 
     def _tool_vetoed(self, frame, person_box):
@@ -272,7 +306,7 @@ class SharpObjectExtension(Extension):
         for (bx1, by1, bx2, by2), cls in zip(result.boxes.xyxy.cpu().numpy(), result.boxes.cls.cpu().numpy()):
             name = self.veto.names[int(cls)]
             box = [float(bx1 + x1), float(by1 + y1), float(bx2 + x1), float(by2 + y1)]
-            if name in VETO_CLASSES and _intersection(box, hand_box) / max(1e-6, _area(box)) >= VETO_INSIDE:
+            if name in self.veto_classes and _intersection(box, hand_box) / max(1e-6, _area(box)) >= VETO_INSIDE:
                 return name
         return None
 
@@ -317,16 +351,28 @@ class SharpObjectExtension(Extension):
             logits = self.classifier(batch.half() if self.half else batch)
         return torch.sigmoid(logits.float().squeeze(1)).cpu().numpy()
 
+    def _pose_people(self, frames):
+        """[(box, keypoints)] on the newest sample, shared with other hand-crop extensions this step."""
+        from extensions.sharp_object.hand_crop import people_from_pose
+
+        key = getattr(self, "pose_key", None)
+        cached = _POSE_CACHE.get("step")
+        if key is not None and cached is not None and cached["frames"] is frames and cached["key"] == key:
+            return cached["persons"]
+        result = self.pose.predict(frames[-1], imgsz=self.pose_imgsz, conf=self.pose_conf, verbose=False,
+                                   device=self.device, half=self.half)[0]
+        persons = people_from_pose(result, self.pose_conf, self.max_people)
+        _POSE_CACHE["step"] = {"frames": frames, "key": key, "persons": persons}
+        return persons
+
     def _observe_hand_crop(self, frames, people):
-        from extensions.sharp_object.hand_crop import cut, hand_crops, people_from_pose
+        from extensions.sharp_object.hand_crop import cut, hand_crops
 
         frame = frames[-1]
         height, width = frame.shape[:2]
         source_w, source_h = people.get("frame_size") or (width, height)
         sx, sy = source_w / width, source_h / height
-        result = self.pose.predict(frame, imgsz=self.pose_imgsz, conf=self.pose_conf, verbose=False,
-                                   device=self.device, half=self.half)[0]
-        persons = people_from_pose(result, self.pose_conf, self.max_people)
+        persons = self._pose_people(frames)
         crops, hands, frame_boxes = [], [], []
         for index, (box, keypoints) in enumerate(persons):
             for hand in hand_crops(box, keypoints, self.crop):
@@ -364,7 +410,7 @@ class SharpObjectExtension(Extension):
                 if hand["person"] == index and hand["score"] >= self.threshold:
                     located, conf = self._locate(frame, frame_box)
                     weapons.append({"box": [round(v * s, 1) for v, s in zip(located, (sx, sy, sx, sy))],
-                                    "conf": hand["score"], "class": "sharp", "holder": len(person_boxes) - 1,
+                                    "conf": hand["score"], "class": self.weapon_class, "holder": len(person_boxes) - 1,
                                     "located": conf is not None})
         weapons = _merge_weapon_boxes(weapons)
         hands = sorted(hands, key=lambda h: -h["score"])[:MAX_REPORTED]

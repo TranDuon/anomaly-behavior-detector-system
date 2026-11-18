@@ -23,7 +23,7 @@ ROOT = Path(__file__).resolve().parents[1] / "mmaction2_demo"
 # under weights/extensions/<name>/<name>.pt (vandalism from V4, sharp_object from S5).
 # Tests pass extension_names explicitly.
 EXTENSION_WEIGHTS = Path(__file__).resolve().parents[1] / "weights" / "extensions"
-KNOWN_EXTENSIONS = ("vandalism", "sharp_object")
+KNOWN_EXTENSIONS = ("vandalism", "sharp_object", "handgun")
 EXTENSION_NAMES = tuple(name for name in KNOWN_EXTENSIONS  # detector .pt or a spec (hand-crop installs)
                         if any((EXTENSION_WEIGHTS / name / f).is_file() for f in (f"{name}.pt", f"{name}_spec.json")))
 # Longest input gap that keeps the collected clip (realtime drops under GPU load).
@@ -37,7 +37,9 @@ EXTENSION_CADENCE = 2
 EXTENSION_SLOW_CADENCE = 3
 # 1: between full extension steps, run only these light extensions on the newest sample, so their
 # boxes refresh every core step (sharp_object ~55 ms on the GPU; vandalism stays on the cadence).
-EVERY_STEP_EXTENSIONS = ('sharp_object',)
+EVERY_STEP_EXTENSIONS = ('sharp_object', 'handgun')
+# Hand-crop weapon extensions: full-detail frames, weapon boxes in the overlay, holder-only highlight.
+WEAPON_EXTENSIONS = behavior_registry.WEAPON_BEHAVIORS
 # Frames sent to the extension worker. The vandalism model resizes every frame to 256x256
 # (no crop) anyway, so sending 256x256 gives the same input with ~14x less copying.
 EXTENSION_FRAME_SIZE = (256, 256)
@@ -67,7 +69,9 @@ EXTENSION_GATE_OVERRIDES = {'vandalism': {'confirm_seconds': 0.5, 'smooth_window
                             'sharp_object': {'release_ratio': 0.5, 'release_seconds': 1.2,
                                              # C: the gate sees the 3rd-highest of the last 4 scores, so an alert
                                              # needs >= 3 of 4 recent steps above threshold (flickering objects fail)
-                                             'k_of_n': (3, 4)}}
+                                             'k_of_n': (3, 4)},
+                            # Handgun: same hand-crop pipeline, same steadying rules as sharp_object.
+                            'handgun': {'release_ratio': 0.5, 'release_seconds': 1.2, 'k_of_n': (3, 4)}}
 # A/C: sharp-object overlay. Keep the last weapon / holder boxes this long when a step has none
 # (alert still on), and blend a new weapon box with the previous one (weight of the old box).
 SHARP_HOLD_SECONDS = 1.0
@@ -426,9 +430,9 @@ class MMActionRuntime:
             self.extension_specs[name] = spec
             self.extension_gates[name] = gate
 
-    def sharp_display(self, weapons, holders, state, timestamp):
-        """A/C: steady sharp-object boxes while the alert is on (hold short gaps, blend positions)."""
-        hold = self.__dict__.setdefault('sharp_hold', {})
+    def sharp_display(self, weapons, holders, state, timestamp, name='sharp_object'):
+        """A/C: steady weapon boxes while the alert is on (hold short gaps, blend positions)."""
+        hold = self.__dict__.setdefault('sharp_hold', {}) if name == 'sharp_object' else             self.__dict__.setdefault('weapon_hold', {}).setdefault(name, {})
         if state == 'normal':
             hold.clear()
             return [], []
@@ -496,7 +500,7 @@ class MMActionRuntime:
                 import cv2
                 height, width = self.samples[-1].shape[:2]
                 size = EXTENSION_FRAME_SIZE
-                if 'sharp_object' in self.extension_specs:
+                if any(name in self.extension_specs for name in WEAPON_EXTENSIONS):
                     scale = min(1., SHARP_OBJECT_MAX_SIDE / max(width, height))
                     size = (max(1, round(width * scale)), max(1, round(height * scale)))
                 small = [cv2.resize(frame, size, interpolation=cv2.INTER_AREA) for frame in self.samples]
@@ -578,9 +582,10 @@ class MMActionRuntime:
                 details[name].update(context=context, gated_score=seen['fed'] if seen else None,
                                      motion=seen.get('motion') if seen else None,
                                      quick_release=seen.get('released') if seen else None)
-            if name == 'sharp_object':  # weapon boxes for the overlay / event log (source pixels)
+            if name in WEAPON_EXTENSIONS:  # weapon boxes for the overlay / event log (source pixels)
                 weapons, regions[name] = self.sharp_display(
-                    (seen.get('details') or {}).get('weapons', []) if seen else [], regions[name], state, timestamp)
+                    (seen.get('details') or {}).get('weapons', []) if seen else [], regions[name], state, timestamp,
+                    name)
                 details[name].update(weapons=weapons)
         output.update(active_behaviors=active, action_states=states, action_scores=scores, action_regions=regions)
         if 'vandalism' in names:

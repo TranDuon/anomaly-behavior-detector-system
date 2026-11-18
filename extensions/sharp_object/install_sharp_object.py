@@ -24,7 +24,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 TARGET = ROOT / "weights" / "extensions" / "sharp_object"
-MEMBERS = ("sharp_object_spec.json",)  # weights members depend on the spec method, checked in check()
+# Weights members depend on the spec method, checked in check(). The handgun extension uses the
+# same installer (extensions/handgun/install_handgun.py) with name="handgun".
 
 
 def sha256(path):
@@ -35,7 +36,7 @@ def sha256(path):
     return digest.hexdigest()
 
 
-def check_hand_crop(folder, spec):
+def check_hand_crop(folder, spec, name="sharp_object"):
     """Hand-crop install: classifier + pose weights load, and one blank step runs end to end."""
     import numpy as np
     from ultralytics import YOLO
@@ -43,7 +44,7 @@ def check_hand_crop(folder, spec):
     from extensions.sharp_object.hand_crop import load_classifier, to_tensor
 
     missing = [k for k in ("classifier", "arch", "pose_weights", "alert_threshold") if k not in spec]
-    if missing or spec["name"] != "sharp_object":
+    if missing or spec["name"] != name:
         raise ValueError(f"bad spec (missing {missing}, name {spec.get('name')})")
     if not 0 < float(spec["alert_threshold"]) < 1:
         raise ValueError("alert_threshold must be in (0, 1)")
@@ -60,13 +61,15 @@ def check_hand_crop(folder, spec):
     return spec, {"method": "hand_crop", "arch": arch}
 
 
-def check(folder):
+def check(folder, name="sharp_object", hand_crop_only=False):
     import numpy as np
     from ultralytics import YOLO
 
-    spec = json.loads((folder / "sharp_object_spec.json").read_text(encoding="utf-8"))
+    spec = json.loads((folder / f"{name}_spec.json").read_text(encoding="utf-8"))
     if spec.get("method") == "hand_crop":
-        return check_hand_crop(folder, spec)
+        return check_hand_crop(folder, spec, name)
+    if hand_crop_only:
+        raise ValueError(f"{name} needs a hand_crop spec, got method {spec.get('method')}")
     missing = [k for k in ("name", "weights", "alert_threshold", "imgsz") if k not in spec]
     if missing or spec["name"] != "sharp_object":
         raise ValueError(f"bad spec (missing {missing}, name {spec.get('name')})")
@@ -80,6 +83,41 @@ def check(folder):
     return spec, model.names
 
 
+def install(name="sharp_object", archive=None, weights=None, threshold=0.35, imgsz=960, hand_crop_only=False):
+    target = TARGET.with_name(name)
+    staging = target.with_name(f"{name}.staging")
+    shutil.rmtree(staging, ignore_errors=True)
+    staging.mkdir(parents=True)
+    if archive:
+        with zipfile.ZipFile(archive) as bundle:
+            names = set(bundle.namelist())
+            missing = [m for m in (f"{name}_spec.json",) if m not in names]
+            if missing:
+                raise ValueError(f"zip is missing {missing}")
+            for name in names:
+                if "/" in name or "\\" in name or name.startswith("."):
+                    raise ValueError(f"unexpected path in zip: {name}")
+                (staging / name).write_bytes(bundle.read(name))
+        source = {"source_zip": archive.name, "source_sha256": sha256(archive)}
+    else:
+        shutil.copy(weights, staging / f"{name}.pt")
+        spec = {"name": name, "run_tag": f"manual:{weights.name}", "framework": "ultralytics",
+                "weights": f"{name}.pt", "alert": name, "imgsz": imgsz,
+                "alert_threshold": threshold, "threshold_rule": "set by hand (intermediate checkpoint)",
+                "created": time.strftime("%Y-%m-%d %H:%M:%S")}
+        (staging / f"{name}_spec.json").write_text(json.dumps(spec, indent=1), encoding="utf-8")
+        source = {"source_weights": str(weights), "source_sha256": sha256(weights)}
+    spec, names = check(staging, name, hand_crop_only)
+    record = {"installed_at": time.strftime("%Y-%m-%dT%H:%M:%S"), "run_tag": spec.get("run_tag"), **source,
+              "classes": names, "files": {p.name: sha256(p) for p in sorted(staging.iterdir())}}
+    (staging / "install.json").write_text(json.dumps(record, indent=1), encoding="utf-8")
+    if target.exists():
+        shutil.rmtree(target.with_name(f"{name}.previous"), ignore_errors=True)
+        target.rename(target.with_name(f"{name}.previous"))
+    staging.rename(target)
+    print(f"installed {spec.get('run_tag')} -> {target} | threshold {spec['alert_threshold']} | classes {names}")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("archive", type=Path, nargs="?")
@@ -89,37 +127,7 @@ def main():
     args = parser.parse_args()
     if bool(args.archive) == bool(args.weights):
         sys.exit("give either a zip or --weights")
-    staging = TARGET.with_name("sharp_object.staging")
-    shutil.rmtree(staging, ignore_errors=True)
-    staging.mkdir(parents=True)
-    if args.archive:
-        with zipfile.ZipFile(args.archive) as bundle:
-            names = set(bundle.namelist())
-            missing = [m for m in MEMBERS if m not in names]
-            if missing:
-                raise ValueError(f"zip is missing {missing}")
-            for name in names:
-                if "/" in name or "\\" in name or name.startswith("."):
-                    raise ValueError(f"unexpected path in zip: {name}")
-                (staging / name).write_bytes(bundle.read(name))
-        source = {"source_zip": args.archive.name, "source_sha256": sha256(args.archive)}
-    else:
-        shutil.copy(args.weights, staging / "sharp_object.pt")
-        spec = {"name": "sharp_object", "run_tag": f"manual:{args.weights.name}", "framework": "ultralytics",
-                "weights": "sharp_object.pt", "alert": "sharp_object", "imgsz": args.imgsz,
-                "alert_threshold": args.threshold, "threshold_rule": "set by hand (intermediate checkpoint)",
-                "created": time.strftime("%Y-%m-%d %H:%M:%S")}
-        (staging / "sharp_object_spec.json").write_text(json.dumps(spec, indent=1), encoding="utf-8")
-        source = {"source_weights": str(args.weights), "source_sha256": sha256(args.weights)}
-    spec, names = check(staging)
-    record = {"installed_at": time.strftime("%Y-%m-%dT%H:%M:%S"), "run_tag": spec.get("run_tag"), **source,
-              "classes": names, "files": {p.name: sha256(p) for p in sorted(staging.iterdir())}}
-    (staging / "install.json").write_text(json.dumps(record, indent=1), encoding="utf-8")
-    if TARGET.exists():
-        shutil.rmtree(TARGET.with_name("sharp_object.previous"), ignore_errors=True)
-        TARGET.rename(TARGET.with_name("sharp_object.previous"))
-    staging.rename(TARGET)
-    print(f"installed {spec.get('run_tag')} -> {TARGET} | threshold {spec['alert_threshold']} | classes {names}")
+    install("sharp_object", archive=args.archive, weights=args.weights, threshold=args.threshold, imgsz=args.imgsz)
 
 
 if __name__ == "__main__":

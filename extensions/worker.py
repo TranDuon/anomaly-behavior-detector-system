@@ -32,7 +32,8 @@ from frame_transport import SharedFrameReader  # noqa: E402
 
 # Modules that register real extensions. Missing optional dependencies only
 # disable the extension that needs them.
-KNOWN_MODULES = ("extensions.vandalism.extension", "extensions.sharp_object.extension")
+KNOWN_MODULES = ("extensions.vandalism.extension", "extensions.sharp_object.extension",
+                 "extensions.handgun.extension")
 
 
 def reply(value):

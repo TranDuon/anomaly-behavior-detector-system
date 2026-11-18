@@ -23,6 +23,7 @@ import argparse
 import csv
 import io
 import json
+import os
 import random
 import re
 import time
@@ -37,7 +38,10 @@ import numpy as np
 from extensions.vandalism import data as fetch
 
 ROOT = Path(__file__).resolve().parents[2]
-CLASS_MAP = json.loads((ROOT / "datasets" / "sharp_object" / "class_map.json").read_text(encoding="utf-8"))
+# WEAPON_CLASS_MAP selects another weapon's class map (e.g. datasets/handgun/class_map.json, relative to the
+# repo root); unset = sharp object. The handgun Colab notebook sets it for every step.
+CLASS_MAP_PATH = ROOT / (os.environ.get("WEAPON_CLASS_MAP") or "datasets/sharp_object/class_map.json")
+CLASS_MAP = json.loads(CLASS_MAP_PATH.read_text(encoding="utf-8"))
 CLASSES = CLASS_MAP["classes"]
 CLASS_ID = {name: index for index, name in enumerate(CLASSES)}
 FIELDS = ["image", "source", "license", "group", "is_video_frame", "boxes", "classes", "status", "origin"]
@@ -52,8 +56,10 @@ OI_IMAGE = "https://open-images-dataset.s3.amazonaws.com/{split}/{image_id}.jpg"
 COCO_ANNOTATIONS = "http://images.cocodataset.org/annotations/annotations_trainval2017.zip"
 COCO_IMAGE = "http://images.cocodataset.org/{split}/{name}"
 GRANADA_REPO = "shravya11/weapon-detection-dataset"
-SIMULETIC = [("Simuletic/cctv-knife-detection-dataset", "CC BY 4.0"),
-             ("Simuletic/CCTV_ATM_Robbery_Detection_Dataset_Gun_Knife", "CC BY-NC 4.0")]
+# (repo, licence, class names when the repo ships no YAML; ATM ids from its README class table)
+SIMULETIC = [("Simuletic/cctv-knife-detection-dataset", "CC BY 4.0", ["person", "knife"]),
+             ("Simuletic/CCTV_ATM_Robbery_Detection_Dataset_Gun_Knife", "CC BY-NC 4.0",
+              ["offender", "victim", "gun", "knife"])]
 KINETICS_CLASSES = {"sword fighting": 603, "throwing knife": 623, "sharpening knives": 517, "chopping meat": 101,
                     "carving wood with a knife": 84, "throwing axe": 620, "chopping wood": 102}
 
@@ -161,6 +167,8 @@ def zenodo(pool, work, limit):
         yaml_name = next(n for n in names if n.lower().endswith((".yaml", ".yml")))
         text = bundle.read(yaml_name).decode("utf-8", "replace")
         class_names = _yaml_names(text)
+        print("  zenodo classes:", class_names, flush=True)
+        skip_names = set(CLASS_MAP["map"].get("zenodo_skip", []))  # e.g. rifle for handgun
         images = [n for n in names if n.lower().endswith((".jpg", ".jpeg", ".png"))]
         labels = {Path(n).stem: n for n in names if n.endswith(".txt") and "/labels/" in n.replace("\\", "/")}
         for name in images:
@@ -175,6 +183,8 @@ def zenodo(pool, work, limit):
                         rows.append((class_names[int(parts[0])], *map(float, parts[1:])))
             kept = [r for r in rows if r[0] in mapping]
             others = {r[0] for r in rows} - set(mapping)
+            if others & skip_names:
+                continue
             if not kept and others - negative_names:
                 continue  # gun / rifle only: out of scope
             image = decode(bundle.read(name))
@@ -205,21 +215,47 @@ def _yaml_names(text):
 
 
 def granada(pool, work, limit):
+    """Granada weapon sets (Pascal VOC). Sharp object: Knife_detection. The class map can name other
+    folders ("granada_patterns"), its own pool source ("granada_source") and labels that only make
+    an image a negative ("granada_negative_only"; images with any other label are then skipped)."""
     from huggingface_hub import snapshot_download
 
-    local = Path(snapshot_download(GRANADA_REPO, repo_type="dataset", allow_patterns=["Knife_detection/**"],
-                                   local_dir=Path(work) / "granada"))
-    mapping = CLASS_MAP["map"]["granada_knife"]
+    patterns = CLASS_MAP.get("granada_patterns", ["Knife_detection/**"])
+    source = CLASS_MAP.get("granada_source", "granada_knife")
+    for attempt in range(1, 7):  # thousands of small files: the Hub may refuse a burst, resume after a pause
+        try:
+            local = Path(snapshot_download(GRANADA_REPO, repo_type="dataset", allow_patterns=patterns,
+                                           local_dir=Path(work) / "granada", max_workers=4))
+            break
+        except Exception as error:  # LocalEntryNotFoundError / HTTP 429: already-downloaded files are kept
+            if attempt == 6:
+                raise
+            print(f"  granada download interrupted ({type(error).__name__}), retry {attempt} in {60 * attempt}s",
+                  flush=True)
+            time.sleep(60 * attempt)
+    mapping = CLASS_MAP["map"].get("granada") or CLASS_MAP["map"]["granada_knife"]
+    negative_only = CLASS_MAP["map"].get("granada_negative_only")
+    by_stem = None  # filename without extension (Pistol detection): looked up by stem
     added = 0
     for xml_path in sorted(local.rglob("*.xml")):
         ident = re.sub(r"[^A-Za-z0-9_-]", "_", xml_path.stem)
-        if pool.has("granada_knife", ident):
+        if pool.has(source, ident):
             continue
         root = ElementTree.parse(xml_path).getroot()
+        names = {(obj.findtext("name") or "").strip() for obj in root.iter("object")}
+        if negative_only is not None and names - set(mapping) - set(negative_only):
+            continue
         image_path = next((p for p in (xml_path.with_suffix(e) for e in (".jpg", ".jpeg", ".png", ".JPG")) if p.is_file()), None)
         if image_path is None:
             filename = root.findtext("filename") or ""
             image_path = next(iter(xml_path.parent.parent.rglob(filename)), None) if filename else None
+            if image_path is None and filename:  # no extension / image in a sibling folder of the same part
+                if by_stem is None:
+                    by_stem = {}
+                    for path in local.rglob("*"):
+                        if path.suffix.lower() in (".jpg", ".jpeg", ".png"):
+                            by_stem.setdefault((_part_of(path, local), path.stem), path)
+                image_path = by_stem.get((_part_of(xml_path, local), Path(filename).stem))
         if image_path is None:
             continue
         boxes = []
@@ -228,12 +264,20 @@ def granada(pool, work, limit):
             box = obj.find("bndbox")
             if name in mapping and box is not None:
                 boxes.append((mapping[name], *(float(box.findtext(k)) for k in ("xmin", "ymin", "xmax", "ymax"))))
-        pool.add("granada_knife", ident, decode(image_path.read_bytes()), boxes, "CC BY 4.0", "granada:" + ident,
+        pool.add(source, ident, decode(image_path.read_bytes()), boxes, "CC BY 4.0", "granada:" + ident,
                  origin=str(xml_path.relative_to(local)))
         added += 1
         if limit and added >= limit:
             break
     return added
+
+
+def _part_of(path, local):
+    """Chunk folder of a Granada file (``.../part_3/...``) so equal names in other chunks never match."""
+    for parent in path.parents:
+        if parent.name.startswith("part_") or parent == local:
+            return parent
+    return local
 
 
 def openimages(pool, work, per_class, negatives_per_class, splits=("train", "validation", "test")):
@@ -461,12 +505,13 @@ def simuletic(pool, work):
     from huggingface_hub import snapshot_download
 
     added = 0
-    for repo, license_ in SIMULETIC:
+    for repo, license_, default_names in SIMULETIC:
         local = Path(snapshot_download(repo, repo_type="dataset", local_dir=Path(work) / repo.replace("/", "__")))
-        yaml_files = list(local.rglob("*.yaml"))
-        names = _yaml_names(yaml_files[0].read_text(encoding="utf-8")) if yaml_files else ["person", "knife"]
+        yaml_files = [p for p in local.rglob("*.yaml") if ".cache" not in p.parts]
+        names = _yaml_names(yaml_files[0].read_text(encoding="utf-8")) if yaml_files else default_names
+        mapping = {k.lower(): v for k, v in CLASS_MAP["map"]["simuletic"].items()}
         for image_path in sorted(local.rglob("*.png")) + sorted(local.rglob("*.jpg")):
-            if "annotated_example" in image_path.name:
+            if "annotated_example" in image_path.name or ".cache" in image_path.parts:
                 continue
             label_path = next(iter(local.rglob(image_path.stem + ".txt")), None)
             ident = re.sub(r"[^A-Za-z0-9_-]", "_", image_path.stem)
@@ -477,9 +522,9 @@ def simuletic(pool, work):
             boxes = []
             for line in label_path.read_text().splitlines():
                 parts = line.split()
-                if len(parts) == 5 and int(parts[0]) < len(names) and names[int(parts[0])].lower() == "knife":
+                if len(parts) == 5 and int(parts[0]) < len(names) and names[int(parts[0])].lower() in mapping:
                     x, y, w, h = map(float, parts[1:])
-                    boxes.append(("dao_ngan", (x - w / 2) * width, (y - h / 2) * height, (x + w / 2) * width, (y + h / 2) * height))
+                    boxes.append((mapping[names[int(parts[0])].lower()], (x - w / 2) * width, (y - h / 2) * height, (x + w / 2) * width, (y + h / 2) * height))
             pool.add("simuletic", ident, image, boxes, license_ + " (synthetic)", "simuletic:" + ident, origin=repo)
             added += 1
     return added

@@ -1,0 +1,31 @@
+{
+ "description": "Hand-crop data for the handgun extension (extensions/handgun). One positive label: a visible hand holds a handgun (pistol / revolver). Used by the sharp_object data scripts when WEAPON_CLASS_MAP=datasets/handgun/class_map.json. Source labels are mapped here; unmapped labels are dropped.",
+ "classes": ["handgun"],
+ "alert": "handgun",
+ "granada_source": "granada_gun",
+ "granada_patterns": [
+  "Pistol detection/**",
+  "Weapons and similar handled objects/*/Sohas_weapon-Detection/**"
+ ],
+ "map": {
+  "zenodo_dangerous_items": {"gun": "handgun"},
+  "zenodo_negative_only": ["knife", "machete", "baseball bat", "baseball_bat", "bat"],
+  "zenodo_skip": ["rifle"],
+  "granada": {"pistol": "handgun", "Pistol": "handgun"},
+  "granada_negative_only": ["knife", "smartphone", "monedero", "billete", "tarjeta"],
+  "granada_knife": {},
+  "openimages": {"Handgun": "handgun"},
+  "simuletic": {"gun": "handgun"}
+ },
+ "hard_negative_labels": [
+  "Mobile phone",
+  "Remote control",
+  "Hair dryer",
+  "Computer mouse",
+  "Stapler",
+  "Camera",
+  "Flashlight",
+  "Calculator"
+ ],
+ "notes": "Granada 'Pistol detection' (3000 VOC images, label 'pistol') and Sohas 'Weapons and similar handled objects' (hands holding pistol / knife / smartphone / purse 'monedero' / banknote 'billete' / card 'tarjeta'; only the pistol is positive). Zenodo Dangerous Items: 'gun' positive, knife / machete / bat images are negatives, rifle images skipped. Simuletic ATM robbery sample: 'gun'. Look-alikes (phone, remote, hair dryer, mouse...) are hard negatives here and are NOT in the handgun runtime veto (extensions/handgun/extension.py). Toy / replica guns filmed for the demo go in the self-filmed group (source 'vn' in build_dataset.py), labelled 'handgun'."
+}

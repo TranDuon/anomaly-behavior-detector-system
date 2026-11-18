@@ -29,6 +29,7 @@ import csv
 import hashlib
 import io
 import json
+import os
 import re
 import shutil
 import zipfile
@@ -36,7 +37,10 @@ from collections import Counter, defaultdict
 from pathlib import Path, PurePosixPath
 
 ROOT = Path(__file__).resolve().parents[2]
-CLASS_MAP = json.loads((ROOT / "datasets" / "sharp_object" / "class_map.json").read_text(encoding="utf-8"))
+# WEAPON_CLASS_MAP selects another weapon's class map (e.g. datasets/handgun/class_map.json, relative to the
+# repo root); unset = sharp object. The handgun Colab notebook sets it for every step.
+CLASS_MAP_PATH = ROOT / (os.environ.get("WEAPON_CLASS_MAP") or "datasets/sharp_object/class_map.json")
+CLASS_MAP = json.loads(CLASS_MAP_PATH.read_text(encoding="utf-8"))
 CLASSES = CLASS_MAP["classes"]
 CLASS_ID = {name: index for index, name in enumerate(CLASSES)}
 IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".webp", ".bmp"}

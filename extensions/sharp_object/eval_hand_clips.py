@@ -24,7 +24,7 @@ def load_package(folder, device):
 
     from extensions.sharp_object.hand_crop import crop_params, load_classifier
 
-    spec = json.loads((folder / "sharp_object_spec.json").read_text(encoding="utf-8"))
+    spec = json.loads(next(Path(folder).glob("*_spec.json")).read_text(encoding="utf-8"))  # sharp_object / handgun
     model, _ = load_classifier(folder / spec["classifier"], device)
     return {"spec": spec, "classifier": model.float().eval(), "pose": YOLO(str(folder / spec["pose_weights"])),
             "crop": crop_params(spec), "threshold": float(spec["alert_threshold"]), "torch": torch}

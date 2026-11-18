@@ -290,17 +290,19 @@ def export(args):
     pose_path = Path(YOLO(args.pose).ckpt_path)
     shutil.copy(pose_path, package / pose_path.name)
     crops = evaluation.get("crops", {})
-    spec = {"name": "sharp_object", "method": "hand_crop", "run_tag": args.run_tag, "alert": CLASS_MAP["alert"],
+    name = args.name  # "handgun" packages the same classifier layout for extensions/handgun
+    spec = {"name": name, "method": "hand_crop", "run_tag": args.run_tag,
+            "alert": CLASS_MAP["alert"] if name == "sharp_object" else name,
             "classifier": "hand_classifier.pt", "arch": best["arch"], "input_size": INPUT_SIZE,
             "pose_weights": pose_path.name, "pose_imgsz": args.runtime_pose_imgsz, "pose_conf": args.runtime_pose_conf,
             "max_people": 8, "crop": crops.get("crop", CROP_DEFAULTS), "confirm_seconds": 0.5, "release_seconds": 1.0,
             "alert_threshold": evaluation["alert_threshold"], "threshold_rule": evaluation["threshold_rule"],
             "alert_logic": "pose -> square crop around each visible hand -> ResNet; step score = max over hands, "
-                           "confirmed over time (extensions/sharp_object/extension.py)",
+                           f"confirmed over time (extensions/{name}/extension.py)",
             "created": time.strftime("%Y-%m-%d %H:%M:%S")}
-    (package / "sharp_object_spec.json").write_text(json.dumps(spec, indent=1), encoding="utf-8")
+    (package / f"{name}_spec.json").write_text(json.dumps(spec, indent=1), encoding="utf-8")
     shutil.copy(output / "evaluation.json", package / "evaluation.json")
-    archive = output / f"sharp_object_{args.run_tag}.zip"
+    archive = output / f"{name}_{args.run_tag}.zip"
     with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as bundle:
         for path in sorted(package.iterdir()):
             bundle.write(path, path.name)
@@ -332,6 +334,8 @@ def main():
     parser.add_argument("--init", type=Path, default=None,
                         help="start from this classifier (best.pt / hand_classifier.pt of an earlier run)")
     parser.add_argument("--run-tag", default="hand_01")
+    parser.add_argument("--name", default="sharp_object", choices=["sharp_object", "handgun"],
+                        help="export: extension the zip installs into")
     parser.add_argument("--device", default=None)
     args = parser.parse_args()
     {"train": train, "evaluate": evaluate, "export": export}[args.stage](args)

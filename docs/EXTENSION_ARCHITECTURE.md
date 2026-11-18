@@ -59,3 +59,11 @@ Cả hai phải báo 13/13 video khớp golden.
 - Danh sách video: `tests/golden/behavior_reference.json` (đường dẫn + SHA-256). Bản sao video ở `tests/golden/videos/` (không đưa vào git).
 - Kết quả gốc: `tests/golden/traces/*.json`, ghi một lần ở commit `36d5c73` bằng `compare_behavior_traces.py record`.
 - So sánh: trạng thái, sự kiện, số người, nhãn active và trạng thái từng nhãn phải giống hệt; điểm lệch ≤ 0.001; box lệch ≤ 2 px.
+
+## Cầm súng ngắn (`handgun`) — khung, chưa có checkpoint
+
+- `extensions/handgun/extension.py`: lớp con của `SharpObjectExtension`, cùng cách hand-crop (pose → crop quanh tay → ResNet nhị phân → veto → YOLO-World vẽ khung). Chỉ khác cấu hình: nhãn `HANDGUN`, từ vựng locator `handgun/pistol/revolver`, **không** veto `cell phone`, `remote`, `hair drier`, `mouse` (súng trong tay hay bị COCO gọi nhầm là các vật này), không dùng veto cây lau nhà (CLIP).
+- Pose chạy một lần mỗi bước cho cả `sharp_object` và `handgun` (cache theo mảng `frames` của worker + file/cấu hình pose).
+- `fight/behaviors.WEAPON_BEHAVIORS`: các extension "cầm vũ khí" — overlay chỉ tô người cầm và vẽ khung vũ khí; runtime giữ khung riêng cho từng extension.
+- Cài: `extensions\env\Scripts\python.exe -m extensions.handgun.install_handgun handgun_<RUN_TAG>.zip` (zip từ `train_hand_classifier.py --stage export --name handgun`). Chưa cài thì runtime không bật `handgun`, mọi nhánh khác không đổi.
+- Dữ liệu: `datasets/handgun/class_map.json` (Granada pistol, Open Images `Handgun`; hard negative: điện thoại, remote, máy sấy, chuột, máy khoan…).

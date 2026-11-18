@@ -41,6 +41,9 @@ CORE_BEHAVIORS = (
                  description="per-person running confirmation"),
 )
 CORE_NAMES = tuple(spec.name for spec in CORE_BEHAVIORS)
+# Extensions whose alert means "this person holds a weapon": the overlay highlights only the
+# holders and draws the weapon boxes from details["weapons"].
+WEAPON_BEHAVIORS = ("sharp_object", "handgun")
 
 _registry = {spec.name: spec for spec in CORE_BEHAVIORS}
 
