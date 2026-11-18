@@ -24,6 +24,9 @@ from fight.mmaction_runtime import has_target_person
 FAR_FACTOR = 1.5
 STATIC_SHIFT = 0.05
 REACT_SHIFT = 0.15
+# A jump of the 'nearest other person' larger than this (in their heights) within the
+# history is the detector switching to a different person, not a reaction to a hit.
+IDENTITY_SWITCH_SHIFT = 1.0
 HISTORY = 6  # core predictions (~1.6 s)
 
 
@@ -81,6 +84,11 @@ class StrikeContext:
             ref = max(1., first[3] - first[1])
             dx, dy = _center(last)[0] - _center(first)[0], _center(last)[1] - _center(first)[1]
             shift = (dx * dx + dy * dy) ** .5 / ref
+            if shift > IDENTITY_SWITCH_SHIFT:
+                # Different person, not movement: restart the track on the current one.
+                signals['identity_switch'] = True
+                self.track = deque([self.track[-1]], maxlen=HISTORY)
+                shift = None
         fall_on_near = near is not None and any(_iou(near, box) > 0.3 for box in
                                                 (output.get('action_regions') or {}).get('fall') or [])
         signals['A4_static'] = shift is not None and shift < STATIC_SHIFT

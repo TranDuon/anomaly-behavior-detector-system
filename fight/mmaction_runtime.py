@@ -26,6 +26,9 @@ EXTENSION_WEIGHTS = Path(__file__).resolve().parents[1] / "weights" / "extension
 KNOWN_EXTENSIONS = ("vandalism", "sharp_object")
 EXTENSION_NAMES = tuple(name for name in KNOWN_EXTENSIONS  # detector .pt or a spec (hand-crop installs)
                         if any((EXTENSION_WEIGHTS / name / f).is_file() for f in (f"{name}.pt", f"{name}_spec.json")))
+# Longest input gap that keeps the collected clip (realtime drops under GPU load).
+MAX_CONTINUOUS_GAP_SECONDS = 3.0
+
 # Submit one extension step every N core samples; slower when the core step is slow.
 # Every step (cadence 1) shared the GPU with the core so much that a core step took
 # ~0.26 s of the 0.267 s budget and the live view lagged. Every second step halves the
@@ -52,8 +55,14 @@ EXTENSION_WINDOW_SECONDS = 7 / 3.75
 # the release threshold (0.7 x threshold), instead of needing 1 s of uninterrupted low scores.
 # probe_02_ft (17/11/2026): scores are ~0 or ~1, so averaging 3 scores hid single hits. Raw score +
 # 0.5 s confirmation on 299 Kinetics val clips: recall 63% -> 73%, hard-negative FP 3.9% -> 6.9%.
+# 18/11/2026: hold the alert 0.6 s (was the spec's 1.0 s) after scores drop, so it clears sooner
+# once the striking stops; confirmation is unchanged, so this adds no new alerts.
 EXTENSION_GATE_OVERRIDES = {'vandalism': {'confirm_seconds': 0.5, 'smooth_window': 1,
-                                          'min_motion': 4.0, 'release_window': 4},
+                                          'min_motion': 4.0, 'release_window': 4, 'release_seconds': 0.6,
+                                          # 18/11: under GPU load vandalism replies arrive every ~1.6 s, past the
+                                          # default 1.5 s gap, so the gate restarted between two high scores
+                                          # and never confirmed (yellow/green flicker). Vandalism only.
+                                          'max_observation_gap': 2.5},
                             # B: alert on at the spec threshold, off only below 0.5x it for 1.2 s
                             'sharp_object': {'release_ratio': 0.5, 'release_seconds': 1.2,
                                              # C: the gate sees the 3rd-highest of the last 4 scores, so an alert
@@ -62,6 +71,10 @@ EXTENSION_GATE_OVERRIDES = {'vandalism': {'confirm_seconds': 0.5, 'smooth_window
 # A/C: sharp-object overlay. Keep the last weapon / holder boxes this long when a step has none
 # (alert still on), and blend a new weapon box with the previous one (weight of the old box).
 SHARP_HOLD_SECONDS = 1.0
+# Vandalism overlay: while the alert is on, keep the last person boxes this long when the core
+# person detector misses everyone for a frame (crouching / turned away), so the red box does not
+# blink. Display only; vandalism states, scores and every other branch are unchanged.
+VANDALISM_BOX_HOLD_SECONDS = 0.8
 SHARP_BOX_SMOOTHING = 0.4
 SLOW_CORE_STEP_SECONDS = 0.22  # core inference per step (budget 0.267 s at 3.75 fps)
 
@@ -402,7 +415,8 @@ class MMActionRuntime:
                 spec = {**spec, **{k: v for k, v in EXTENSION_GATE_OVERRIDES.get(name, {}).items() if k in spec}}
                 release_ratio = EXTENSION_GATE_OVERRIDES.get(name, {}).get('release_ratio', .7)
                 gate = EventGate(spec['threshold'], spec['threshold'] * release_ratio,
-                                 confirm_seconds=spec['confirm_seconds'], release_seconds=spec['release_seconds'])
+                                 confirm_seconds=spec['confirm_seconds'], release_seconds=spec['release_seconds'],
+                                 max_observation_gap=EXTENSION_GATE_OVERRIDES.get(name, {}).get('max_observation_gap', 1.5))
             except (KeyError, TypeError, ValueError):
                 continue
             behavior_registry.register(behavior_registry.BehaviorSpec(
@@ -456,7 +470,21 @@ class MMActionRuntime:
             people = {'person_boxes': output.get('person_boxes', []),
                       'posture_boxes': (output.get('posture') or {}).get('boxes', []),
                       'frame_size': [self.samples[-1].shape[1], self.samples[-1].shape[0]]}
-            if self.extension_step % self.extension_cadence != 0 and light:
+            # 18/11/2026: a full step (vandalism + sharp_object) that found the worker busy with a
+            # light sharp_object step used to be dropped until the next cadence slot, so vandalism
+            # replies came only every ~1.6 s and the alarm needed ~2 s more to confirm. A due full
+            # step now stays due: no light step is sent while it waits, and it goes out on the next
+            # idle core step. sharp_object still runs inside every full step.
+            if self.extension_step % self.extension_cadence == 0:
+                self.extension_full_due = True
+            # 18/11/2026: while vandalism is verifying (yellow, not yet red), score it on every core
+            # step so the confirming second high score comes 0.27-0.5 s after the first instead of
+            # waiting for the next cadence slot. Back to the normal cadence once red or normal.
+            vandal_gate = self.extension_gates.get('vandalism')
+            if vandal_gate is not None and vandal_gate.pending_since is not None and not vandal_gate.active:
+                self.extension_full_due = True
+            full_due = getattr(self, 'extension_full_due', False)
+            if not full_due and light:
                 import cv2
                 height, width = self.samples[-1].shape[:2]
                 scale = min(1., SHARP_OBJECT_MAX_SIDE / max(width, height))
@@ -464,7 +492,7 @@ class MMActionRuntime:
                 # same 9-frame shape as a full step (the shared buffer is fixed-size); sharp_object reads the last one
                 client.submit([cv2.resize(frame, size, interpolation=cv2.INTER_AREA) for frame in self.samples],
                               self.sample_times[-1], people, only=light)
-            elif self.extension_step % self.extension_cadence == 0:
+            elif full_due:
                 import cv2
                 height, width = self.samples[-1].shape[:2]
                 size = EXTENSION_FRAME_SIZE
@@ -472,10 +500,11 @@ class MMActionRuntime:
                     scale = min(1., SHARP_OBJECT_MAX_SIDE / max(width, height))
                     size = (max(1, round(width * scale)), max(1, round(height * scale)))
                 small = [cv2.resize(frame, size, interpolation=cv2.INTER_AREA) for frame in self.samples]
-                client.submit(small, self.sample_times[-1],
-                              {'person_boxes': output.get('person_boxes', []),
-                               'posture_boxes': (output.get('posture') or {}).get('boxes', []),
-                               'frame_size': [width, height]})
+                if client.submit(small, self.sample_times[-1],
+                                 {'person_boxes': output.get('person_boxes', []),
+                                  'posture_boxes': (output.get('posture') or {}).get('boxes', []),
+                                  'frame_size': [width, height]}):
+                    self.extension_full_due = False
         reply = client.latest(timestamp) if client is not None else None
         results = (reply or {}).get('extensions', {})
         active = [name for name in output.get('active_behaviors', []) if name not in names]
@@ -554,6 +583,15 @@ class MMActionRuntime:
                     (seen.get('details') or {}).get('weapons', []) if seen else [], regions[name], state, timestamp)
                 details[name].update(weapons=weapons)
         output.update(active_behaviors=active, action_states=states, action_scores=scores, action_regions=regions)
+        if 'vandalism' in names:
+            hold = self.__dict__.setdefault('vandalism_box_hold', {})
+            boxes = output.get('person_boxes') or []
+            if states.get('vandalism', 'normal') == 'normal':
+                hold.clear()
+            elif boxes:
+                hold.update(boxes=[list(box) for box in boxes], at=timestamp)
+            elif hold.get('boxes') and timestamp - hold['at'] <= VANDALISM_BOX_HOLD_SECONDS:
+                output['vandalism_display_boxes'] = [list(box) for box in hold['boxes']]
         if output.get('prediction_timestamp') == timestamp and 'strike_context' not in output:
             # Group-A context (people / positions) for a strike: information only, the strike
             # branch and all core fields stay exactly as the core produced them.
@@ -720,6 +758,7 @@ class MMActionRuntime:
         if getattr(self, 'strike_context', None) is not None:
             self.strike_context.reset()
         self.extension_step = 0
+        self.extension_full_due = False
         if self.extension_client is not None:
             self.extension_client.reset()
 
@@ -891,7 +930,10 @@ class MMActionRuntime:
         self.result = {**self.result, "event": None}
         if not self.model_ready:
             return dict(self.result)
-        if self.last_input is not None and timestamp - self.last_input > 1:
+        # Realtime playback drops samples when the GPU falls behind (gaps of ~1-1.6 s). Keep the
+        # collected clip across such gaps instead of clearing it and warming up again for ~2 s;
+        # only a long break (paused source, reconnect) starts over.
+        if self.last_input is not None and timestamp - self.last_input > MAX_CONTINUOUS_GAP_SECONDS:
             self.reset()
         self.last_input = timestamp
         if self.next_sample is None:

@@ -54,6 +54,18 @@ VETO_CONF = 0.35
 VETO_INSIDE = 0.6                     # share of the object box inside the hand crop
 VETO_IMGSZ = 320
 VETO_REACH = 2.0                      # search square = 2x the hand crop side
+# B (18/11/2026): long household-tool veto. A hand gripping a mop / broom handle looks like a hand
+# gripping a spear or dao phong lon in the hand crop (the head of the tool is outside the crop),
+# and COCO has no mop/broom class. CLIP (ViT-B/32, zero-shot) looks at the whole alerted person:
+# if "holding a mop / broom / rake" outweighs the weapon prompts, that person's hands are cancelled.
+# Measured offline: mop video 22/22 alerted people cancelled; self-filmed weapon video 0/75;
+# 28 alerted people in Vietnamese news weapon photos: 3 cancelled (1 holds a machete and a broom).
+TOOL_PROMPTS = ["a person holding a mop", "a person holding a broom", "a person mopping the floor",
+                "a person sweeping the floor", "a person holding a rake"]
+WEAPON_PROMPTS = ["a person holding a knife", "a person holding a machete", "a person holding a spear",
+                  "a person holding a sword", "a person holding a long blade on a pole", "a person holding an axe"]
+TOOL_VETO_PROB = 0.8   # share of the softmax on the tool prompts
+CLIP_LOCAL = WEIGHTS.parent / "clip" / "ViT-B-32.pt"   # used when present, else the CLIP cache
 FLOOR_BAND = 0.12   # object entirely in the lowest 12 % of the person box and wider than tall
 #                      -> lying on the floor next to the feet, not held
 
@@ -64,6 +76,26 @@ def _area(box):
 
 def _intersection(a, b):
     return _area((max(a[0], b[0]), max(a[1], b[1]), min(a[2], b[2]), min(a[3], b[3])))
+
+
+WEAPON_MERGE_OVERLAP = 0.6  # share of the smaller box covered by the other -> same weapon
+
+
+def _merge_weapon_boxes(weapons):
+    """One weapon held in both hands is located once per alerted hand, giving two near-identical
+    boxes. Keep one box per weapon (the union of overlapping boxes of the same holder).
+    Display only: the alert score and holders are unchanged."""
+    merged = []
+    for weapon in sorted(weapons, key=lambda w: -w["conf"]):
+        for kept in merged:
+            a, b = kept["box"], weapon["box"]
+            if kept["holder"] == weapon["holder"] and                     _intersection(a, b) >= WEAPON_MERGE_OVERLAP * max(1e-6, min(_area(a), _area(b))):
+                kept["box"] = [min(a[0], b[0]), min(a[1], b[1]), max(a[2], b[2]), max(a[3], b[3])]
+                kept["located"] = kept["located"] or weapon["located"]
+                break
+        else:
+            merged.append(dict(weapon, box=list(weapon["box"])))
+    return merged
 
 
 def holder_of(obj, people):
@@ -137,6 +169,7 @@ class SharpObjectExtension(Extension):
             self.classifier.half()
         self.locator = self._load_locator(folder)
         self.veto = self._load_veto(folder)
+        self.tool_veto = self._load_tool_veto()
         blank = np.zeros((self.pose_imgsz, self.pose_imgsz, 3), np.uint8)
         self.pose.predict(blank, imgsz=self.pose_imgsz, verbose=False, device=self.device, half=self.half)  # warm-up
         self._classify([np.zeros((self.input_size, self.input_size, 3), np.uint8)])
@@ -181,6 +214,44 @@ class SharpObjectExtension(Extension):
         except Exception as error:  # the extension still works without the veto
             print(f"sharp_object: object veto disabled ({type(error).__name__}: {error})", flush=True)
             return None
+
+    def _load_tool_veto(self):
+        try:
+            import clip
+            import torch
+
+            model, preprocess = clip.load(str(CLIP_LOCAL) if CLIP_LOCAL.is_file() else "ViT-B/32", device=self.device)
+            with torch.no_grad():
+                text = model.encode_text(clip.tokenize(TOOL_PROMPTS + WEAPON_PROMPTS).to(self.device))
+                text = text / text.norm(dim=-1, keepdim=True)
+            return model, preprocess, text
+        except Exception as error:  # the extension still works without this veto
+            print(f"sharp_object: tool veto disabled ({type(error).__name__}: {error})", flush=True)
+            return None
+
+    def _tool_vetoed(self, frame, person_box):
+        """Probability (0-1) that the person in ``person_box`` (frame pixels) holds a household long
+        tool rather than a weapon, or None when the veto is unavailable."""
+        if self.tool_veto is None:
+            return None
+        import cv2
+        import torch
+        from PIL import Image
+
+        model, preprocess, text = self.tool_veto
+        height, width = frame.shape[:2]
+        x1, y1, x2, y2 = person_box
+        pad_x, pad_y = .3 * (x2 - x1), .1 * (y2 - y1)  # arms and long handles stick out
+        x1, y1 = int(max(0, x1 - pad_x)), int(max(0, y1 - pad_y))
+        x2, y2 = int(min(width, x2 + pad_x)), int(min(height, y2 + pad_y))
+        if x2 - x1 < 16 or y2 - y1 < 16:
+            return None
+        image = preprocess(Image.fromarray(cv2.cvtColor(frame[y1:y2, x1:x2], cv2.COLOR_BGR2RGB))).unsqueeze(0)
+        with torch.no_grad():
+            features = model.encode_image(image.to(self.device))
+            features = features / features.norm(dim=-1, keepdim=True)
+            probs = (100 * features @ text.T).softmax(-1)[0].float().cpu().numpy()
+        return float(probs[:len(TOOL_PROMPTS)].sum())
 
     def _vetoed(self, frame, hand_box):
         """Name of a harmless COCO object held in ``hand_box`` (frame pixels), else None."""
@@ -270,6 +341,12 @@ class SharpObjectExtension(Extension):
                 held = self._vetoed(frame, frame_box)
                 if held is not None:  # A: harmless object in this hand -> no alert from it
                     hand.update(raw_score=hand["score"], vetoed=held, score=0.0)
+        for index in sorted({h["person"] for h in hands if h["score"] >= self.threshold}):
+            tool = self._tool_vetoed(frame, [float(v) for v in persons[index][0]])
+            if tool is not None and tool >= TOOL_VETO_PROB:  # B: mop / broom, not a weapon
+                for hand in hands:
+                    if hand["person"] == index and hand["score"] >= self.threshold:
+                        hand.update(raw_score=hand["score"], vetoed="long_tool", tool_prob=round(tool, 3), score=0.0)
         scores = [hand["score"] for hand in hands]
         # Holders are reported with the core person boxes (exact match needed for the red overlay);
         # a pose person with no matching core box keeps its own box.
@@ -289,6 +366,7 @@ class SharpObjectExtension(Extension):
                     weapons.append({"box": [round(v * s, 1) for v, s in zip(located, (sx, sy, sx, sy))],
                                     "conf": hand["score"], "class": "sharp", "holder": len(person_boxes) - 1,
                                     "located": conf is not None})
+        weapons = _merge_weapon_boxes(weapons)
         hands = sorted(hands, key=lambda h: -h["score"])[:MAX_REPORTED]
         return {"score": float(max(scores, default=0.)), "boxes": person_boxes,
                 "details": {"method": "hand_crop", "people": len(persons), "hands": hands, "weapons": weapons}}

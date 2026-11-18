@@ -121,7 +121,7 @@ def annotate(frame, result):
                   **({} if others else {"state": "normal"})}
     verifying = [n for n in names if (result.get("action_states") or {}).get(n) == "verifying"]
     if extension_active or (verifying and result["state"] not in {"fighting", "verifying"}):
-        scene = [] if relabelled else list(result.get("person_boxes", []))
+        scene = [] if relabelled else list(result.get("person_boxes", []) or result.get("vandalism_display_boxes", []))
         if set(extension_active or verifying) <= {"sharp_object"}:
             # Person holding a sharp object: highlight only the holders, not everybody in view.
             scene = list((result.get("action_regions") or {}).get("sharp_object", []))
@@ -892,8 +892,9 @@ class FightProcessor:
                         self.stop_event.wait(0.02)
                         continue
                     timestamp = samples[-1][1]
-                    if sampled_drops > observed_drops and not self.preview:
-                        self.reset_after_sample_loss()
+                    # Dropped samples no longer clear the clip: resetting on every drop meant ~2 s of
+                    # warm-up with no scoring each time the GPU fell behind. The runtime itself starts
+                    # over only after a long input gap (MAX_CONTINUOUS_GAP_SECONDS).
                     observed_drops = sampled_drops
                 for sample, sample_time in samples:
                     result = (
